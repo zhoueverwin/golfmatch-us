@@ -15,8 +15,7 @@ export type StatsTooltipKey =
   | "likes"
   | "profileViews"
   | "impressions"
-  | "postViews"
-  | "recruitmentViews";
+  | "postViews";
 
 interface StatsTooltipProps {
   visible: boolean;
@@ -52,11 +51,6 @@ const TOOLTIP_CONTENT: Record<
     title: "投稿閲覧",
     description: "あなたの投稿がフィード上で閲覧された合計回数です。投稿するとフィードに表示され、あなたのプロフィールへの流入が増えます。投稿が多いユーザーほど、いいね・閲覧・つながりの数が平均2〜3倍高い傾向があります。",
     tip: "まだ投稿していない方は、最近のラウンド写真やお気に入りのコースを1枚シェアするだけでOK！週1回の投稿でプロフィール閲覧数が大きく伸びます。",
-  },
-  recruitmentViews: {
-    title: "募集閲覧",
-    description: "あなたが作成したラウンド募集の詳細ページが見られた合計回数です。募集を出すと、同じエリア・レベルのゴルファーに自動で表示されます。一緒にラウンドした相手とつながるケースも多く、マッチングのきっかけになります。",
-    tip: "まずは直近の空き日程で1件募集してみましょう！コース名・プレー費・希望レベルを具体的に書くと応募率が大幅にアップします。",
   },
 };
 

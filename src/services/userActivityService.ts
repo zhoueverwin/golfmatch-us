@@ -250,9 +250,8 @@ export class UserActivityService {
     profileViews: number;
     impressions: number;
     postViews: number;
-    recruitmentViews: number;
   }> {
-    const fallback = { matches: 0, likes: 0, profileViews: 0, impressions: 0, postViews: 0, recruitmentViews: 0 };
+    const fallback = { matches: 0, likes: 0, profileViews: 0, impressions: 0, postViews: 0 };
     try {
       const { data, error } = await supabase.rpc('get_mypage_dashboard_stats', {
         target_user_id: profileId,
@@ -269,7 +268,6 @@ export class UserActivityService {
         profileViews: data?.profile_views ?? 0,
         impressions: data?.impressions ?? 0,
         postViews: data?.post_views ?? 0,
-        recruitmentViews: data?.recruitment_views ?? 0,
       };
     } catch (error) {
       console.error('[UserActivityService] Exception in getDashboardStats:', error);
@@ -364,24 +362,6 @@ export class UserActivityService {
       });
   }
 
-  /**
-   * Track a recruitment view. Silently ignores duplicate key errors (daily dedup).
-   */
-  static trackRecruitmentView(viewerId: string, recruitmentId: string): void {
-    if (!viewerId || !recruitmentId) return;
-
-    supabase
-      .from('recruitment_views')
-      .upsert(
-        { viewer_id: viewerId, recruitment_id: recruitmentId },
-        { onConflict: 'viewer_id,recruitment_id,created_date', ignoreDuplicates: true },
-      )
-      .then(({ error }) => {
-        if (error && error.code !== '23505') {
-          console.error('[UserActivityService] trackRecruitmentView error:', error);
-        }
-      });
-  }
 }
 
 export default UserActivityService;

@@ -1,6 +1,6 @@
 /**
  * Share Service
- * Handles image capture and sharing functionality for posts and recruitments
+ * Handles image capture and sharing functionality for posts
  */
 
 import { RefObject } from 'react';
@@ -18,15 +18,6 @@ export interface SharePostData {
   userName: string;
   content?: string;
   imageUrl?: string;
-}
-
-export interface ShareRecruitmentData {
-  date: string;
-  courseName: string;
-  location?: string;
-  hostName: string;
-  remainingSlots: number;
-  totalSlots: number;
 }
 
 export const shareService = {
@@ -128,22 +119,6 @@ export const shareService = {
 ${data.content ? data.content.substring(0, 100) + (data.content.length > 100 ? '...' : '') : ''}
 
 アプリをダウンロード👇
-${appLink}`;
-  },
-
-  /**
-   * Generate share message for a recruitment
-   */
-  generateRecruitmentShareMessage: (data: ShareRecruitmentData): string => {
-    const appLink = shareService.getAppLink();
-    return `🏌️ ゴルフ仲間募集中！
-
-📅 ${data.date}
-⛳ ${data.courseName}
-${data.location ? `📍 ${data.location}` : ''}
-👥 残り${data.remainingSlots}枠
-
-Golfmatchでチェック👇
 ${appLink}`;
   },
 

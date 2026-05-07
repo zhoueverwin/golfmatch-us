@@ -1,9 +1,7 @@
 // Re-export data models for convenience
 export * from "./dataModels";
 export * from "./auth";
-export * from "./recruitment";
 import { User, SearchFilters } from "./dataModels";
-import { GolfCourse } from "./recruitment";
 
 // Matching and Likes Types
 export interface Like {
@@ -94,20 +92,12 @@ export type RootStackParamList = {
   };
   BlockedUsers: undefined;
   HiddenPosts: undefined;
-  // Recruitment (募集) screens
-  RecruitmentDetail: { recruitmentId: string };
-  RecruitmentCreate: { prefillCourse?: GolfCourse } | undefined;
-  RecruitmentEdit: { recruitmentId: string };
-  MyRecruitments: undefined;
-  RecruitmentApplications: { recruitmentId: string };
-  CourseSearch: undefined;
   SwipeCard: undefined; // Data passed via swipeCardData module
 };
 
 export type MainTabParamList = {
   Home: undefined;
   Search: undefined;
-  Recruitment: undefined; // 募集 (Golf Member Recruitment)
   Connections: undefined;
   Messages: undefined;
   MyPage: undefined;

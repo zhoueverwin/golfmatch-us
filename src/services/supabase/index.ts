@@ -12,7 +12,3 @@ export {
 } from "./contact-inquiries.service";
 export { reportsService, ReportsService } from "./reports.service";
 export { blocksService, BlocksService } from "./blocks.service";
-export {
-  recruitmentsService,
-  default as RecruitmentsService,
-} from "./recruitments.service";

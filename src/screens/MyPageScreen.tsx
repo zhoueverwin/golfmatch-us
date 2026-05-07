@@ -70,9 +70,9 @@ const MyPageScreen: React.FC = () => {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Dashboard stats (6 metrics)
+  // Dashboard stats
   const [dashboardStats, setDashboardStats] = useState({
-    matches: 0, likes: 0, profileViews: 0, impressions: 0, postViews: 0, recruitmentViews: 0,
+    matches: 0, likes: 0, profileViews: 0, impressions: 0, postViews: 0,
   });
   const [dailyStats, setDailyStats] = useState({
     todayProfileViews: 0, todayLikes: 0, todayImpressions: 0, todayPostViews: 0, yesterdayProfileViews: 0,
@@ -699,7 +699,6 @@ const MyPageScreen: React.FC = () => {
                     { key: "profileViews" as StatsTooltipKey, label: "閲覧", value: dashboardStats.profileViews },
                     { key: "impressions" as StatsTooltipKey, label: "印象", value: dashboardStats.impressions },
                     { key: "postViews" as StatsTooltipKey, label: "投稿", value: dashboardStats.postViews },
-                    { key: "recruitmentViews" as StatsTooltipKey, label: "募集", value: dashboardStats.recruitmentViews },
                   ]).map((item, index) => (
                     <React.Fragment key={item.key}>
                       {index > 0 && <View style={styles.dashDividerV} />}

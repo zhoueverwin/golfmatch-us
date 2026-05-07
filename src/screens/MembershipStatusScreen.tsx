@@ -45,7 +45,6 @@ const FEATURES: Feature[] = [
   { name: "いいね送信", free: true, premium: true },
   { name: "マッチング", free: true, premium: true },
   { name: "投稿の閲覧・作成", free: true, premium: true },
-  { name: "募集の閲覧・作成", free: true, premium: true },
   { name: "検索（性別・年齢・地域・スキル等）", free: false, premium: true },
   { name: "メッセージ送信", free: false, premium: true },
   { name: "並び替えオプション", free: false, premium: true },
@@ -298,7 +297,7 @@ const MembershipStatusScreen: React.FC = () => {
             <View style={styles.badgeRowText}>
               <Text style={styles.badgeRowTitle}>有料会員バッジ</Text>
               <Text style={styles.badgeRowDesc}>
-                有料会員になると、プロフィール・投稿・検索結果・募集などでお名前の横にゴールドバッジが表示されます。信頼感がアップし、マッチ率の向上が期待できます。
+                有料会員になると、プロフィール・投稿・検索結果などでお名前の横にゴールドバッジが表示されます。信頼感がアップし、マッチ率の向上が期待できます。
               </Text>
             </View>
           </View>

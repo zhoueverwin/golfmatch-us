@@ -61,9 +61,6 @@ interface NotificationContextType {
   clearFootprintsSection: () => Promise<void>;
   hasNewMessages: boolean;
   clearMessagesNotification: () => Promise<void>;
-  // Recruitment notifications
-  hasNewRecruitmentNotifications: boolean;
-  clearRecruitmentNotification: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -91,8 +88,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   // Derived state: MyPage badge shows if either section has new items
   const hasNewMyPageNotification = hasNewNotifications || hasNewFootprints;
   const [hasNewMessages, setHasNewMessages] = useState(false);
-  // Recruitment notifications (for applications on user's recruitments)
-  const [hasNewRecruitmentNotifications, setHasNewRecruitmentNotifications] = useState(false);
 
   const appState = useRef(AppState.currentState);
   const subscriptionsRef = useRef<any[]>([]);
@@ -123,12 +118,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       }
 
       // Parallelize all cache reads — they are independent
-      const [cachedConnection, cachedNotifications, cachedFootprints, cachedMessages, cachedRecruitment] = await Promise.all([
+      const [cachedConnection, cachedNotifications, cachedFootprints, cachedMessages] = await Promise.all([
         CacheService.get<boolean>('connection_notification'),
         CacheService.get<boolean>('notifications_section_notification'),
         CacheService.get<boolean>('footprints_section_notification'),
         CacheService.get<boolean>('messages_notification'),
-        CacheService.get<boolean>('recruitment_notification'),
       ]);
 
       // Double-check initialization hasn't happened while we were loading cache
@@ -138,7 +132,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       if (cachedNotifications) setHasNewNotifications(true);
       if (cachedFootprints) setHasNewFootprints(true);
       if (cachedMessages) setHasNewMessages(true);
-      if (cachedRecruitment) setHasNewRecruitmentNotifications(true);
     };
     loadNotificationStates();
   }, []);
@@ -505,9 +498,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         console.log('[NotifRT] 📡 Footprints subscription status:', status);
       });
 
-    // Subscribe to recruitment notifications (applications on user's recruitments)
-    const recruitmentNotificationsChannel = supabase
-      .channel('user-recruitment-notifications')
+    // Subscribe to system + KYC notifications on the notifications table
+    const userNotificationsChannel = supabase
+      .channel('user-notifications')
       .on(
         'postgres_changes',
         {
@@ -518,15 +511,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         },
         (payload) => {
           const notificationType = payload.new?.type;
-          // Check if this is a recruitment-related notification
-          if (notificationType === 'recruitment_application' ||
-              notificationType === 'recruitment_approved' ||
-              notificationType === 'recruitment_rejected') {
-            console.log('[NotifRT] 🏌️ Recruitment notification received!', payload);
-            handleRecruitmentNotification(payload.new);
-          }
           // Handle system notifications (daily stats, announcements, etc.)
-          else if (notificationType === 'system') {
+          if (notificationType === 'system') {
             console.log('[NotifRT] 📊 System notification received!', payload);
             setHasNewNotifications(true);
             CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000);
@@ -551,7 +537,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         }
       )
       .subscribe((status) => {
-        console.log('[NotifRT] 📡 Recruitment notifications subscription status:', status);
+        console.log('[NotifRT] 📡 User notifications subscription status:', status);
       });
 
     subscriptionsRef.current = [
@@ -561,7 +547,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       matchesChannel2,
       reactionsChannel,
       footprintsChannel,
-      recruitmentNotificationsChannel,
+      userNotificationsChannel,
     ];
   };
 
@@ -847,29 +833,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     console.log('[NotifRT] 💾 Footprints badge saved to cache');
   };
 
-  const handleRecruitmentNotification = async (notification: any) => {
-    console.log('[NotifRT] 🔔 Processing recruitment notification:', {
-      type: notification.type,
-      userId: notification.user_id,
-      currentProfileId: profileId,
-    });
-
-    if (!profileId) {
-      console.log('[NotifRT] ⏭️ Skipping recruitment notification (no profileId)');
-      return;
-    }
-
-    // Set recruitment notification indicator
-    console.log('[NotifRT] ✅ Setting hasNewRecruitmentNotifications = true');
-    setHasNewRecruitmentNotifications(true);
-    await CacheService.set('recruitment_notification', true, 7 * 24 * 60 * 60 * 1000); // 7 days TTL
-    console.log('[NotifRT] 💾 Recruitment badge saved to cache');
-
-    // Also set the general notifications badge
-    setHasNewNotifications(true);
-    await CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000);
-  };
-
   const showNotification = async (notification: NotificationData) => {
     const isAppInForeground = appState.current === 'active';
 
@@ -994,12 +957,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     await CacheService.remove('messages_notification');
   };
 
-  const clearRecruitmentNotification = async () => {
-    console.log('[NotifRT] 🧹 Clearing recruitment notification badge');
-    setHasNewRecruitmentNotifications(false);
-    await CacheService.remove('recruitment_notification');
-  };
-
   const contextValue: NotificationContextType = {
     unreadCount,
     preferences,
@@ -1018,8 +975,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     clearFootprintsSection,
     hasNewMessages,
     clearMessagesNotification,
-    hasNewRecruitmentNotifications,
-    clearRecruitmentNotification,
   };
 
   return (
