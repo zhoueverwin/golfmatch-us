@@ -40,12 +40,12 @@ const UserListModal: React.FC<UserListModalProps> = ({
     );
 
     if (diffInHours < 1) {
-      return "たった今";
+      return "Just now";
     } else if (diffInHours < 24) {
-      return `${diffInHours}時間前`;
+      return `${diffInHours}h ago`;
     } else {
       const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}日前`;
+      return `${diffInDays}d ago`;
     }
   };
 
@@ -59,7 +59,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.name}</Text>
         <View style={styles.userDetails}>
-          {item.age && <Text style={styles.userDetail}>{item.age}歳</Text>}
+          {item.age && <Text style={styles.userDetail}>{item.age}</Text>}
           {item.location && (
             <Text style={styles.userDetail}>・{String(item.location)}</Text>
           )}
@@ -75,19 +75,19 @@ const UserListModal: React.FC<UserListModalProps> = ({
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons
-        name={title.includes("足あと") ? "eye-off" : "heart-outline"}
+        name={title.toLowerCase().includes("visitor") ? "eye-off" : "heart-outline"}
         size={48}
         color={Colors.gray[400]}
       />
       <Text style={styles.emptyTitle}>
-        {title.includes("足あと")
-          ? "まだ足あとがありません"
-          : "まだいいねがありません"}
+        {title.toLowerCase().includes("visitor")
+          ? "No visitors yet"
+          : "No likes yet"}
       </Text>
       <Text style={styles.emptySubtitle}>
-        {title.includes("足あと")
-          ? "プロフィールを見た人がここに表示されます"
-          : "あなたをいいねした人がここに表示されます"}
+        {title.toLowerCase().includes("visitor")
+          ? "People who view your profile will show up here"
+          : "People who like you will show up here"}
       </Text>
     </View>
   );

@@ -32,119 +32,119 @@ interface HelpItem {
 const helpCategories: HelpCategory[] = [
   {
     id: "profile",
-    title: "プロフィール",
+    title: "Profile",
     items: [
-      { id: "profile-setup", title: "プロフィール項目を設定・変更したい" },
-      { id: "main-photo", title: "メイン写真の設定・変更をしたい" },
-      { id: "sub-photo", title: "サブ写真の設定・変更をしたい" },
-      { id: "photo-permission", title: "写真設定時のアクセス権限について" },
+      { id: "profile-setup", title: "Set up or edit your profile" },
+      { id: "main-photo", title: "Set or change your main photo" },
+      { id: "sub-photo", title: "Set or change additional photos" },
+      { id: "photo-permission", title: "Photo access permissions" },
     ],
   },
   {
     id: "likes",
-    title: "いいね・マッチング",
+    title: "Likes & Matches",
     items: [
-      { id: "like-send", title: "いいねの送り方" },
-      { id: "like-receive", title: "いいねの確認方法" },
-      { id: "like-match", title: "マッチングとは?" },
-      { id: "like-history", title: "過去のいいねを確認したい" },
+      { id: "like-send", title: "How to send a Like" },
+      { id: "like-receive", title: "How to view Likes you've received" },
+      { id: "like-match", title: "What is a Match?" },
+      { id: "like-history", title: "View past Likes" },
     ],
   },
   {
     id: "messages",
-    title: "メッセージ",
+    title: "Messages",
     items: [
-      { id: "message-send", title: "メッセージの送り方" },
-      { id: "message-read", title: "メッセージの確認方法" },
-      { id: "message-notification", title: "メッセージ通知の設定" },
-      { id: "message-block", title: "ユーザーをブロックしたい" },
+      { id: "message-send", title: "How to send a message" },
+      { id: "message-read", title: "How to read messages" },
+      { id: "message-notification", title: "Message notification settings" },
+      { id: "message-block", title: "How to block a user" },
     ],
   },
   {
     id: "posts",
-    title: "投稿",
+    title: "Posts",
     items: [
-      { id: "post-create", title: "投稿の作り方" },
-      { id: "post-media", title: "写真・動画の追加方法" },
-      { id: "post-react", title: "投稿にリアクションしたい" },
-      { id: "post-delete", title: "投稿を削除したい" },
+      { id: "post-create", title: "How to create a post" },
+      { id: "post-media", title: "Adding photos and videos" },
+      { id: "post-react", title: "Reacting to posts" },
+      { id: "post-delete", title: "How to delete a post" },
     ],
   },
   {
     id: "features",
-    title: "機能",
+    title: "Features",
     items: [
-      { id: "search-feature", title: "検索機能の使い方" },
-      { id: "filter-feature", title: "フィルター機能について" },
-      { id: "calendar-feature", title: "カレンダー機能の使い方" },
-      { id: "connections-feature", title: "つながり機能について" },
-      { id: "footprints-feature", title: "足あと機能について" },
+      { id: "search-feature", title: "Using Search" },
+      { id: "filter-feature", title: "About filters" },
+      { id: "calendar-feature", title: "Using the calendar" },
+      { id: "connections-feature", title: "About Connections" },
+      { id: "footprints-feature", title: "About Profile Views" },
     ],
   },
   {
     id: "membership",
-    title: "メンバーシップ",
+    title: "Membership",
     items: [
-      { id: "membership-benefits", title: "メンバーシップの特典" },
-      { id: "membership-purchase", title: "メンバーシップの購入方法" },
-      { id: "membership-cancel", title: "メンバーシップの解約方法" },
-      { id: "membership-restore", title: "購入を復元したい" },
+      { id: "membership-benefits", title: "Membership benefits" },
+      { id: "membership-purchase", title: "How to subscribe" },
+      { id: "membership-cancel", title: "How to cancel your subscription" },
+      { id: "membership-restore", title: "Restore purchases" },
     ],
   },
   {
     id: "kyc-verification",
-    title: "本人確認",
+    title: "Identity Verification",
     items: [
-      { id: "kyc-process", title: "本人確認の手順" },
-      { id: "kyc-documents", title: "使用できる本人確認書類" },
-      { id: "kyc-required", title: "本人確認が必要な理由" },
-      { id: "kyc-failed", title: "本人確認ができない場合" },
+      { id: "kyc-process", title: "How identity verification works" },
+      { id: "kyc-documents", title: "Accepted ID documents" },
+      { id: "kyc-required", title: "Why we verify identity" },
+      { id: "kyc-failed", title: "If verification fails" },
     ],
   },
   {
     id: "safety-moderation",
-    title: "安全・モデレーション",
+    title: "Safety & Moderation",
     items: [
-      { id: "moderation-overview", title: "投稿の監視体制について" },
-      { id: "moderation-guidelines", title: "コミュニティガイドライン" },
-      { id: "moderation-action", title: "違反コンテンツへの対応" },
+      { id: "moderation-overview", title: "How we moderate posts" },
+      { id: "moderation-guidelines", title: "Community guidelines" },
+      { id: "moderation-action", title: "How we handle violations" },
     ],
   },
   {
     id: "reporting",
-    title: "通報・ブロック",
+    title: "Reporting & Blocking",
     items: [
-      { id: "report-user", title: "ユーザーを通報したい" },
-      { id: "report-reason", title: "通報理由の選択方法" },
-      { id: "block-user", title: "ユーザーをブロックしたい" },
-      { id: "hidden-posts", title: "投稿を非表示にしたい" },
-      { id: "report-safety", title: "安全に利用するために" },
+      { id: "report-user", title: "How to report a user" },
+      { id: "report-reason", title: "Choosing a report reason" },
+      { id: "block-user", title: "How to block a user" },
+      { id: "hidden-posts", title: "How to hide a post" },
+      { id: "report-safety", title: "Staying safe on GolfMatch" },
     ],
   },
   {
     id: "withdrawal",
-    title: "退会",
+    title: "Delete Account",
     items: [
-      { id: "withdrawal-process", title: "退会手続きの方法" },
-      { id: "withdrawal-data", title: "退会時のデータ取り扱い" },
+      { id: "withdrawal-process", title: "How to delete your account" },
+      { id: "withdrawal-data", title: "What happens to your data" },
     ],
   },
   {
     id: "bugs",
-    title: "不具合について",
+    title: "Troubleshooting",
     items: [
-      { id: "bug-report", title: "不具合を報告したい" },
-      { id: "bug-common", title: "よくある不具合と対処法" },
-      { id: "bug-app-update", title: "アプリの更新方法" },
+      { id: "bug-report", title: "Report a bug" },
+      { id: "bug-common", title: "Common issues and fixes" },
+      { id: "bug-app-update", title: "How to update the app" },
     ],
   },
   {
     id: "other",
-    title: "その他",
+    title: "Other",
     items: [
-      { id: "privacy-policy", title: "プライバシーポリシー" },
-      { id: "terms-of-service", title: "利用規約" },
-      { id: "contact-support", title: "サポートへのお問い合わせ" },
+      { id: "privacy-policy", title: "Privacy Policy" },
+      { id: "terms-of-service", title: "Terms of Service" },
+      { id: "contact-support", title: "Contact Support" },
     ],
   },
 ];
@@ -176,7 +176,7 @@ const HelpScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="ヘルプ・お問い合わせ"
+        title="Help & Contact"
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
@@ -228,13 +228,13 @@ const HelpScreen: React.FC = () => {
         })}
 
         <View style={styles.contactSection}>
-          <Text style={styles.contactText}>ヘルプで解決しない場合</Text>
+          <Text style={styles.contactText}>Still need help?</Text>
           <TouchableOpacity
             style={styles.contactButton}
             onPress={handleContactPress}
             activeOpacity={0.8}
           >
-            <Text style={styles.contactButtonText}>お問い合わせ</Text>
+            <Text style={styles.contactButtonText}>Contact Us</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

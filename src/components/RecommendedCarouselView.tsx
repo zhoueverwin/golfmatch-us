@@ -124,7 +124,7 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
         ),
         // Section 2: New registrations
         DataProvider.searchUsers({}, 1, 20, "registration"),
-        // Section 3: Same-region users (e.g. 関東 for 東京都)
+        // Section 3: Same-region users (e.g. neighboring states)
         prefecture
           ? DataProvider.searchUsers(
               { prefectures: getRegionPrefectures(prefecture) },
@@ -196,7 +196,7 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
         );
 
         if (response.error) {
-          Alert.alert("エラー", "ユーザーの読み込みに失敗しました");
+          Alert.alert("Error", "Failed to load users");
         } else {
           let users = (response.data || []).filter(
             (u) => !excludeIds.includes(u.id),
@@ -274,11 +274,11 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
 
   const handleNewUsersLockedPress = useCallback(() => {
     Alert.alert(
-      "有料会員限定",
-      "新しく登録したお相手のプロフィールを見るには有料会員への登録が必要です。\n\n有料会員になると、新規ユーザーへのアプローチやメッセージ送信など、すべての機能が使えます！\n\n素敵な出会いを逃さないために、今すぐアップグレードしましょう！",
+      "Premium members only",
+      "Viewing newly registered members requires a Premium subscription.\n\nPremium unlocks every feature, including reaching out to new members and sending messages.\n\nDon't miss out — upgrade today!",
       [
-        { text: "閉じる", style: "cancel" },
-        { text: "詳しく見る", onPress: () => navigation.navigate("Store") },
+        { text: "Close", style: "cancel" },
+        { text: "Learn more", onPress: () => navigation.navigate("Store") },
       ],
     );
   }, [navigation]);
@@ -313,7 +313,7 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
   // Filtered mode: show FlashList grid
   if (hasActiveFilters) {
     if (filteredLoading && filteredUsers.length === 0) {
-      return <Loading text="プロフィールを読み込み中..." fullScreen />;
+      return <Loading text="Loading profiles..." fullScreen />;
     }
 
     return (
@@ -329,9 +329,9 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
         ListEmptyComponent={
           <EmptyState
             icon="search-outline"
-            title="プロフィールが見つかりません"
-            subtitle="フィルターを調整して、もう一度お試しください"
-            buttonTitle="フィルターをリセット"
+            title="No profiles found"
+            subtitle="Try adjusting your filters and search again"
+            buttonTitle="Reset filters"
             onButtonPress={onResetFilters}
           />
         }
@@ -345,7 +345,7 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
 
   // Carousel mode
   if (sectionsLoading && recommendedUsers.length === 0) {
-    return <Loading text="おすすめを読み込み中..." fullScreen />;
+    return <Loading text="Loading recommendations..." fullScreen />;
   }
 
   return (
@@ -362,13 +362,13 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
       }
     >
       <CarouselSection
-        title="あなたへのおすすめ"
+        title="Recommended for you"
         users={recommendedUsers}
         loading={sectionsLoading}
         onCardPress={(user, index) => handleCardPress(recommendedUsers, index)}
       />
       <CarouselSection
-        title="新しく登録したお相手"
+        title="New members"
         users={newUsers}
         loading={sectionsLoading}
         onCardPress={(user, index) => handleCardPress(newUsers, index)}
@@ -377,7 +377,7 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
       />
       {nearbyUsers.length > 0 && (
         <CarouselSection
-          title="あなたの近くの人"
+          title="People near you"
           users={nearbyUsers}
           loading={sectionsLoading}
           onCardPress={(user, index) => handleCardPress(nearbyUsers, index)}
@@ -391,8 +391,8 @@ const RecommendedCarouselView: React.FC<RecommendedCarouselViewProps> = ({
         nearbyUsers.length === 0 && (
           <EmptyState
             icon="search-outline"
-            title="おすすめのユーザーが見つかりません"
-            subtitle="しばらくしてからもう一度お試しください"
+            title="No recommended users found"
+            subtitle="Please try again in a little while"
           />
         )}
     </ScrollView>

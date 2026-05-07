@@ -80,7 +80,7 @@ const SwipeCardScreen: React.FC = () => {
           >
             <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>プロフィール</Text>
+          <Text style={styles.headerTitle}>Profile</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -91,16 +91,16 @@ const SwipeCardScreen: React.FC = () => {
               size={64}
               color={Colors.gray[300]}
             />
-            <Text style={styles.emptyTitle}>全てのカードを確認しました</Text>
+            <Text style={styles.emptyTitle}>You're all caught up</Text>
             <Text style={styles.emptySubtitle}>
-              さがすページに戻って、もっと見つけましょう
+              Head back to Search to find more golfers
             </Text>
             <TouchableOpacity
               style={styles.backToSearchButton}
               onPress={() => navigation.goBack()}
             >
               <Text style={styles.backToSearchButtonText}>
-                新しいユーザーを探す
+                Find New People
               </Text>
             </TouchableOpacity>
           </View>

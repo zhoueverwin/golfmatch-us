@@ -52,7 +52,7 @@ interface NotificationContextType {
   clearConnectionNotification: () => Promise<void>;
   // MyPage badge is derived from hasNewNotifications OR hasNewFootprints
   hasNewMyPageNotification: boolean;
-  // Separate tracking for お知らせ and 足あと sections
+  // Separate tracking for Notifications and Footprints sections
   hasNewNotifications: boolean;
   hasNewFootprints: boolean;
   unreadFootprintCount: number;
@@ -81,7 +81,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const [currentToast, setCurrentToast] = useState<NotificationData | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [hasNewConnections, setHasNewConnections] = useState(false);
-  // Separate tracking for お知らせ and 足あと sections
+  // Separate tracking for Notifications and Footprints sections
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
   const [hasNewFootprints, setHasNewFootprints] = useState(false);
   const [unreadFootprintCount, setUnreadFootprintCount] = useState(0);
@@ -603,8 +603,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         .eq('id', latestMessage.sender_id)
         .single();
 
-      const title = sender?.name || 'メッセージ';
-      const body = `${sender?.name || 'Someone'}からメッセージが届きました`;
+      const title = sender?.name || 'Message';
+      const body = `${sender?.name || 'Someone'} sent you a message`;
 
       // Save single notification to database
       await notificationService.createNotification(
@@ -658,7 +658,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       console.log('[NotifRT] ✅ Setting hasNewConnections = true');
       setHasNewConnections(true);
       await CacheService.set('connection_notification', true, 7 * 24 * 60 * 60 * 1000);
-      console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for お知らせ section)');
+      console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for Notifications section)');
       setHasNewNotifications(true);
       await CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000);
       console.log('[NotifRT] 💾 Badges saved to cache');
@@ -672,9 +672,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       .eq('id', like.liker_user_id)
       .single();
 
-    const likeType = like.type === 'super_like' ? 'スーパーいいね' : 'いいね';
+    const likeType = like.type === 'super_like' ? 'Super Like' : 'Like';
     const title = liker?.name || likeType;
-    const body = `${liker?.name || 'Someone'}があなたに${likeType}しました`;
+    const body = `${liker?.name || 'Someone'} ${like.type === 'super_like' ? 'super liked' : 'liked'} you`;
 
     // NOTE: Do NOT create notification here - the database trigger `create_like_notification`
     // already creates the notification row when a like is inserted.
@@ -698,8 +698,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     console.log('[NotifRT] ✅ Setting hasNewConnections = true');
     setHasNewConnections(true);
     await CacheService.set('connection_notification', true, 7 * 24 * 60 * 60 * 1000); // 7 days TTL
-    // Also set the MyPage notification badge since like notifications appear in お知らせ
-    console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for お知らせ section)');
+    // Also set the MyPage notification badge since like notifications appear in the Notifications section
+    console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for Notifications section)');
     setHasNewNotifications(true);
     await CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000);
     console.log('[NotifRT] 💾 Badges saved to cache');
@@ -727,7 +727,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       console.log('[NotifRT] ✅ Setting hasNewConnections = true (match)');
       setHasNewConnections(true);
       await CacheService.set('connection_notification', true, 7 * 24 * 60 * 60 * 1000);
-      console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for お知らせ section)');
+      console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for Notifications section)');
       setHasNewNotifications(true);
       await CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000);
       console.log('[NotifRT] 💾 Badges saved to cache');
@@ -742,8 +742,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       .eq('id', otherUserId)
       .single();
 
-    const title = 'マッチしました！';
-    const body = `${otherUser?.name || 'Someone'}とマッチしました！`;
+    const title = "It's a match!";
+    const body = `You matched with ${otherUser?.name || 'someone'}!`;
 
     // NOTE: Do NOT create notification here - the database trigger `create_match_notification`
     // already creates the notification row when a match is inserted.
@@ -767,8 +767,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     console.log('[NotifRT] ✅ Setting hasNewConnections = true (match)');
     setHasNewConnections(true);
     await CacheService.set('connection_notification', true, 7 * 24 * 60 * 60 * 1000); // 7 days TTL
-    // Also set the MyPage notification badge since match notifications appear in お知らせ
-    console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for お知らせ section)');
+    // Also set the MyPage notification badge since match notifications appear in the Notifications section
+    console.log('[NotifRT] ✅ Setting hasNewNotifications = true (for Notifications section)');
     setHasNewNotifications(true);
     await CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000);
     console.log('[NotifRT] 💾 Badges saved to cache');
@@ -789,8 +789,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       .eq('id', reaction.user_id)
       .single();
 
-    const title = reactor?.name || 'リアクション';
-    const body = `${reactor?.name || 'Someone'}があなたの投稿にリアクションしました`;
+    const title = reactor?.name || 'Reaction';
+    const body = `${reactor?.name || 'Someone'} reacted to your post`;
 
     // NOTE: Do NOT create notification here - the database trigger `create_post_reaction_notification`
     // already creates the notification row when a reaction is inserted.
@@ -826,7 +826,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     }
 
     // Set footprints section notification indicator and increment count
-    console.log('[NotifRT] ✅ Setting hasNewFootprints = true (for 足あと section)');
+    console.log('[NotifRT] ✅ Setting hasNewFootprints = true (for Footprints section)');
     setHasNewFootprints(true);
     setUnreadFootprintCount(prev => prev + 1);
     await CacheService.set('footprints_section_notification', true, 7 * 24 * 60 * 60 * 1000); // 7 days TTL
@@ -844,7 +844,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     // Push notifications are handled server-side by the send-push-notification Edge Function.
     // No client-side push sending needed.
 
-    // Set notifications section indicator for all notification types (お知らせ)
+    // Set notifications section indicator for all notification types
     setHasNewNotifications(true);
     await CacheService.set('notifications_section_notification', true, 7 * 24 * 60 * 60 * 1000); // 7 days TTL
 
@@ -930,14 +930,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     await CacheService.remove('connection_notification');
   };
 
-  // Clear お知らせ section only (called when viewing/clearing NotificationHistoryScreen)
+  // Clear Notifications section only (called when viewing/clearing NotificationHistoryScreen)
   const clearNotificationsSection = async () => {
     console.log('[NotifRT] 🧹 Clearing notifications section badge');
     setHasNewNotifications(false);
     await CacheService.remove('notifications_section_notification');
   };
 
-  // Clear 足あと section only (called when viewing/clearing FootprintsScreen)
+  // Clear Footprints section only (called when viewing/clearing FootprintsScreen)
   const clearFootprintsSection = async () => {
     console.log('[NotifRT] 🧹 Clearing footprints section badge');
     setHasNewFootprints(false);

@@ -240,11 +240,11 @@ class RevenueCatService {
       // Provide more specific error messages
       let errorMessage = error.message || "Purchase failed";
       if (error.code === 1) {
-        errorMessage = "App Store接続エラー。ネットワーク接続を確認してください。";
+        errorMessage = "App Store connection error. Please check your network connection.";
       } else if (error.code === 2) {
-        errorMessage = "製品が見つかりません。App Store Connectの設定を確認してください。";
+        errorMessage = "Product not found. Please check the App Store Connect configuration.";
       } else if (error.code === 3) {
-        errorMessage = "購入が許可されていません。";
+        errorMessage = "Purchase is not allowed.";
       }
 
       console.error("[RevenueCat] Purchase failed:", errorMessage);

@@ -74,15 +74,15 @@ const NotificationHistoryScreen: React.FC = () => {
     // to appear unresponsive (3 sequential network calls blocked navigation).
     const { data } = notification;
 
-    // For system notifications (e.g. 本人確認のお願い) — show alert with body, optional screen navigation
+    // For system notifications (e.g. identity verification request) — show alert with body, optional screen navigation
     if (data.screen) {
       const tabScreens = ['Home', 'Search', 'Connections', 'Messages', 'MyPage'];
       Alert.alert(
         notification.title,
         notification.body,
         [
-          { text: '閉じる', style: 'cancel' },
-          { text: '確認する', onPress: () => {
+          { text: 'Close', style: 'cancel' },
+          { text: 'View', onPress: () => {
             if (tabScreens.includes(data.screen!)) {
               navigation.navigate('Main', { screen: data.screen } as any);
             } else {
@@ -121,7 +121,7 @@ const NotificationHistoryScreen: React.FC = () => {
     await markAllAsRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     await refreshNotifications();
-    // Clear the notifications section badge (for マイページ tab)
+    // Clear the notifications section badge (for My Page tab)
     await clearNotificationsSection();
   };
 
@@ -163,12 +163,12 @@ const NotificationHistoryScreen: React.FC = () => {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'たった今';
-    if (diffMins < 60) return `${diffMins}分前`;
-    if (diffHours < 24) return `${diffHours}時間前`;
-    if (diffDays < 7) return `${diffDays}日前`;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString('ja-JP', {
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
@@ -220,9 +220,9 @@ const NotificationHistoryScreen: React.FC = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="notifications-off" size={64} color={Colors.gray[300]} />
-      <Text style={styles.emptyTitle}>通知はありません</Text>
+      <Text style={styles.emptyTitle}>No notifications</Text>
       <Text style={styles.emptySubtitle}>
-        新しい通知があるとここに表示されます
+        New notifications will appear here
       </Text>
     </View>
   );
@@ -234,14 +234,14 @@ const NotificationHistoryScreen: React.FC = () => {
       style={styles.markAllButton}
       onPress={handleMarkAllAsRead}
     >
-      <Text style={styles.markAllText} numberOfLines={1}>すべて既読</Text>
+      <Text style={styles.markAllText} numberOfLines={1}>Mark all read</Text>
     </TouchableOpacity>
   ) : undefined;
 
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="お知らせ"
+        title="Notifications"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
         rightComponent={rightComponent}

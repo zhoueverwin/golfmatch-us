@@ -63,8 +63,76 @@ const RETRY_CONFIG = {
 let consecutiveErrors = 0;
 let lastSuccessTime = Date.now();
 
+// ============================================================================
+// READ-ONLY GUARD (development safety net for the JP production backend)
+//
+// While the .env still points at the JP production Supabase project, this guard
+// prevents any write — table mutations, RPCs, uploads, account changes — from
+// reaching the server. RLS would already reject most writes, but this is a
+// belt-and-braces layer that doesn't depend on RLS being correct or the
+// signed-in user's permissions.
+//
+// Set EXPO_PUBLIC_SUPABASE_READ_ONLY=false (or remove this block) once you've
+// cut over to the new US Supabase project and want writes to land normally.
+// ============================================================================
+const READ_ONLY_BACKEND =
+  (Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_READ_ONLY ??
+    process.env.EXPO_PUBLIC_SUPABASE_READ_ONLY ??
+    'true') !== 'false';
+
+// Allowed POST endpoints when read-only is on. These are auth flows (token
+// refresh, sign-in, sign-out, OTP) which are necessary even in read-only mode.
+const READ_ONLY_POST_ALLOWLIST = [
+  '/auth/v1/token',
+  '/auth/v1/logout',
+  '/auth/v1/otp',
+  '/auth/v1/recover',
+  '/auth/v1/magiclink',
+];
+
+function isWriteBlocked(input: RequestInfo | URL, method: string): boolean {
+  if (!READ_ONLY_BACKEND) return false;
+  const m = method.toUpperCase();
+  if (m === 'GET' || m === 'HEAD' || m === 'OPTIONS') return false;
+  const url =
+    typeof input === 'string'
+      ? input
+      : input instanceof URL
+      ? input.toString()
+      : (input as Request).url;
+  if (m === 'POST' && READ_ONLY_POST_ALLOWLIST.some((p) => url.includes(p))) {
+    return false;
+  }
+  return true;
+}
+
 // Custom fetch wrapper with retry logic and connection monitoring
 const customFetch: typeof fetch = async (input, init) => {
+  const method = (init?.method ?? 'GET').toString();
+
+  if (isWriteBlocked(input, method)) {
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+        ? input.toString()
+        : (input as Request).url;
+    const msg = `[supabase] BLOCKED ${method} ${url} — read-only mode is on. ` +
+      `Set EXPO_PUBLIC_SUPABASE_READ_ONLY=false in .env to allow writes.`;
+    console.warn(msg);
+    return new Response(
+      JSON.stringify({
+        code: 'READ_ONLY_MODE',
+        message: msg,
+      }),
+      {
+        status: 451, // 451 Unavailable For Legal Reasons — repurposed as a clear "blocked by client policy" signal
+        statusText: 'Blocked by read-only mode',
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
+  }
+
   let lastError: Error | null = null;
   let delay = RETRY_CONFIG.initialDelayMs;
 
@@ -130,6 +198,12 @@ export function getConnectionHealth(): {
     consecutiveErrors,
     lastSuccessAge: Date.now() - lastSuccessTime,
   };
+}
+
+if (READ_ONLY_BACKEND) {
+  console.warn(
+    `🔒 [supabase] READ-ONLY mode is ACTIVE (${supabaseUrl}). All write requests will be blocked client-side. Set EXPO_PUBLIC_SUPABASE_READ_ONLY=false in .env to allow writes.`,
+  );
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

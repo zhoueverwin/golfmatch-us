@@ -57,9 +57,9 @@ const PrefectureSelector: React.FC<PrefectureSelectorProps> = ({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={Colors.gray[600]} />
           </TouchableOpacity>
-          <Text style={styles.title}>居住地</Text>
+          <Text style={styles.title}>Select state</Text>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={styles.clearButton}>クリア</Text>
+            <Text style={styles.clearButton}>Clear</Text>
           </TouchableOpacity>
         </View>
 
@@ -92,7 +92,7 @@ const PrefectureSelector: React.FC<PrefectureSelectorProps> = ({
         {/* Action Button */}
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>適用</Text>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

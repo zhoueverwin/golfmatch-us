@@ -39,7 +39,7 @@ const StandardHeader: React.FC<StandardHeaderProps> = ({
             activeOpacity={0.7}
             accessible
             accessibilityRole="button"
-            accessibilityLabel="戻る"
+            accessibilityLabel="Back"
           >
             <View style={styles.backContent}>
               <Image
@@ -49,7 +49,7 @@ const StandardHeader: React.FC<StandardHeaderProps> = ({
                 fadeDuration={0}
               />
               <Text style={[styles.backLabel, { color: backButtonColor }]}>
-                戻る
+                Back
               </Text>
             </View>
           </TouchableOpacity>

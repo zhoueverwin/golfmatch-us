@@ -144,7 +144,7 @@ const Toast: React.FC<ToastProps> = ({
             onPress={hideToast}
             style={styles.closeButton}
             accessibilityRole="button"
-            accessibilityLabel="閉じる"
+            accessibilityLabel="Close"
           >
             <Ionicons name="close" size={16} color={Colors.white} />
           </TouchableOpacity>

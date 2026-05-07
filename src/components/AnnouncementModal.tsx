@@ -119,9 +119,9 @@ const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
               onPress={onDismiss}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="閉じる"
+              accessibilityLabel="Close"
             >
-              <Text style={styles.dismissButtonText}>閉じる</Text>
+              <Text style={styles.dismissButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

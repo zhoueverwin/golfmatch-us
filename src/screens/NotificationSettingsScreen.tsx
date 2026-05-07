@@ -65,33 +65,33 @@ const NotificationSettingsScreen: React.FC = () => {
   const settingItems = [
     {
       key: 'push_enabled' as const,
-      title: 'プッシュ通知',
-      description: 'アプリが閉じているときも通知を受け取る',
+      title: 'Push Notifications',
+      description: 'Receive notifications even when the app is closed',
       icon: 'notifications' as keyof typeof Ionicons.glyphMap,
       isPrimary: true,
     },
     {
       key: 'messages_enabled' as const,
-      title: 'メッセージ',
-      description: '新しいメッセージを受信したとき',
+      title: 'Messages',
+      description: 'When you receive a new message',
       icon: 'chatbubble' as keyof typeof Ionicons.glyphMap,
     },
     {
       key: 'likes_enabled' as const,
-      title: 'いいね',
-      description: '誰かがあなたにいいねしたとき',
+      title: 'Likes',
+      description: 'When someone Likes you',
       icon: 'heart' as keyof typeof Ionicons.glyphMap,
     },
     {
       key: 'matches_enabled' as const,
-      title: 'マッチ',
-      description: '新しいマッチが成立したとき',
+      title: 'Matches',
+      description: 'When you have a new match',
       icon: 'people' as keyof typeof Ionicons.glyphMap,
     },
     {
       key: 'post_reactions_enabled' as const,
-      title: '投稿リアクション',
-      description: '投稿にリアクションがついたとき',
+      title: 'Post Reactions',
+      description: 'When someone reacts to your post',
       icon: 'thumbs-up' as keyof typeof Ionicons.glyphMap,
     },
   ];
@@ -99,7 +99,7 @@ const NotificationSettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="通知設定"
+        title="Notification Settings"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -109,7 +109,7 @@ const NotificationSettingsScreen: React.FC = () => {
       >
         <View style={styles.header}>
           <Text style={styles.subtitle}>
-            受け取りたい通知を選択してください
+            Choose which notifications you'd like to receive
           </Text>
         </View>
 
@@ -170,7 +170,7 @@ const NotificationSettingsScreen: React.FC = () => {
             style={styles.infoIcon}
           />
           <Text style={styles.infoText}>
-            通知をオフにしても、アプリ内のお知らせ履歴には記録されます。
+            Even if you turn off notifications, they'll still appear in your notification history.
           </Text>
         </View>
 

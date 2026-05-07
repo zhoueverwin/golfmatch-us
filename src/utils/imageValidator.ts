@@ -30,7 +30,7 @@ export async function validateKycImage(file: {
     if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
       return {
         ok: false,
-        message: 'JPEG/PNG/WebP の画像をアップロードしてください。',
+        message: 'Please upload a JPEG, PNG, or WebP image.',
       };
     }
 
@@ -38,7 +38,7 @@ export async function validateKycImage(file: {
     if (file.size && file.size > MAX_FILE_SIZE) {
       return {
         ok: false,
-        message: 'ファイルサイズは10MB以下にしてください。',
+        message: 'File size must be 10MB or less.',
       };
     }
 
@@ -56,7 +56,7 @@ export async function validateKycImage(file: {
     if (width < MIN_WIDTH || height < MIN_HEIGHT) {
       return {
         ok: false,
-        message: `画像の解像度が低すぎます。より鮮明な写真を使用してください（推奨: 幅 >= ${MIN_WIDTH}px, 高さ >= ${MIN_HEIGHT}px）。`,
+        message: `Image resolution is too low. Please use a clearer photo (recommended: width >= ${MIN_WIDTH}px, height >= ${MIN_HEIGHT}px).`,
       };
     }
 
@@ -66,7 +66,7 @@ export async function validateKycImage(file: {
 
     return {
       ok: true,
-      message: '基本的なチェックを通過しました。',
+      message: 'Passed basic validation checks.',
     };
   } catch (error) {
     console.error('Image validation error:', error);
@@ -74,7 +74,7 @@ export async function validateKycImage(file: {
     // Server will do final validation
     return {
       ok: true,
-      message: '画像検証をスキップしました。',
+      message: 'Image validation was skipped.',
     };
   }
 }

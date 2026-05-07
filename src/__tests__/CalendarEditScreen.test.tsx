@@ -59,7 +59,7 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText(/月/)).toBeTruthy();
+        expect(getByText(/January|February|March|April|May|June|July|August|September|October|November|December/)).toBeTruthy();
       });
     });
 
@@ -67,7 +67,7 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         dayNames.forEach((day) => {
           expect(getByText(day)).toBeTruthy();
         });
@@ -78,7 +78,7 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
     });
   });
@@ -100,7 +100,7 @@ describe("CalendarEditScreen", () => {
           date: "2025-11-01",
           is_available: true,
           time_slots: ["09:00"],
-          notes: "午前のみ",
+          notes: "Morning only",
         },
       ];
 
@@ -125,7 +125,7 @@ describe("CalendarEditScreen", () => {
       
       await waitFor(() => {
         // Should still render the calendar
-        expect(getByText(/月/)).toBeTruthy();
+        expect(getByText(/January|February|March|April|May|June|July|August|September|October|November|December/)).toBeTruthy();
       });
     });
   });
@@ -219,7 +219,7 @@ describe("CalendarEditScreen", () => {
       fireEvent.press(day1);
       
       // Press save button
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       await waitFor(() => {
@@ -231,16 +231,16 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
 
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          "保存完了",
-          "ゴルフ可能日を更新しました。",
+          "Saved",
+          "Your golf availability has been updated.",
           expect.any(Array)
         );
       });
@@ -255,16 +255,16 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
 
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          "エラー",
-          "保存に失敗しました。"
+          "Error",
+          expect.stringContaining("Failed to save")
         );
       });
     });
@@ -273,10 +273,10 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
 
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       await waitFor(() => {
@@ -295,15 +295,15 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
 
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
-      // Button should show "保存中..." while saving
+      // Button should show "Saving..." while saving
       await waitFor(() => {
-        expect(getByText("保存中...")).toBeTruthy();
+        expect(getByText("Saving...")).toBeTruthy();
       });
     });
   });
@@ -332,7 +332,7 @@ describe("CalendarEditScreen", () => {
       fireEvent.press(day3);
       
       // Save
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       await waitFor(() => {
@@ -354,16 +354,16 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
 
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          "エラー",
-          "保存中にエラーが発生しました。"
+          "Error",
+          "Something went wrong while saving."
         );
       });
     });
@@ -375,10 +375,10 @@ describe("CalendarEditScreen", () => {
       const { getByText } = render(wrap(<CalendarEditScreen />));
       
       await waitFor(() => {
-        expect(getByText("保存")).toBeTruthy();
+        expect(getByText("Save")).toBeTruthy();
       });
 
-      const saveButton = getByText("保存");
+      const saveButton = getByText("Save");
       fireEvent.press(saveButton);
       
       // Should not attempt to save without user ID

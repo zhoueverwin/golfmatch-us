@@ -33,12 +33,12 @@ type ContactReplyScreenNavigationProp = StackNavigationProp<
 
 // Inquiry types matching common support categories
 const INQUIRY_TYPES = [
-  { value: 'account', label: 'アカウントについて' },
-  { value: 'payment', label: '料金・支払いについて' },
-  { value: 'feature', label: '機能について' },
-  { value: 'bug', label: '不具合・バグ報告' },
-  { value: 'suggestion', label: 'ご意見・ご要望' },
-  { value: 'other', label: 'その他' },
+  { value: 'account', label: 'Account' },
+  { value: 'payment', label: 'Billing & Payments' },
+  { value: 'feature', label: 'Features' },
+  { value: 'bug', label: 'Bug Report' },
+  { value: 'suggestion', label: 'Feedback & Suggestions' },
+  { value: 'other', label: 'Other' },
 ];
 
 const ContactReplyScreen: React.FC = () => {
@@ -141,7 +141,7 @@ const ContactReplyScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!profileId) {
-      Alert.alert('エラー', 'ログインが必要です');
+      Alert.alert('Error', 'You need to be signed in');
       return;
     }
 
@@ -153,9 +153,9 @@ const ContactReplyScreen: React.FC = () => {
       setSubmitting(true);
       
       // Use inquiry type label as subject if subject is empty
-      const finalSubject = subject.trim() || 
-        INQUIRY_TYPES.find((t) => t.value === inquiryType)?.label || 
-        'お問い合わせ';
+      const finalSubject = subject.trim() ||
+        INQUIRY_TYPES.find((t) => t.value === inquiryType)?.label ||
+        'Contact';
 
       const result = await DataProvider.createContactInquiry(
         profileId,
@@ -166,8 +166,8 @@ const ContactReplyScreen: React.FC = () => {
 
       if (result.success) {
         Alert.alert(
-          '送信完了',
-          'お問い合わせを受け付けました。返信をお待ちください。',
+          'Sent',
+          "We've received your message. We'll get back to you soon.",
           [
             {
               text: 'OK',
@@ -185,11 +185,11 @@ const ContactReplyScreen: React.FC = () => {
           ]
         );
       } else {
-        Alert.alert('エラー', result.error || 'お問い合わせの送信に失敗しました');
+        Alert.alert('Error', result.error || 'Failed to send your message');
       }
     } catch (error) {
       console.error('[ContactReplyScreen] Error submitting inquiry:', error);
-      Alert.alert('エラー', 'お問い合わせの送信に失敗しました');
+      Alert.alert('Error', 'Failed to send your message');
     } finally {
       setSubmitting(false);
     }
@@ -199,10 +199,10 @@ const ContactReplyScreen: React.FC = () => {
     const errors: typeof formErrors = {};
     
     if (!inquiryType) {
-      errors.inquiryType = 'お問い合わせ種別を選択してください';
+      errors.inquiryType = 'Please select a category';
     }
     if (!message.trim()) {
-      errors.message = 'お問い合わせ内容を入力してください';
+      errors.message = 'Please enter a message';
     }
 
     setFormErrors(errors);
@@ -212,11 +212,11 @@ const ContactReplyScreen: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'replied':
-        return { text: '返信あり', color: Colors.success };
+        return { text: 'Replied', color: Colors.success };
       case 'pending':
-        return { text: '未返信', color: Colors.warning };
+        return { text: 'Pending', color: Colors.warning };
       case 'closed':
-        return { text: '閉じる', color: Colors.gray[500] };
+        return { text: 'Closed', color: Colors.gray[500] };
       default:
         return { text: status, color: Colors.gray[500] };
     }
@@ -229,13 +229,13 @@ const ContactReplyScreen: React.FC = () => {
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
-      return '今日';
+      return 'Today';
     } else if (diffDays === 1) {
-      return '昨日';
+      return 'Yesterday';
     } else if (diffDays < 7) {
-      return `${diffDays}日前`;
+      return `${diffDays}d ago`;
     } else {
-      return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
   };
 
@@ -285,8 +285,8 @@ const ContactReplyScreen: React.FC = () => {
         {/* Inquiry Type */}
         <View style={styles.fieldContainer}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>お問い合わせ種別</Text>
-            <Text style={styles.requiredTag}>必須</Text>
+            <Text style={styles.label}>Category</Text>
+            <Text style={styles.requiredTag}>Required</Text>
           </View>
           <TouchableOpacity
             style={[
@@ -302,7 +302,7 @@ const ContactReplyScreen: React.FC = () => {
                 !inquiryType && styles.selectFieldPlaceholder,
               ]}
             >
-              {selectedTypeLabel || '選択してください'}
+              {selectedTypeLabel || 'Select one'}
             </Text>
             <Ionicons name="chevron-down" size={20} color={Colors.primaryLight} />
           </TouchableOpacity>
@@ -314,13 +314,13 @@ const ContactReplyScreen: React.FC = () => {
         {/* Name */}
         <View style={styles.fieldContainer}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>お名前</Text>
-            <Text style={styles.requiredTag}>必須</Text>
+            <Text style={styles.label}>Name</Text>
+            <Text style={styles.requiredTag}>Required</Text>
           </View>
           <View style={styles.inputField}>
             <TextInput
               style={styles.input}
-              placeholder="お名前を入力"
+              placeholder="Enter your name"
               placeholderTextColor={Colors.gray[400]}
               value={userName}
               onChangeText={setUserName}
@@ -332,13 +332,13 @@ const ContactReplyScreen: React.FC = () => {
         {/* Email */}
         <View style={styles.fieldContainer}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>メールアドレス</Text>
-            <Text style={styles.requiredTag}>必須</Text>
+            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.requiredTag}>Required</Text>
           </View>
           <View style={styles.inputField}>
             <TextInput
               style={styles.input}
-              placeholder="メールアドレスを入力"
+              placeholder="Enter your email"
               placeholderTextColor={Colors.gray[400]}
               value={userEmail}
               onChangeText={setUserEmail}
@@ -353,12 +353,12 @@ const ContactReplyScreen: React.FC = () => {
         {subject.trim() && (
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
-              <Text style={styles.label}>件名</Text>
+              <Text style={styles.label}>Subject</Text>
             </View>
             <View style={styles.inputField}>
               <TextInput
                 style={styles.input}
-                placeholder="件名を入力（任意）"
+                placeholder="Enter a subject (optional)"
                 placeholderTextColor={Colors.gray[400]}
                 value={subject}
                 onChangeText={setSubject}
@@ -371,13 +371,13 @@ const ContactReplyScreen: React.FC = () => {
         {/* Message */}
         <View style={styles.fieldContainer}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>お問い合わせ内容</Text>
-            <Text style={styles.requiredTag}>必須</Text>
+            <Text style={styles.label}>Message</Text>
+            <Text style={styles.requiredTag}>Required</Text>
           </View>
           <View style={styles.textAreaField}>
             <TextInput
               style={styles.textArea}
-              placeholder="お問い合わせ内容を入力"
+              placeholder="Type your message here"
               placeholderTextColor={Colors.gray[400]}
               value={message}
               onChangeText={setMessage}
@@ -405,7 +405,7 @@ const ContactReplyScreen: React.FC = () => {
           {submitting ? (
             <ActivityIndicator size="small" color={Colors.white} />
           ) : (
-            <Text style={styles.submitButtonText}>送信</Text>
+            <Text style={styles.submitButtonText}>Send</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -417,7 +417,7 @@ const ContactReplyScreen: React.FC = () => {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       );
     }
@@ -426,8 +426,8 @@ const ContactReplyScreen: React.FC = () => {
       return (
         <EmptyState
           icon="mail-outline"
-          title="お問い合わせはまだありません"
-          subtitle="「送信」タブからお問い合わせを送信できます"
+          title="No messages yet"
+          subtitle="Use the Send tab to contact us"
         />
       );
     }
@@ -476,7 +476,7 @@ const ContactReplyScreen: React.FC = () => {
               {/* Original Inquiry */}
               <View style={styles.messageBubble}>
                 <View style={styles.messageHeader}>
-                  <Text style={styles.messageSender}>あなた</Text>
+                  <Text style={styles.messageSender}>You</Text>
                   <Text style={styles.messageDate}>
                     {formatDate(selectedInquiry.created_at)}
                   </Text>
@@ -489,7 +489,7 @@ const ContactReplyScreen: React.FC = () => {
                 selectedInquiry.replies.map((reply) => (
                   <View key={reply.id} style={[styles.messageBubble, styles.replyBubble]}>
                     <View style={styles.messageHeader}>
-                      <Text style={styles.replySender}>管理者からの返信</Text>
+                      <Text style={styles.replySender}>Reply from Support</Text>
                       <Text style={styles.messageDate}>
                         {formatDate(reply.created_at)}
                       </Text>
@@ -500,7 +500,7 @@ const ContactReplyScreen: React.FC = () => {
               ) : (
                 <View style={styles.noRepliesContainer}>
                   <Text style={styles.noRepliesText}>
-                    まだ返信がありません。しばらくお待ちください。
+                    No replies yet. We'll get back to you soon.
                   </Text>
                 </View>
               )}
@@ -526,7 +526,7 @@ const ContactReplyScreen: React.FC = () => {
         >
           <View style={styles.pickerContainer}>
             <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>お問い合わせ種別を選択</Text>
+              <Text style={styles.pickerTitle}>Select a Category</Text>
               <TouchableOpacity
                 onPress={() => setShowTypePicker(false)}
                 style={styles.pickerCloseButton}
@@ -571,7 +571,7 @@ const ContactReplyScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="お問い合わせと返信"
+        title="Contact & Replies"
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
@@ -582,7 +582,7 @@ const ContactReplyScreen: React.FC = () => {
           style={[styles.tab, activeTab === 'send' && styles.activeTab]}
           onPress={() => setActiveTab('send')}
           accessibilityRole="tab"
-          accessibilityLabel="お問い合わせを送信"
+          accessibilityLabel="Send a message"
           accessibilityState={{ selected: activeTab === 'send' }}
         >
           <Text
@@ -591,7 +591,7 @@ const ContactReplyScreen: React.FC = () => {
               activeTab === 'send' && styles.activeTabText,
             ]}
           >
-            送信
+            Send
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -601,7 +601,7 @@ const ContactReplyScreen: React.FC = () => {
             loadInquiries();
           }}
           accessibilityRole="tab"
-          accessibilityLabel="返信を確認"
+          accessibilityLabel="View replies"
           accessibilityState={{ selected: activeTab === 'replies' }}
         >
           <Text
@@ -610,7 +610,7 @@ const ContactReplyScreen: React.FC = () => {
               activeTab === 'replies' && styles.activeTabText,
             ]}
           >
-            返信
+            Replies
           </Text>
         </TouchableOpacity>
       </View>

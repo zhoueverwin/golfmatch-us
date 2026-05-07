@@ -195,11 +195,11 @@ describe("VideoPlayer", () => {
 
     it("should handle various NSURLErrorDomain error codes", () => {
       const testCases = [
-        { code: -1001, expectedMessage: "ネットワークエラー: 動画を読み込めませんでした。" },
-        { code: -1003, expectedMessage: "ネットワークエラー: 動画を読み込めませんでした。" },
-        { code: -1004, expectedMessage: "ネットワークエラー: 動画を読み込めませんでした。" },
-        { code: -1005, expectedMessage: "ネットワークエラー: 動画を読み込めませんでした。" },
-        { code: -1009, expectedMessage: "ネットワークエラー: 動画を読み込めませんでした。" },
+        { code: -1001, expectedMessage: "Network error: Could not load video." },
+        { code: -1003, expectedMessage: "Network error: Could not load video." },
+        { code: -1004, expectedMessage: "Network error: Could not load video." },
+        { code: -1005, expectedMessage: "Network error: Could not load video." },
+        { code: -1009, expectedMessage: "Network error: Could not load video." },
       ];
 
       testCases.forEach(({ code, expectedMessage }) => {
@@ -209,7 +209,7 @@ describe("VideoPlayer", () => {
         
         // Test that the error handling logic would correctly identify these as network errors
         expect(code).toBeLessThan(0);
-        expect(expectedMessage).toContain("ネットワークエラー");
+        expect(expectedMessage).toContain("Network error");
       });
     });
   });

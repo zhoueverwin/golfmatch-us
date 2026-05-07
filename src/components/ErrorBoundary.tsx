@@ -84,9 +84,9 @@ class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <View style={styles.errorContainer}>
             <Ionicons name="warning-outline" size={48} color={Colors.error} />
-            <Text style={styles.errorTitle}>問題が発生しました</Text>
+            <Text style={styles.errorTitle}>Something went wrong</Text>
             <Text style={styles.errorMessage}>
-              申し訳ございません。予期しない問題が発生しました。{"\n"}アプリを再起動してください。
+              We're sorry — an unexpected error occurred.{"\n"}Please restart the app.
             </Text>
             {__DEV__ && this.state.error && (
               <Text style={styles.errorDetails}>
@@ -97,7 +97,7 @@ class ErrorBoundary extends Component<Props, State> {
               style={styles.retryButton}
               onPress={this.handleRetry}
             >
-              <Text style={styles.retryButtonText}>再試行</Text>
+              <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -55,10 +55,10 @@ const TOTAL_STEPS = 7;
 type DocumentType = 'mynumber' | 'license' | 'passport' | 'insurance';
 
 const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
-  { value: 'mynumber', label: 'マイナンバーカード' },
-  { value: 'license', label: '運転免許証' },
-  { value: 'passport', label: 'パスポート' },
-  { value: 'insurance', label: '健康保険証' },
+  { value: 'mynumber', label: 'State ID Card' },
+  { value: 'license', label: "Driver's License" },
+  { value: 'passport', label: 'Passport' },
+  { value: 'insurance', label: 'Health Insurance Card' },
 ];
 
 const KycVerificationScreen: React.FC = () => {
@@ -231,8 +231,8 @@ const KycVerificationScreen: React.FC = () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'カメラ権限が必要です',
-        'カメラへのアクセスが拒否されました。設定を確認してください。'
+        'Camera Access Needed',
+        'Camera access was denied. Please check your settings.'
       );
       return false;
     }
@@ -243,8 +243,8 @@ const KycVerificationScreen: React.FC = () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'ライブラリ権限が必要です',
-        'ファイルへのアクセスが拒否されました。設定を確認してください。'
+        'Library Access Needed',
+        'File access was denied. Please check your settings.'
       );
       return false;
     }
@@ -272,7 +272,7 @@ const KycVerificationScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Camera error:', error);
-      Alert.alert('エラー', '写真の撮影に失敗しました。');
+      Alert.alert('Error', 'Failed to take photo.');
     }
   };
 
@@ -294,7 +294,7 @@ const KycVerificationScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('File select error:', error);
-      Alert.alert('エラー', 'ファイルの選択に失敗しました。');
+      Alert.alert('Error', 'Failed to choose file.');
     }
   };
 
@@ -343,12 +343,12 @@ const KycVerificationScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!profileId || !idFrontPhoto.uri || !idBackPhoto.uri || !selfiePhoto.uri || !idSelfiePhoto.uri || !golfPhoto.uri) {
-      Alert.alert('エラー', '5点すべての写真を提出してください。');
+      Alert.alert('Error', 'Please submit all 5 photos.');
       return;
     }
 
     if (!agreedToTerms) {
-      Alert.alert('エラー', '利用規約に同意してください。');
+      Alert.alert('Error', 'Please agree to the Terms of Service.');
       return;
     }
 
@@ -365,7 +365,7 @@ const KycVerificationScreen: React.FC = () => {
       );
 
       if (idFrontUpload.error) {
-        Alert.alert('アップロードエラー', '身分証（表）の写真のアップロードに失敗しました。');
+        Alert.alert('Upload Error', 'Failed to upload the front of your ID.');
         setSubmitting(false);
         setIdFrontPhoto(prev => ({ ...prev, uploading: false }));
         return;
@@ -382,7 +382,7 @@ const KycVerificationScreen: React.FC = () => {
       );
 
       if (idBackUpload.error) {
-        Alert.alert('アップロードエラー', '身分証（裏）の写真のアップロードに失敗しました。');
+        Alert.alert('Upload Error', 'Failed to upload the back of your ID.');
         setSubmitting(false);
         setIdBackPhoto(prev => ({ ...prev, uploading: false }));
         return;
@@ -399,7 +399,7 @@ const KycVerificationScreen: React.FC = () => {
       );
 
       if (selfieUpload.error) {
-        Alert.alert('アップロードエラー', 'セルフィーのアップロードに失敗しました。');
+        Alert.alert('Upload Error', 'Failed to upload your selfie.');
         setSubmitting(false);
         setSelfiePhoto(prev => ({ ...prev, uploading: false }));
         return;
@@ -416,7 +416,7 @@ const KycVerificationScreen: React.FC = () => {
       );
 
       if (idSelfieUpload.error) {
-        Alert.alert('アップロードエラー', '身分証と自撮りのアップロードに失敗しました。');
+        Alert.alert('Upload Error', 'Failed to upload your selfie with ID.');
         setSubmitting(false);
         setIdSelfiePhoto(prev => ({ ...prev, uploading: false }));
         return;
@@ -433,7 +433,7 @@ const KycVerificationScreen: React.FC = () => {
       );
 
       if (golfUpload.error) {
-        Alert.alert('アップロードエラー', 'ゴルフ写真のアップロードに失敗しました。');
+        Alert.alert('Upload Error', 'Failed to upload your golf photo.');
         setSubmitting(false);
         setGolfPhoto(prev => ({ ...prev, uploading: false }));
         return;
@@ -453,11 +453,11 @@ const KycVerificationScreen: React.FC = () => {
       if (result.success) {
         nextStep(); // Go to completion step
       } else {
-        Alert.alert('エラー', result.error || '申請に失敗しました。');
+        Alert.alert('Error', result.error || 'Submission failed.');
       }
     } catch (error) {
       console.error('Submission error:', error);
-      Alert.alert('エラー', '申請に失敗しました。もう一度お試しください。');
+      Alert.alert('Error', 'Submission failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -485,27 +485,27 @@ const KycVerificationScreen: React.FC = () => {
   const getStepTitle = (step: number): string => {
     switch (step) {
       case STEPS.WELCOME:
-        return '本人確認';
+        return 'Identity Verification';
       case STEPS.DOCUMENT:
-        return '身分証明書';
+        return 'ID Document';
       case STEPS.SELFIE:
-        return '顔写真';
+        return 'Selfie';
       case STEPS.ID_SELFIE:
-        return '身分証との自撮り';
+        return 'Selfie with ID';
       case STEPS.GOLF_PHOTO:
-        return 'ゴルフ写真';
+        return 'Golf Photo';
       case STEPS.REVIEW:
-        return '確認';
+        return 'Review';
       case STEPS.COMPLETION:
-        return '完了';
+        return 'Done';
       default:
-        return '本人確認';
+        return 'Identity Verification';
     }
   };
 
   const getDocumentTypeLabel = (): string => {
     const found = DOCUMENT_TYPES.find(dt => dt.value === documentType);
-    return found ? found.label : 'マイナンバーカード';
+    return found ? found.label : 'State ID Card';
   };
 
   // Check which photos need to be re-uploaded
@@ -584,7 +584,7 @@ const KycVerificationScreen: React.FC = () => {
             if (idFrontPhoto.uri) {
               setIdFrontPhoto(prev => ({ ...prev, uploading: true }));
               upload = await kycService.uploadKycImage(idFrontPhoto.uri, profileId, submissionId, 'id_photo', true);
-              if (upload.error) throw new Error('身分証（表）のアップロードに失敗しました');
+              if (upload.error) throw new Error('Failed to upload front of ID');
               idFrontUrl = upload.url!;
               setIdFrontPhoto(prev => ({ ...prev, uploading: false, uploaded: true }));
             }
@@ -593,7 +593,7 @@ const KycVerificationScreen: React.FC = () => {
             if (idBackPhoto.uri) {
               setIdBackPhoto(prev => ({ ...prev, uploading: true }));
               upload = await kycService.uploadKycImage(idBackPhoto.uri, profileId, submissionId, 'id_back_photo', true);
-              if (upload.error) throw new Error('身分証（裏）のアップロードに失敗しました');
+              if (upload.error) throw new Error('Failed to upload back of ID');
               idBackUrl = upload.url!;
               setIdBackPhoto(prev => ({ ...prev, uploading: false, uploaded: true }));
             }
@@ -602,7 +602,7 @@ const KycVerificationScreen: React.FC = () => {
             if (selfiePhoto.uri) {
               setSelfiePhoto(prev => ({ ...prev, uploading: true }));
               upload = await kycService.uploadKycImage(selfiePhoto.uri, profileId, submissionId, 'selfie', true);
-              if (upload.error) throw new Error('セルフィーのアップロードに失敗しました');
+              if (upload.error) throw new Error('Failed to upload selfie');
               selfieUrl = upload.url!;
               setSelfiePhoto(prev => ({ ...prev, uploading: false, uploaded: true }));
             }
@@ -611,7 +611,7 @@ const KycVerificationScreen: React.FC = () => {
             if (idSelfiePhoto.uri) {
               setIdSelfiePhoto(prev => ({ ...prev, uploading: true }));
               upload = await kycService.uploadKycImage(idSelfiePhoto.uri, profileId, submissionId, 'id_selfie', true);
-              if (upload.error) throw new Error('身分証との自撮りのアップロードに失敗しました');
+              if (upload.error) throw new Error('Failed to upload selfie with ID');
               idSelfieUrl = upload.url!;
               setIdSelfiePhoto(prev => ({ ...prev, uploading: false, uploaded: true }));
             }
@@ -620,7 +620,7 @@ const KycVerificationScreen: React.FC = () => {
             if (golfPhoto.uri) {
               setGolfPhoto(prev => ({ ...prev, uploading: true }));
               upload = await kycService.uploadKycImage(golfPhoto.uri, profileId, submissionId, 'golf_photo', true);
-              if (upload.error) throw new Error('ゴルフ写真のアップロードに失敗しました');
+              if (upload.error) throw new Error('Failed to upload golf photo');
               golfUrl = upload.url!;
               setGolfPhoto(prev => ({ ...prev, uploading: false, uploaded: true }));
             }
@@ -642,11 +642,11 @@ const KycVerificationScreen: React.FC = () => {
         setIsRetryMode(false);
         setCurrentStep(STEPS.COMPLETION);
       } else {
-        Alert.alert('エラー', result.error || '再提出に失敗しました。');
+        Alert.alert('Error', result.error || 'Resubmission failed.');
       }
     } catch (error: any) {
       console.error('Retry submission error:', error);
-      Alert.alert('エラー', error.message || '再提出に失敗しました。');
+      Alert.alert('Error', error.message || 'Resubmission failed.');
     } finally {
       setSubmitting(false);
     }
@@ -656,7 +656,7 @@ const KycVerificationScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="本人確認認証"
+          title="Identity Verification"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
@@ -672,7 +672,7 @@ const KycVerificationScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="本人確認認証"
+          title="Identity Verification"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
@@ -680,13 +680,13 @@ const KycVerificationScreen: React.FC = () => {
           <View style={styles.successIconContainer}>
             <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
           </View>
-          <Text style={styles.statusTitle}>本人確認済み</Text>
+          <Text style={styles.statusTitle}>Verified</Text>
           <Text style={styles.statusDescription}>
-            あなたの本人確認は完了しています。{'\n'}
-            プロフィールに認証バッジが表示されています。
+            Your identity has been verified.{'\n'}
+            A verified badge now appears on your profile.
           </Text>
           <Button
-            title="戻る"
+            title="Back"
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           />
@@ -700,7 +700,7 @@ const KycVerificationScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="本人確認認証"
+          title="Identity Verification"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
@@ -708,19 +708,19 @@ const KycVerificationScreen: React.FC = () => {
           <View style={styles.pendingIconContainer}>
             <Ionicons name="time" size={80} color={Colors.primary} />
           </View>
-          <Text style={styles.statusTitle}>審査中</Text>
+          <Text style={styles.statusTitle}>Under Review</Text>
           <Text style={styles.statusDescription}>
-            本人確認の審査を行っています。{'\n'}
-            結果は1〜3営業日以内にお知らせします。
+            We're reviewing your verification.{'\n'}
+            You'll hear back within 1-3 business days.
           </Text>
           <View style={styles.infoBox}>
             <Ionicons name="information-circle" size={20} color={Colors.info} />
             <Text style={styles.infoBoxText}>
-              審査完了後、登録メールアドレスに結果をお知らせします。
+              Once review is complete, we'll email you the result.
             </Text>
           </View>
           <Button
-            title="戻る"
+            title="Back"
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           />
@@ -737,7 +737,7 @@ const KycVerificationScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="写真の再提出"
+          title="Resubmit Photos"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
@@ -751,9 +751,9 @@ const KycVerificationScreen: React.FC = () => {
             <View style={styles.retryIconContainer}>
               <Ionicons name="refresh-circle" size={48} color={Colors.warning} />
             </View>
-            <Text style={styles.retryTitle}>再提出が必要です</Text>
+            <Text style={styles.retryTitle}>Resubmission Needed</Text>
             <Text style={styles.retrySubtitle}>
-              以下の{retryCount}枚の写真を再度アップロードしてください
+              Please re-upload the {retryCount} photo{retryCount === 1 ? '' : 's'} below
             </Text>
           </View>
 
@@ -762,11 +762,11 @@ const KycVerificationScreen: React.FC = () => {
             {photosNeedingRetry.map((photoType) => {
               const reason = getPhotoRejectionReason(photoType);
               const photoLabels: Record<string, string> = {
-                id_front: '身分証明書（表面）',
-                id_back: '身分証明書（裏面）',
-                selfie: '顔写真（セルフィー）',
-                id_selfie: '身分証との自撮り',
-                golf_photo: 'ゴルフ写真',
+                id_front: 'ID Document (Front)',
+                id_back: 'ID Document (Back)',
+                selfie: 'Selfie',
+                id_selfie: 'Selfie with ID',
+                golf_photo: 'Golf Photo',
               };
               const label = photoLabels[photoType] || photoType;
 
@@ -817,7 +817,7 @@ const KycVerificationScreen: React.FC = () => {
                   <View style={styles.rejectionReasonBox}>
                     <Ionicons name="alert-circle" size={16} color={Colors.error} />
                     <Text style={styles.rejectionReasonText}>
-                      {reason || '写真の品質が基準を満たしていません'}
+                      {reason || 'This photo did not meet our quality standards'}
                     </Text>
                   </View>
 
@@ -837,7 +837,7 @@ const KycVerificationScreen: React.FC = () => {
                         </TouchableOpacity>
                         <View style={styles.retryPhotoSuccess}>
                           <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                          <Text style={styles.retryPhotoSuccessText}>新しい写真を選択済み</Text>
+                          <Text style={styles.retryPhotoSuccessText}>New photo selected</Text>
                         </View>
                       </View>
                     ) : (
@@ -847,7 +847,7 @@ const KycVerificationScreen: React.FC = () => {
                           onPress={handleFile}
                         >
                           <Ionicons name="add" size={32} color={Colors.primary} />
-                          <Text style={styles.retryPhotoAddText}>写真を選択</Text>
+                          <Text style={styles.retryPhotoAddText}>Choose Photo</Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -859,14 +859,14 @@ const KycVerificationScreen: React.FC = () => {
                         onPress={handleCamera}
                       >
                         <Ionicons name="camera" size={20} color={Colors.primary} />
-                        <Text style={styles.retryActionText}>撮影</Text>
+                        <Text style={styles.retryActionText}>Camera</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.retryActionButton}
                         onPress={handleFile}
                       >
                         <Ionicons name="folder-open" size={20} color={Colors.primary} />
-                        <Text style={styles.retryActionText}>選択</Text>
+                        <Text style={styles.retryActionText}>Library</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -877,7 +877,7 @@ const KycVerificationScreen: React.FC = () => {
 
           {/* Submit Button */}
           <Button
-            title={submitting ? '送信中...' : allRetryPhotosUploaded() ? '再提出する' : `あと${retryCount - photosNeedingRetry.filter(t => {
+            title={submitting ? 'Submitting...' : allRetryPhotosUploaded() ? 'Resubmit' : `${retryCount - photosNeedingRetry.filter(t => {
               switch(t) {
                 case 'id_front': return !!idFrontPhoto.uri;
                 case 'id_back': return !!idBackPhoto.uri;
@@ -886,7 +886,16 @@ const KycVerificationScreen: React.FC = () => {
                 case 'golf_photo': return !!golfPhoto.uri;
                 default: return false;
               }
-            }).length}枚必要です`}
+            }).length} more photo${(retryCount - photosNeedingRetry.filter(t => {
+              switch(t) {
+                case 'id_front': return !!idFrontPhoto.uri;
+                case 'id_back': return !!idBackPhoto.uri;
+                case 'selfie': return !!selfiePhoto.uri;
+                case 'id_selfie': return !!idSelfiePhoto.uri;
+                case 'golf_photo': return !!golfPhoto.uri;
+                default: return false;
+              }
+            }).length) === 1 ? '' : 's'} needed`}
             onPress={handleRetrySubmit}
             disabled={!allRetryPhotosUploaded() || submitting}
             style={styles.retrySubmitButton}
@@ -895,7 +904,7 @@ const KycVerificationScreen: React.FC = () => {
           {submitting && (
             <View style={styles.retrySubmittingOverlay}>
               <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.retrySubmittingText}>写真をアップロード中...</Text>
+              <Text style={styles.retrySubmittingText}>Uploading photos...</Text>
             </View>
           )}
         </ScrollView>
@@ -974,8 +983,8 @@ const KycVerificationScreen: React.FC = () => {
 
         {currentStep === STEPS.SELFIE && (
           <PhotoStep
-            title="顔写真（セルフィー）"
-            subtitle="正面を向いて、明るい場所で撮影してください"
+            title="Selfie"
+            subtitle="Face the camera in a well-lit space"
             icon="person"
             instructions={[]}
             photo={selfiePhoto}
@@ -991,8 +1000,8 @@ const KycVerificationScreen: React.FC = () => {
 
         {currentStep === STEPS.ID_SELFIE && (
           <PhotoStep
-            title="身分証との自撮り"
-            subtitle="顔の横に身分証を持って撮影してください"
+            title="Selfie with ID"
+            subtitle="Hold your ID next to your face and take a photo"
             icon="id-card"
             instructions={[]}
             photo={idSelfiePhoto}
@@ -1008,8 +1017,8 @@ const KycVerificationScreen: React.FC = () => {
 
         {currentStep === STEPS.GOLF_PHOTO && (
           <PhotoStep
-            title="ゴルフをしている写真"
-            subtitle="ゴルフ場や練習場で顔が確認できる写真"
+            title="A Photo of You Playing Golf"
+            subtitle="Show your face at a golf course or driving range"
             icon="golf"
             instructions={[]}
             photo={golfPhoto}
@@ -1061,9 +1070,9 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ kycStatus, onStart }) => {
         <View style={styles.shieldIconContainer}>
           <Ionicons name="shield-checkmark" size={48} color={Colors.primary} />
         </View>
-        <Text style={styles.heroTitle}>本人確認を始めます</Text>
+        <Text style={styles.heroTitle}>Verify Your Identity</Text>
         <Text style={styles.heroSubtitle}>
-          安全にご利用いただくため、本人確認が必要です
+          We verify everyone to keep the community safe.
         </Text>
       </View>
 
@@ -1072,7 +1081,7 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ kycStatus, onStart }) => {
         <View style={styles.retryNotice}>
           <Ionicons name="alert-circle" size={20} color={Colors.warning} />
           <Text style={styles.retryNoticeText}>
-            前回の申請は再提出が必要です。より鮮明な写真をアップロードしてください。
+            Your previous submission needs to be redone. Please upload clearer photos.
           </Text>
         </View>
       )}
@@ -1082,17 +1091,17 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ kycStatus, onStart }) => {
         <View style={styles.infoCard}>
           <Ionicons name="time-outline" size={24} color={Colors.primary} />
           <View style={styles.infoCardContent}>
-            <Text style={styles.infoCardTitle}>所要時間</Text>
-            <Text style={styles.infoCardText}>約5分で完了します</Text>
+            <Text style={styles.infoCardTitle}>Time Required</Text>
+            <Text style={styles.infoCardText}>Takes about 5 minutes</Text>
           </View>
         </View>
 
         <View style={styles.infoCard}>
           <Ionicons name="document-text-outline" size={24} color={Colors.primary} />
           <View style={styles.infoCardContent}>
-            <Text style={styles.infoCardTitle}>必要なもの</Text>
+            <Text style={styles.infoCardTitle}>What You'll Need</Text>
             <Text style={styles.infoCardText}>
-              本人確認書類（運転免許証、パスポート、マイナンバーカード）
+              A valid government-issued ID (driver's license, passport, or state ID)
             </Text>
           </View>
         </View>
@@ -1102,18 +1111,18 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ kycStatus, onStart }) => {
       <View style={styles.warningBox}>
         <View style={styles.warningHeader}>
           <Ionicons name="alert-circle" size={20} color={Colors.warning} />
-          <Text style={styles.warningTitle}>撮影時の注意事項</Text>
+          <Text style={styles.warningTitle}>Photo Tips</Text>
         </View>
         <Text style={styles.warningText}>
-          • 鮮明で読みやすい画像をご提出ください{'\n'}
-          • ぼやけた画像は再提出が必要になります{'\n'}
-          • 反射や光の映り込みにご注意ください
+          • Make sure your photos are clear and easy to read{'\n'}
+          • Blurry photos will need to be retaken{'\n'}
+          • Watch out for glare or reflections
         </Text>
       </View>
 
       {/* Start Button */}
       <Button
-        title="本人確認を開始する"
+        title="Start Verification"
         onPress={onStart}
         style={styles.primaryButton}
       />
@@ -1162,7 +1171,7 @@ const DocumentStep: React.FC<DocumentStepProps> = ({
     <View style={styles.stepContainer}>
       {/* Document Type Selector */}
       <View style={styles.documentSelectorContainer}>
-        <Text style={styles.documentSelectorLabel}>登録する書類</Text>
+        <Text style={styles.documentSelectorLabel}>Document Type</Text>
         <TouchableOpacity
           style={styles.documentSelector}
           onPress={onTogglePicker}
@@ -1206,11 +1215,11 @@ const DocumentStep: React.FC<DocumentStepProps> = ({
       </View>
 
       {/* Side by Side Photo Uploads */}
-      <Text style={styles.documentPhotosSectionLabel}>登録する写真</Text>
+      <Text style={styles.documentPhotosSectionLabel}>Photos</Text>
       <View style={styles.documentPhotosContainer}>
         {/* Front Photo */}
         <View style={styles.documentPhotoCard}>
-          <Text style={styles.documentPhotoLabel}>表面</Text>
+          <Text style={styles.documentPhotoLabel}>Front</Text>
           {idFrontPhoto.uri ? (
             <View style={styles.documentPhotoPreviewWrapper}>
               <Image source={{ uri: idFrontPhoto.uri }} style={styles.documentPhotoPreview} />
@@ -1251,7 +1260,7 @@ const DocumentStep: React.FC<DocumentStepProps> = ({
 
         {/* Back Photo */}
         <View style={styles.documentPhotoCard}>
-          <Text style={styles.documentPhotoLabel}>裏面</Text>
+          <Text style={styles.documentPhotoLabel}>Back</Text>
           {idBackPhoto.uri ? (
             <View style={styles.documentPhotoPreviewWrapper}>
               <Image source={{ uri: idBackPhoto.uri }} style={styles.documentPhotoPreview} />
@@ -1293,12 +1302,12 @@ const DocumentStep: React.FC<DocumentStepProps> = ({
 
       {/* Warning Text */}
       <Text style={styles.documentWarningText}>
-        ※写真がぶれていたり、見切れていると認証できない可能性があります。印字されてる文字がはっきり読み取れる、正面から撮影した写真をご登録ください。
+        Note: Blurry or partially cropped photos may not be accepted. Please upload front-facing photos where all printed text is clearly readable.
       </Text>
 
       {/* Next Button */}
       <Button
-        title={canProceed ? '次へ進む' : `あと${getMissingCount()}枚必要です`}
+        title={canProceed ? 'Next' : `${getMissingCount()} more photo${getMissingCount() === 1 ? '' : 's'} needed`}
         onPress={onNext}
         disabled={!canProceed}
         style={styles.nextButton}
@@ -1322,8 +1331,8 @@ const ExampleImage: React.FC<ExampleImageProps> = ({ type }) => {
               <Ionicons name="person" size={24} color={Colors.gray[400]} />
             </View>
             <View style={styles.exampleCheckmarks}>
-              <Text style={styles.exampleCheckText}>✓ 正面向き</Text>
-              <Text style={styles.exampleCheckText}>✓ 明るい場所</Text>
+              <Text style={styles.exampleCheckText}>✓ Face the camera</Text>
+              <Text style={styles.exampleCheckText}>✓ Good lighting</Text>
             </View>
           </View>
         );
@@ -1338,7 +1347,7 @@ const ExampleImage: React.FC<ExampleImageProps> = ({ type }) => {
                 <Ionicons name="card" size={16} color={Colors.gray[400]} />
               </View>
             </View>
-            <Text style={styles.exampleHintText}>顔の横に身分証を持つ</Text>
+            <Text style={styles.exampleHintText}>Hold ID next to your face</Text>
           </View>
         );
       case 'golf':
@@ -1348,7 +1357,7 @@ const ExampleImage: React.FC<ExampleImageProps> = ({ type }) => {
               <Ionicons name="golf" size={24} color={Colors.success} />
               <Ionicons name="person" size={20} color={Colors.gray[400]} />
             </View>
-            <Text style={styles.exampleHintText}>ゴルフ中の写真</Text>
+            <Text style={styles.exampleHintText}>Photo while golfing</Text>
           </View>
         );
     }
@@ -1356,7 +1365,7 @@ const ExampleImage: React.FC<ExampleImageProps> = ({ type }) => {
 
   return (
     <View style={styles.exampleImageContainer}>
-      <Text style={styles.exampleLabel}>例</Text>
+      <Text style={styles.exampleLabel}>Example</Text>
       <View style={styles.exampleImageBox}>
         {getExampleContent()}
       </View>
@@ -1406,7 +1415,7 @@ const PhotoStep: React.FC<PhotoStepProps> = ({
 
         {/* Upload Area */}
         <View style={styles.photoUploadArea}>
-          <Text style={styles.photoUploadLabel}>あなたの写真</Text>
+          <Text style={styles.photoUploadLabel}>Your Photo</Text>
           {photo.uri ? (
             <View style={styles.compactPhotoPreviewWrapper}>
               <Image source={{ uri: photo.uri }} style={styles.compactPhotoPreview} />
@@ -1448,7 +1457,7 @@ const PhotoStep: React.FC<PhotoStepProps> = ({
               style={styles.retakeButton}
               onPress={onCameraPress}
             >
-              <Text style={styles.retakeButtonText}>撮り直す</Text>
+              <Text style={styles.retakeButtonText}>Retake</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -1456,7 +1465,7 @@ const PhotoStep: React.FC<PhotoStepProps> = ({
 
       {/* Next Button */}
       <Button
-        title={canProceed ? '次へ進む' : '写真を追加してください'}
+        title={canProceed ? 'Next' : 'Add a photo to continue'}
         onPress={onNext}
         disabled={!canProceed}
         style={styles.nextButton}
@@ -1491,11 +1500,11 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
   onEditStep,
 }) => {
   const photos = [
-    { label: '身分証（表）', photo: idFrontPhoto, step: STEPS.DOCUMENT },
-    { label: '身分証（裏）', photo: idBackPhoto, step: STEPS.DOCUMENT },
-    { label: '顔写真', photo: selfiePhoto, step: STEPS.SELFIE },
-    { label: '身分証との自撮り', photo: idSelfiePhoto, step: STEPS.ID_SELFIE },
-    { label: 'ゴルフ写真', photo: golfPhoto, step: STEPS.GOLF_PHOTO },
+    { label: 'ID (Front)', photo: idFrontPhoto, step: STEPS.DOCUMENT },
+    { label: 'ID (Back)', photo: idBackPhoto, step: STEPS.DOCUMENT },
+    { label: 'Selfie', photo: selfiePhoto, step: STEPS.SELFIE },
+    { label: 'Selfie with ID', photo: idSelfiePhoto, step: STEPS.ID_SELFIE },
+    { label: 'Golf Photo', photo: golfPhoto, step: STEPS.GOLF_PHOTO },
   ];
 
   return (
@@ -1505,15 +1514,15 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
         <View style={styles.reviewIconContainer}>
           <Ionicons name="document-text" size={32} color={Colors.primary} />
         </View>
-        <Text style={styles.reviewTitle}>提出内容の確認</Text>
+        <Text style={styles.reviewTitle}>Review Your Submission</Text>
         <Text style={styles.reviewSubtitle}>
-          以下の内容で本人確認を申請します
+          We'll submit this for verification
         </Text>
       </View>
 
       {/* Photo List */}
       <View style={styles.reviewSection}>
-        <Text style={styles.reviewSectionTitle}>アップロード済みの画像</Text>
+        <Text style={styles.reviewSectionTitle}>Uploaded Photos</Text>
         {photos.map((item, index) => (
           <TouchableOpacity
             key={index}
@@ -1538,10 +1547,10 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
 
       {/* Checklist */}
       <View style={styles.checklistBox}>
-        <Text style={styles.checklistTitle}>確認事項</Text>
-        <Text style={styles.checklistItem}>• すべての画像が鮮明に撮影されていますか？</Text>
-        <Text style={styles.checklistItem}>• 書類の文字が読み取れますか？</Text>
-        <Text style={styles.checklistItem}>• 顔写真は正面を向いていますか？</Text>
+        <Text style={styles.checklistTitle}>Quick Checklist</Text>
+        <Text style={styles.checklistItem}>• Are all photos clear and in focus?</Text>
+        <Text style={styles.checklistItem}>• Is the text on your ID readable?</Text>
+        <Text style={styles.checklistItem}>• Is your face fully visible in the selfie?</Text>
       </View>
 
       {/* Terms Agreement */}
@@ -1559,16 +1568,16 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
           )}
         </View>
         <Text style={styles.termsText}>
-          <Text style={styles.termsLink}>利用規約</Text>
-          と
-          <Text style={styles.termsLink}>プライバシーポリシー</Text>
-          に同意します
+          I agree to the{' '}
+          <Text style={styles.termsLink}>Terms of Service</Text>
+          {' '}and{' '}
+          <Text style={styles.termsLink}>Privacy Policy</Text>
         </Text>
       </TouchableOpacity>
 
       {/* Submit Button */}
       <Button
-        title={submitting ? '送信中...' : '提出する'}
+        title={submitting ? 'Submitting...' : 'Submit'}
         onPress={onSubmit}
         disabled={!agreedToTerms || submitting}
         style={styles.submitButton}
@@ -1577,7 +1586,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
       {submitting && (
         <View style={styles.submittingOverlay}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.submittingText}>写真をアップロード中...</Text>
+          <Text style={styles.submittingText}>Uploading photos...</Text>
         </View>
       )}
     </View>
@@ -1596,16 +1605,16 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onGoHome }) => {
         <View style={styles.completionIconContainer}>
           <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
         </View>
-        <Text style={styles.completionTitle}>本人確認を受け付けました</Text>
-        <Text style={styles.completionSubtitle}>ご提出ありがとうございます</Text>
+        <Text style={styles.completionTitle}>Verification Submitted</Text>
+        <Text style={styles.completionSubtitle}>Thanks for your submission</Text>
       </View>
 
       {/* Status Message */}
       <View style={styles.completionStatusBox}>
         <Ionicons name="hourglass" size={20} color={Colors.primary} />
         <Text style={styles.completionStatusText}>
-          本人確認の審査を開始しました。{'\n'}
-          結果は登録メールアドレスにお知らせいたします。
+          We've started reviewing your verification.{'\n'}
+          We'll email you the result.
         </Text>
       </View>
 
@@ -1614,16 +1623,16 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onGoHome }) => {
         <View style={styles.completionInfoCard}>
           <Ionicons name="time-outline" size={24} color={Colors.primary} />
           <View style={styles.completionInfoContent}>
-            <Text style={styles.completionInfoTitle}>審査期間</Text>
-            <Text style={styles.completionInfoText}>通常1〜3営業日で完了します</Text>
+            <Text style={styles.completionInfoTitle}>Review Time</Text>
+            <Text style={styles.completionInfoText}>Usually 1-3 business days</Text>
           </View>
         </View>
 
         <View style={styles.completionInfoCard}>
           <Ionicons name="mail-outline" size={24} color={Colors.primary} />
           <View style={styles.completionInfoContent}>
-            <Text style={styles.completionInfoTitle}>結果の通知</Text>
-            <Text style={styles.completionInfoText}>審査完了後、メールでお知らせします</Text>
+            <Text style={styles.completionInfoTitle}>Result Notification</Text>
+            <Text style={styles.completionInfoText}>We'll email you once it's reviewed</Text>
           </View>
         </View>
       </View>
@@ -1632,14 +1641,14 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onGoHome }) => {
       <View style={styles.nextStepsBox}>
         <Ionicons name="information-circle" size={20} color={Colors.info} />
         <Text style={styles.nextStepsText}>
-          審査完了まで通常通りアプリをご利用いただけます。{'\n'}
-          承認後、プロフィールに認証バッジが表示されます。
+          You can keep using the app while we review.{'\n'}
+          Once approved, a verified badge will appear on your profile.
         </Text>
       </View>
 
       {/* Home Button */}
       <Button
-        title="ホームに戻る"
+        title="Back to Home"
         onPress={onGoHome}
         style={styles.homeButton}
       />

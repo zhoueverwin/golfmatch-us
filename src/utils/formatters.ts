@@ -2,57 +2,53 @@
 // Consolidated from duplicate code across multiple files
 
 /**
- * Convert age to Japanese age range string
+ * Convert age to age range string
  * @param age - The age number
- * @returns Japanese age range string (e.g., "30代前半")
+ * @returns Age range string (e.g., "Early 30s")
  */
 export const getAgeRange = (age: number): string => {
-  if (age < 25) return "20代前半";
-  if (age < 30) return "20代後半";
-  if (age < 35) return "30代前半";
-  if (age < 40) return "30代後半";
-  if (age < 45) return "40代前半";
-  if (age < 50) return "40代後半";
-  return "50代以上";
+  if (age < 25) return "Early 20s";
+  if (age < 30) return "Late 20s";
+  if (age < 35) return "Early 30s";
+  if (age < 40) return "Late 30s";
+  if (age < 45) return "Early 40s";
+  if (age < 50) return "Late 40s";
+  return "50+";
 };
 
 /**
- * Convert golf skill level to Japanese display text
- * Handles both Japanese and English skill level values
+ * Convert golf skill level to display text
+ * Handles both Japanese and English skill level values (database may contain legacy JP values)
  * @param level - The skill level string (can be null/undefined)
- * @returns Japanese skill level text
+ * @returns Skill level display text
  */
 export const getSkillLevelText = (level: string | null | undefined): string => {
-  if (!level) return "未設定";
+  if (!level) return "Not set";
 
   switch (level) {
-    // Japanese values (from database)
-    case "ビギナー":
-      return "ビギナー";
-    case "中級者":
-      return "中級者";
-    case "上級者":
-      return "上級者";
-    case "プロ":
-      return "プロ";
-    // English values (for backward compatibility)
+    case "Beginner":
+    case "Intermediate":
+    case "Advanced":
+    case "Pro":
+      return level;
+    // Lowercase variants from older clients
     case "beginner":
-      return "ビギナー";
+      return "Beginner";
     case "intermediate":
-      return "中級者";
+      return "Intermediate";
     case "advanced":
-      return "上級者";
+      return "Advanced";
     case "professional":
-      return "プロ";
+      return "Pro";
     default:
-      return "未設定";
+      return "Not set";
   }
 };
 
 /**
- * Format a timestamp to relative time (e.g., "5分前", "3時間前")
+ * Format a timestamp to relative time (e.g., "5 min ago", "3 hours ago")
  * @param timestamp - ISO timestamp string
- * @returns Formatted relative time string in Japanese
+ * @returns Formatted relative time string
  */
 export const formatRelativeTime = (timestamp: string): string => {
   const date = new Date(timestamp);
@@ -63,15 +59,15 @@ export const formatRelativeTime = (timestamp: string): string => {
   const days = Math.floor(diff / 86400000);
 
   if (minutes < 1) {
-    return "たった今";
+    return "Just now";
   } else if (minutes < 60) {
-    return `${minutes}分前`;
+    return `${minutes} min ago`;
   } else if (hours < 24) {
-    return `${hours}時間前`;
+    return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
   } else if (days < 7) {
-    return `${days}日前`;
+    return `${days} ${days === 1 ? "day" : "days"} ago`;
   } else {
-    return date.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+    return date.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
   }
 };
 
@@ -108,13 +104,17 @@ export const calculateAge = (birthDate: string | Date): number => {
 };
 
 /**
- * Format birth date for display in Japanese
+ * Format birth date for display
  * @param birthDate - ISO date string (YYYY-MM-DD)
- * @returns Formatted string like "1990年5月15日"
+ * @returns Formatted string like "May 15, 1990"
  */
 export const formatBirthDateJapanese = (birthDate: string): string => {
   const date = new Date(birthDate);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 /**
@@ -167,57 +167,3 @@ export const htmlToPlainText = (html: string | null | undefined): string => {
   return text;
 };
 
-/**
- * Normalize prefecture name by removing 都/府/県/道 suffix.
- * Profiles use "東京都", "千葉県" etc. but GORA/golf_courses use "東京", "千葉".
- */
-export function normalizePrefecture(prefecture: string): string {
-  if (!prefecture || prefecture === '未設定') return '';
-  // 北海道 stays as-is (removing 道 would leave just 北海)
-  if (prefecture === '北海道') return '北海道';
-  return prefecture.replace(/[都府県]$/, '');
-}
-
-/**
- * Format Japanese text with natural line breaks for better readability
- * Adds line breaks after Japanese sentence endings and before URLs
- * Useful for API responses that return continuous text (like Rakuten GORA captions)
- * @param text - Plain text string to format
- * @returns Formatted text with natural line breaks
- */
-export const formatJapaneseText = (text: string | null | undefined): string => {
-  if (!text) return '';
-
-  let formatted = text;
-
-  // First apply HTML conversion if any HTML exists
-  formatted = htmlToPlainText(formatted);
-
-  // Add line break before URLs (http:// or https://)
-  formatted = formatted.replace(/(https?:\/\/)/g, '\n$1');
-
-  // Add line break after Japanese sentence endings (。) but not if followed by 」or another punctuation
-  formatted = formatted.replace(/。(?![」）\)])/g, '。\n');
-
-  // Add line break after specific markers that indicate new sections
-  formatted = formatted.replace(/([♪★●◆■▼▲])/g, '\n$1');
-
-  // Add line break before 【 and after 】 (Japanese bracket sections like 【お得情報】)
-  formatted = formatted.replace(/【/g, '\n\n【');
-  formatted = formatted.replace(/】/g, '】\n');
-
-  // Add line break after access information patterns (ICより followed by distance)
-  formatted = formatted.replace(/(ICより\d+km（\d+分）)/g, '$1\n');
-
-  // Clean up multiple consecutive newlines (max 2)
-  formatted = formatted.replace(/\n{3,}/g, '\n\n');
-
-  // Trim whitespace from each line
-  formatted = formatted
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0) // Remove empty lines
-    .join('\n');
-
-  return formatted.trim();
-};

@@ -285,7 +285,7 @@ class AuthService {
       if (!emailDomain || (!emailDomain.endsWith('.jp') && !AuthService.ALLOWED_NON_JP_DOMAINS.includes(emailDomain))) {
         return {
           success: false,
-          error: 'メールアドレスでの登録はJPドメイン(.jp)のメールのみ対応しています。Gmailの方はGoogleログイン、Apple IDの方はAppleでサインインをご利用ください。',
+          error: 'Email signup is only supported for .jp domain emails. Gmail users, please sign in with Google. Apple ID users, please sign in with Apple.',
         };
       }
 
@@ -300,7 +300,7 @@ class AuthService {
       if (blockedDomains.includes(emailDomain)) {
         return {
           success: false,
-          error: configData?.value?.message || 'このメールドメインは登録に使用できません。',
+          error: configData?.value?.message || 'This email domain cannot be used to register.',
         };
       }
 
@@ -313,7 +313,7 @@ class AuthService {
       if (bannedEmail) {
         return {
           success: false,
-          error: 'このメールアドレスでは登録できません。',
+          error: 'This email address cannot be used to register.',
         };
       }
 
@@ -362,7 +362,7 @@ class AuthService {
         }
         return {
           success: false,
-          error: "このメールアドレスは既に登録されています。ログインしてください。",
+          error: "This email address is already registered. Please sign in instead.",
         };
       }
 
@@ -407,7 +407,7 @@ class AuthService {
         return {
           success: true,
           session: undefined,
-          error: "メールアドレスを確認してください。",
+          error: "Please check your email to confirm your address.",
         };
       }
 
@@ -512,7 +512,7 @@ class AuthService {
       if (!GoogleSignin || typeof GoogleSignin.signIn !== 'function') {
         return {
           success: false,
-          error: "Google Sign-Inは開発ビルドでのみ利用可能です。\n\nExpo Goでは使用できません。メールアドレスでログインしてください。",
+          error: "Google Sign-In is only available in development builds.\n\nIt cannot be used in Expo Go. Please sign in with email instead.",
         };
       }
 
@@ -533,7 +533,7 @@ class AuthService {
         logAuthError("Google Play Services check failed", playServicesError);
         return {
           success: false,
-          error: translateAuthError("Google Play Servicesが利用できません"),
+          error: translateAuthError("Google Play Services is not available"),
         };
       }
 
@@ -581,7 +581,7 @@ class AuthService {
         logAuthError("No data in Google Sign-In response", new Error("Missing data object"));
         return {
           success: false,
-          error: translateAuthError("Googleからのレスポンスにデータがありません"),
+          error: translateAuthError("No data received in Google response"),
         };
       }
 
@@ -602,7 +602,7 @@ class AuthService {
         });
         return {
           success: false,
-          error: translateAuthError("GoogleからIDトークンを取得できませんでした"),
+          error: translateAuthError("Could not retrieve ID token from Google"),
         };
       }
 
@@ -681,7 +681,7 @@ class AuthService {
             }
             return {
               success: false,
-              error: translateAuthError("Google Play Servicesが利用できません"),
+              error: translateAuthError("Google Play Services is not available"),
             };
 
           default:
@@ -691,7 +691,7 @@ class AuthService {
             });
             return {
               success: false,
-              error: translateAuthError(error.message || "Googleログインに失敗しました"),
+              error: translateAuthError(error.message || "Google sign-in failed"),
             };
         }
       }
@@ -707,93 +707,6 @@ class AuthService {
         success: false,
         error: translateAuthError(
           error instanceof Error ? error.message : "Failed to sign in with Google"
-        ),
-      };
-    }
-  }
-
-  // LINE Sign In
-  async signInWithLine(lineAccessToken: string, lineIdToken?: string): Promise<OTPVerificationResult> {
-    try {
-      if (__DEV__) {
-        console.log("🟢 [LINEAuth] Starting LINE authentication");
-      }
-
-      // Call our Supabase Edge Function to verify LINE token and create/find user
-      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-      const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/line-auth`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseAnonKey}`,
-        },
-        body: JSON.stringify({
-          accessToken: lineAccessToken,
-          idToken: lineIdToken,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.session) {
-        if (__DEV__) {
-          console.log("❌ [LINEAuth] Edge function error:", result.error);
-        }
-        logAuthError("LINE auth edge function failed", new Error(result.error));
-        return {
-          success: false,
-          error: translateAuthError(result.error || "LINE認証に失敗しました"),
-        };
-      }
-
-      if (__DEV__) {
-        console.log("✅ [LINEAuth] Got session from edge function");
-      }
-
-      // Set the session in Supabase client
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: result.session.access_token,
-        refresh_token: result.session.refresh_token,
-      });
-
-      if (sessionError) {
-        if (__DEV__) {
-          console.log("❌ [LINEAuth] Failed to set session:", sessionError);
-        }
-        logAuthError("Failed to set LINE session", sessionError);
-        return {
-          success: false,
-          error: translateAuthError(sessionError.message),
-        };
-      }
-
-      // Track with analytics
-      logCompleteRegistration('line');
-      if (result.user?.id) {
-        setUserId(result.user.id);
-        firebaseLogRegistration('line');
-        firebaseSetUserId(result.user.id);
-      }
-
-      if (__DEV__) {
-        console.log("✅ [LINEAuth] LINE authentication successful");
-      }
-
-      return {
-        success: true,
-        session: result.session,
-      };
-    } catch (error) {
-      if (__DEV__) {
-        console.log("💥 [LINEAuth] Exception:", error);
-      }
-      logAuthError("LINE sign-in exception", error);
-      return {
-        success: false,
-        error: translateAuthError(
-          error instanceof Error ? error.message : "LINE認証に失敗しました"
         ),
       };
     }
@@ -1017,42 +930,13 @@ class AuthService {
     }
   }
 
-  async linkPhone(phoneNumber: string): Promise<IdentityLinkResult> {
-    try {
-      // For phone linking, we need to use the updateUser method
-      const { error } = await supabase.auth.updateUser({
-        phone: phoneNumber,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error: translateAuthError(error.message),
-        };
-      }
-
-      return {
-        success: true,
-        message: "Phone number successfully linked to your account",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to link phone number",
-      };
-    }
-  }
-
   async linkGoogle(): Promise<IdentityLinkResult> {
     try {
       // Check if Google Sign-In is available (not in Expo Go)
       if (!GoogleSignin || typeof GoogleSignin.signIn !== 'function') {
         return {
           success: false,
-          error: "Google Sign-Inは開発ビルドでのみ利用可能です。Expo Goでは使用できません。",
+          error: "Google Sign-In is only available in development builds. It cannot be used in Expo Go.",
         };
       }
 
@@ -1069,7 +953,7 @@ class AuthService {
         }
         return {
           success: false,
-          error: "Google Play Servicesが利用できません",
+          error: "Google Play Services is not available",
         };
       }
 
@@ -1104,7 +988,7 @@ class AuthService {
         logAuthError("No ID token received from Google during linking", new Error("Missing ID token"));
         return {
           success: false,
-          error: "GoogleからIDトークンを取得できませんでした",
+          error: "Could not retrieve ID token from Google",
         };
       }
 
@@ -1159,7 +1043,7 @@ class AuthService {
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
             return {
               success: false,
-              error: "Google Play Servicesが利用できません",
+              error: "Google Play Services is not available",
             };
           default:
             logAuthError("Google account linking error", error, {
@@ -1317,7 +1201,7 @@ class AuthService {
       if (!GoogleSignin || typeof GoogleSignin.signInSilently !== 'function') {
         return {
           success: false,
-          error: "Google Sign-Inは開発ビルドでのみ利用可能です。",
+          error: "Google Sign-In is only available in development builds.",
         };
       }
 
@@ -1422,7 +1306,7 @@ class AuthService {
       if (!user?.id) {
         return {
           success: false,
-          error: "ユーザーが見つかりません",
+          error: "User not found",
         };
       }
 
@@ -1488,7 +1372,7 @@ class AuthService {
       return {
         success: false,
         error: translateAuthError(
-          error instanceof Error ? error.message : "アカウントの削除に失敗しました"
+          error instanceof Error ? error.message : "Failed to delete account"
         ),
       };
     }

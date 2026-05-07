@@ -32,7 +32,6 @@
     "@shopify/flash-list": "^2.2.0",
     "@supabase/supabase-js": "^2.58.0",
     "@tanstack/react-query": "^5.90.10",
-    "@xmartlabs/react-native-line": "^5.6.0",
     "base64-arraybuffer": "^1.0.2",
     "disposable-email-domains": "^1.0.62",
     "expo": "~54.0.21",

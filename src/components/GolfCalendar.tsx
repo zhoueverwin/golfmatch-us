@@ -71,20 +71,20 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
 
   const calendarDays = generateCalendarData(currentDate);
   const monthNames = [
-    "1月",
-    "2月",
-    "3月",
-    "4月",
-    "5月",
-    "6月",
-    "7月",
-    "8月",
-    "9月",
-    "10月",
-    "11月",
-    "12月",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
-  const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Load availability data
   const loadAvailability = async () => {
@@ -160,13 +160,13 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
       );
 
       if (response.error) {
-        Alert.alert("エラー", "保存に失敗しました。");
+        Alert.alert("Error", "Failed to save changes.");
       } else {
-        Alert.alert("保存完了", "ゴルフ可能日を更新しました。");
+        Alert.alert("Saved", "Your golf availability has been updated.");
       }
     } catch (error) {
       console.error("Error saving availability:", error);
-      Alert.alert("エラー", "保存中にエラーが発生しました。");
+      Alert.alert("Error", "Something went wrong while saving.");
     } finally {
       setSaving(false);
     }
@@ -251,7 +251,7 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
           </TouchableOpacity>
 
           <Text style={styles.monthTitle}>
-            {currentDate.getFullYear()}年 {monthNames[currentDate.getMonth()]}
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </Text>
 
           <TouchableOpacity
@@ -359,7 +359,7 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
           <Ionicons name="close" size={24} color={Colors.gray[600]} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>ゴルフ可能日</Text>
+        <Text style={styles.headerTitle}>Available Days</Text>
 
         <TouchableOpacity
           onPress={saveAvailability}
@@ -367,7 +367,7 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
           disabled={saving}
         >
           <Text style={[styles.saveText, saving && styles.saveTextDisabled]}>
-            {saving ? "保存中..." : "保存"}
+            {saving ? "Saving..." : "Save"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -384,7 +384,7 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
           </TouchableOpacity>
 
           <Text style={styles.monthTitle}>
-            {currentDate.getFullYear()}年 {monthNames[currentDate.getMonth()]}
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </Text>
 
           <TouchableOpacity
@@ -489,11 +489,11 @@ const GolfCalendar: React.FC<GolfCalendarProps> = ({
               size={16}
               color={Colors.success}
             />
-            <Text style={styles.legendText}>ゴルフ可能日</Text>
+            <Text style={styles.legendText}>Available</Text>
           </View>
           <View style={styles.legendItem}>
             <Ionicons name="close-circle" size={16} color={Colors.error} />
-            <Text style={styles.legendText}>ゴルフ不可</Text>
+            <Text style={styles.legendText}>Unavailable</Text>
           </View>
         </View>
       </ScrollView>

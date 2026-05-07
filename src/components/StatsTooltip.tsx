@@ -28,29 +28,29 @@ const TOOLTIP_CONTENT: Record<
   { title: string; description: string; tip: string }
 > = {
   matches: {
-    title: "つながり",
-    description: "お互いにいいねを送り合った人数です。つながると、メッセージのやり取りができるようになります。",
-    tip: "「いいね」が届いたらなるべく早く返すと、つながり率がアップします！",
+    title: "Matches",
+    description: "The number of people who liked you back. Once you match, you can start messaging each other.",
+    tip: "Reply to incoming likes quickly to boost your match rate!",
   },
   likes: {
-    title: "いいね",
-    description: "他のユーザーから受け取ったいいねの合計数です。あなたのプロフィールに興味を持っている人がこれだけいます。",
-    tip: "ゴルフ中の写真やラウンド風景を追加すると、いいね数が大きく伸びる傾向があります！",
+    title: "Likes",
+    description: "The total number of likes you've received. This many people are interested in your profile.",
+    tip: "Adding photos from your rounds tends to drive a big jump in likes!",
   },
   profileViews: {
-    title: "閲覧",
-    description: "あなたのプロフィールページを訪れたユニークユーザー数です。同じ人が何度見ても1回としてカウントされます。",
-    tip: "定期的に投稿したり、カレンダーを更新すると検索上位に表示されやすくなります！",
+    title: "Views",
+    description: "The number of unique users who visited your profile. Repeat views by the same person count as one.",
+    tip: "Posting regularly and updating your calendar helps you rank higher in search results!",
   },
   impressions: {
-    title: "印象",
-    description: "検索結果やおすすめ一覧にあなたが表示された回数です。多いほど、他のユーザーの目に触れる機会が増えています。",
-    tip: "有料会員はおすすめや検索結果で優先表示されます。都道府県・スキルレベル・スコアの入力も表示回数アップに効果的です！",
+    title: "Impressions",
+    description: "The number of times you appeared in search results and recommendations. The more often you show up, the more chances others have to see you.",
+    tip: "Premium members get priority placement in recommendations and search. Filling out your state, skill level, and score also boosts impressions!",
   },
   postViews: {
-    title: "投稿閲覧",
-    description: "あなたの投稿がフィード上で閲覧された合計回数です。投稿するとフィードに表示され、あなたのプロフィールへの流入が増えます。投稿が多いユーザーほど、いいね・閲覧・つながりの数が平均2〜3倍高い傾向があります。",
-    tip: "まだ投稿していない方は、最近のラウンド写真やお気に入りのコースを1枚シェアするだけでOK！週1回の投稿でプロフィール閲覧数が大きく伸びます。",
+    title: "Post views",
+    description: "The total number of times your posts have been viewed in the feed. Posting brings more traffic to your profile. Active posters average 2-3x more likes, views, and matches.",
+    tip: "Haven't posted yet? Just share a recent round photo or your favorite course. Posting once a week meaningfully boosts profile views.",
   },
 };
 

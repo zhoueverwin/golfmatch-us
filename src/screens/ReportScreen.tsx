@@ -34,38 +34,38 @@ interface ReportCategory {
 const REPORT_CATEGORIES: ReportCategory[] = [
   {
     value: "inappropriate_content",
-    label: "不適切なコンテンツ",
-    description: "暴力的、性的、または攻撃的なコンテンツ",
+    label: "Inappropriate content",
+    description: "Violent, sexual, or offensive content",
   },
   {
     value: "spam",
-    label: "スパム",
-    description: "迷惑な広告や繰り返しの投稿",
+    label: "Spam",
+    description: "Unwanted ads or repeated posts",
   },
   {
     value: "harassment",
-    label: "嫌がらせ",
-    description: "いじめ、脅迫、または嫌がらせ行為",
+    label: "Harassment",
+    description: "Bullying, threats, or harassment",
   },
   {
     value: "fraud",
-    label: "詐欺",
-    description: "詐欺行為やなりすまし",
+    label: "Fraud",
+    description: "Scams or impersonation",
   },
   {
     value: "inappropriate_media",
-    label: "不適切な画像/動画",
-    description: "不適切な写真やビデオコンテンツ",
+    label: "Inappropriate photos/videos",
+    description: "Inappropriate photo or video content",
   },
   {
     value: "false_information",
-    label: "誤った情報",
-    description: "虚偽の情報やデマの拡散",
+    label: "False information",
+    description: "Misleading information or misinformation",
   },
   {
     value: "other",
-    label: "その他",
-    description: "上記に当てはまらないその他の問題",
+    label: "Other",
+    description: "Something else not listed above",
   },
 ];
 
@@ -96,17 +96,17 @@ const ReportScreen: React.FC = () => {
 
   const validateForm = (): boolean => {
     if (!selectedCategory) {
-      setError("通報の種類を選択してください");
+      setError("Please select a report reason");
       return false;
     }
 
     if (description.length < MIN_DESCRIPTION_LENGTH) {
-      setError(`詳細は${MIN_DESCRIPTION_LENGTH}文字以上で入力してください`);
+      setError(`Please enter at least ${MIN_DESCRIPTION_LENGTH} characters`);
       return false;
     }
 
     if (description.length > MAX_DESCRIPTION_LENGTH) {
-      setError(`詳細は${MAX_DESCRIPTION_LENGTH}文字以内で入力してください`);
+      setError(`Please keep your description under ${MAX_DESCRIPTION_LENGTH} characters`);
       return false;
     }
 
@@ -132,8 +132,8 @@ const ReportScreen: React.FC = () => {
 
       if (result.success) {
         Alert.alert(
-          "通報完了",
-          "通報を受け付けました。ご協力ありがとうございます。",
+          "Report Submitted",
+          "Thanks for your report. We'll review it shortly.",
           [
             {
               text: "OK",
@@ -142,10 +142,10 @@ const ReportScreen: React.FC = () => {
           ]
         );
       } else {
-        setError(result.error || "通報の送信に失敗しました");
+        setError(result.error || "Failed to submit the report");
       }
     } catch (err: any) {
-      setError(err.message || "通報の送信に失敗しました");
+      setError(err.message || "Failed to submit the report");
     } finally {
       setIsSubmitting(false);
     }
@@ -154,12 +154,12 @@ const ReportScreen: React.FC = () => {
   const handleCancel = () => {
     if (description.length > 0 || selectedCategory) {
       Alert.alert(
-        "通報をキャンセル",
-        "入力内容が破棄されます。よろしいですか？",
+        "Discard Report?",
+        "Your changes will be lost. Are you sure?",
         [
-          { text: "続ける", style: "cancel" },
+          { text: "Keep Editing", style: "cancel" },
           {
-            text: "キャンセル",
+            text: "Discard",
             style: "destructive",
             onPress: () => navigation.goBack(),
           },
@@ -179,7 +179,7 @@ const ReportScreen: React.FC = () => {
         <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
           <Ionicons name="close" size={24} color={Colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>通報</Text>
+        <Text style={styles.headerTitle}>Report</Text>
         <View style={styles.headerButton} />
       </View>
 
@@ -190,21 +190,21 @@ const ReportScreen: React.FC = () => {
       >
         {/* User Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>通報対象</Text>
+          <Text style={styles.sectionTitle}>Reporting</Text>
           <Text style={styles.userName}>{reportedUserName}</Text>
           {reportedPostId && (
-            <Text style={styles.targetInfo}>投稿に関する通報</Text>
+            <Text style={styles.targetInfo}>Reporting a post</Text>
           )}
           {reportedMessageId && (
-            <Text style={styles.targetInfo}>メッセージに関する通報</Text>
+            <Text style={styles.targetInfo}>Reporting a message</Text>
           )}
         </View>
 
         {/* Category Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>通報の種類 *</Text>
+          <Text style={styles.sectionTitle}>Report reason *</Text>
           <Text style={styles.sectionSubtitle}>
-            最も適切な理由を選択してください
+            Select the reason that best fits
           </Text>
 
           {REPORT_CATEGORIES.map((category) => (
@@ -247,15 +247,15 @@ const ReportScreen: React.FC = () => {
 
         {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>詳細 *</Text>
+          <Text style={styles.sectionTitle}>Details *</Text>
           <Text style={styles.sectionSubtitle}>
-            問題の詳細を具体的に説明してください（{MIN_DESCRIPTION_LENGTH}〜
-            {MAX_DESCRIPTION_LENGTH}文字）
+            Describe the issue in detail ({MIN_DESCRIPTION_LENGTH}–
+            {MAX_DESCRIPTION_LENGTH} characters)
           </Text>
 
           <TextInput
             style={styles.textInput}
-            placeholder="具体的な内容を入力してください..."
+            placeholder="Please describe what happened..."
             placeholderTextColor={Colors.gray[400]}
             value={description}
             onChangeText={(text) => {
@@ -298,14 +298,14 @@ const ReportScreen: React.FC = () => {
           {isSubmitting ? (
             <ActivityIndicator size="small" color={Colors.white} />
           ) : (
-            <Text style={styles.submitButtonText}>通報を送信</Text>
+            <Text style={styles.submitButtonText}>Submit Report</Text>
           )}
         </TouchableOpacity>
 
         {/* Privacy Notice */}
         <Text style={styles.privacyNotice}>
-          通報者の情報は通報対象のユーザーに公開されません。
-          虚偽の通報を繰り返した場合、アカウントが停止される場合があります。
+          Your identity won't be shared with the reported user.
+          Repeated false reports may result in account suspension.
         </Text>
       </ScrollView>
     </SafeAreaView>

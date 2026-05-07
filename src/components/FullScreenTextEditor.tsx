@@ -79,11 +79,11 @@ export const FullScreenTextEditor: React.FC<FullScreenTextEditorProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={handleClose} style={styles.headerButton}>
-              <Text style={styles.cancelText}>キャンセル</Text>
+              <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.title}>{title}</Text>
             <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-              <Text style={styles.saveText}>完了</Text>
+              <Text style={styles.saveText}>Done</Text>
             </TouchableOpacity>
           </View>
 

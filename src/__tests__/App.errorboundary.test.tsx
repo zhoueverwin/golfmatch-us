@@ -15,6 +15,6 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(getByText("エラーが発生しました")).toBeTruthy();
+    expect(getByText("Something went wrong")).toBeTruthy();
   });
 });

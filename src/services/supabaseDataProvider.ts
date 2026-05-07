@@ -1018,7 +1018,7 @@ class SupabaseDataProvider {
   }
 
   /**
-   * Get server-enforced daily recommendations (本日限定).
+   * Get server-enforced daily recommendations (today's picks).
    * Cached by date — results don't change within a day.
    */
   async getDailyRecommendations(
@@ -1138,7 +1138,7 @@ class SupabaseDataProvider {
         transportation: user.transportation || "",
         available_days: user.available_days || "",
       },
-      play_prefecture: user.play_prefecture || [], // プレー地域 (max 3)
+      play_prefecture: user.play_prefecture || [], // Prefectures where user plays golf (max 3)
     };
 
     // Cache the profile
@@ -1235,7 +1235,7 @@ class SupabaseDataProvider {
       }
     }
 
-    // Handle play_prefecture (プレー地域)
+    // Handle play_prefecture (prefectures where user plays golf)
     if ((profile as any).play_prefecture !== undefined) {
       updates.play_prefecture = (profile as any).play_prefecture;
     }

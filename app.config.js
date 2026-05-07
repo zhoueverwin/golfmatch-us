@@ -24,16 +24,15 @@ export default {
           "instagram",
           "instagram-stories",
           "twitter",
-          "line",
           "fb",
           "sms"
         ],
-        NSCameraUsageDescription: "Golfmatchでは、投稿作成時に写真や動画を撮影したり、本人確認のために身分証明書を撮影する際にカメラを使用します。例：ゴルフラウンドの写真を撮影して投稿に追加できます。",
-        NSPhotoLibraryUsageDescription: "Golfmatchでは、投稿作成時に既存の写真や動画を選択したり、プロフィール画像を設定する際にフォトライブラリを使用します。例：カメラロールからゴルフ写真を選んで投稿に追加できます。",
-        NSMicrophoneUsageDescription: "Golfmatchでは、投稿用の動画を撮影する際に音声を録音するためにマイクを使用します。例：ゴルフスイングの動画を音声付きで撮影できます。",
-        NSUserNotificationsUsageDescription: "マッチング成立、新しいメッセージ、いいねなどの通知をお届けするために使用します。例：新しいマッチングが成立した際にお知らせします。",
+        NSCameraUsageDescription: "Golfmatch uses the camera to take photos and videos for your posts, and to capture ID documents for identity verification. For example: snap a photo from your round to add to a post.",
+        NSPhotoLibraryUsageDescription: "Golfmatch accesses your photo library so you can choose existing photos or videos for posts and your profile picture. For example: pick a golf photo from your camera roll to add to a post.",
+        NSMicrophoneUsageDescription: "Golfmatch uses the microphone to record audio when you capture video for your posts. For example: record your swing video with sound.",
+        NSUserNotificationsUsageDescription: "Used to send notifications about new matches, messages, likes, and other activity. For example: get notified when you have a new match.",
         // ATT (App Tracking Transparency) permission message for iOS 14+
-        NSUserTrackingUsageDescription: "あなたに合った広告を表示するために使用されます"
+        NSUserTrackingUsageDescription: "Used to show ads that are more relevant to you."
       },
       buildNumber: "39"
     },
@@ -89,14 +88,14 @@ export default {
           advertiserIDCollectionEnabled: true,
           autoLogAppEventsEnabled: true,
           isAutoInitEnabled: true,
-          iosUserTrackingPermission: "あなたに合った広告を表示するために使用されます"
+          iosUserTrackingPermission: "Used to show ads that are more relevant to you."
         }
       ],
       // App Tracking Transparency for iOS 14+
       [
         "expo-tracking-transparency",
         {
-          userTrackingPermission: "あなたに合った広告を表示するために使用されます"
+          userTrackingPermission: "Used to show ads that are more relevant to you."
         }
       ],
       [
@@ -110,24 +109,24 @@ export default {
       [
         "expo-image-picker",
         {
-          photosPermission: "Golfmatchでは、投稿作成時に既存の写真や動画を選択したり、プロフィール画像を設定する際にフォトライブラリを使用します。例：カメラロールからゴルフ写真を選んで投稿に追加できます。",
-          cameraPermission: "Golfmatchでは、投稿作成時に写真や動画を撮影したり、本人確認のために身分証明書を撮影する際にカメラを使用します。例：ゴルフラウンドの写真を撮影して投稿に追加できます。",
-          microphonePermission: "Golfmatchでは、投稿用の動画を撮影する際に音声を録音するためにマイクを使用します。例：ゴルフスイングの動画を音声付きで撮影できます。"
+          photosPermission: "Golfmatch accesses your photo library so you can choose existing photos or videos for posts and your profile picture. For example: pick a golf photo from your camera roll to add to a post.",
+          cameraPermission: "Golfmatch uses the camera to take photos and videos for your posts, and to capture ID documents for identity verification. For example: snap a photo from your round to add to a post.",
+          microphonePermission: "Golfmatch uses the microphone to record audio when you capture video for your posts. For example: record your swing video with sound."
         }
       ],
       [
         "expo-camera",
         {
-          cameraPermission: "Golfmatchでは、投稿作成時に写真や動画を撮影したり、本人確認のために身分証明書を撮影する際にカメラを使用します。例：ゴルフラウンドの写真を撮影して投稿に追加できます。",
-          microphonePermission: "Golfmatchでは、投稿用の動画を撮影する際に音声を録音するためにマイクを使用します。例：ゴルフスイングの動画を音声付きで撮影できます。",
+          cameraPermission: "Golfmatch uses the camera to take photos and videos for your posts, and to capture ID documents for identity verification. For example: snap a photo from your round to add to a post.",
+          microphonePermission: "Golfmatch uses the microphone to record audio when you capture video for your posts. For example: record your swing video with sound.",
           recordAudioAndroid: true
         }
       ],
       [
         "expo-media-library",
         {
-          photosPermission: "Golfmatchでは、撮影した写真や動画をデバイスに保存する際にフォトライブラリへの書き込みを使用します。例：投稿用に撮影した写真をカメラロールに保存できます。",
-          savePhotosPermission: "Golfmatchでは、撮影した写真や動画をデバイスに保存する際にフォトライブラリへの書き込みを使用します。例：投稿用に撮影した写真をカメラロールに保存できます。",
+          photosPermission: "Golfmatch saves photos and videos you create to your photo library so you can keep them on your device. For example: save a photo you captured to your camera roll.",
+          savePhotosPermission: "Golfmatch saves photos and videos you create to your photo library so you can keep them on your device. For example: save a photo you captured to your camera roll.",
           isAccessMediaLocationEnabled: true
         }
       ],
@@ -135,18 +134,12 @@ export default {
       "@react-native-firebase/app",
       ["expo-build-properties", { ios: { useFrameworks: "static" } }],
       "./plugins/withFirebaseFix",
-      [
-        "@xmartlabs/react-native-line",
-        {
-          channelId: "2009230449"
-        }
-      ],
     ],
     notification: {
       icon: "./assets/icon.png",
       color: "#4A90E2",
       androidMode: "default",
-      androidCollapsedTitle: "新しい通知"
+      androidCollapsedTitle: "New notifications"
     }
   }
 };

@@ -29,19 +29,19 @@ import { UserActivityService } from "../services/userActivityService";
 import { useNotifications } from "../contexts/NotificationContext";
 import StatsTooltip, { StatsTooltipKey } from "../components/StatsTooltip";
 
-/** Compact number formatter: 999 → "999", 1200 → "1.2k", 10000 → "1万", 1000000 → "100万" */
+/** Compact number formatter: 999 → "999", 1200 → "1.2k", 1500000 → "1.5M", 1000000000 → "1B" */
 const formatStat = (n: number): string => {
   if (n < 1000) return String(n);
-  if (n < 10_000) {
+  if (n < 1_000_000) {
     const k = n / 1000;
     return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
   }
-  if (n < 100_000_000) {
-    const man = n / 10_000;
-    return man % 1 === 0 ? `${man}万` : `${man.toFixed(1)}万`;
+  if (n < 1_000_000_000) {
+    const m = n / 1_000_000;
+    return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
   }
-  const oku = n / 100_000_000;
-  return oku % 1 === 0 ? `${oku}億` : `${oku.toFixed(1)}億`;
+  const b = n / 1_000_000_000;
+  return b % 1 === 0 ? `${b}B` : `${b.toFixed(1)}B`;
 };
 import GolfCalendar from "../components/GolfCalendar";
 
@@ -184,7 +184,7 @@ const MyPageScreen: React.FC = () => {
   };
 
   // Throttle refetches — skip if we loaded less than 10 seconds ago.
-  // Quick back-navigation (足あと → 戻る) won't trigger any data reload,
+  // Quick back-navigation (Visitors → Back) won't trigger any data reload,
   // eliminating all re-render flashing. Longer absences (EditProfile) still refresh.
   const lastFetchRef = useRef(0);
 
@@ -223,7 +223,7 @@ const MyPageScreen: React.FC = () => {
       {isLoadingProfile ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>プロフィールを読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading your profile...</Text>
         </View>
       ) : (
         <ScrollView
@@ -233,7 +233,7 @@ const MyPageScreen: React.FC = () => {
           scrollEventThrottle={16}
           onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}
         >
-          {/* Header with プロフィール表示 */}
+          {/* Header with View Profile */}
           <View style={styles.headerContainer}>
             <TouchableOpacity
               onPress={() =>
@@ -245,7 +245,7 @@ const MyPageScreen: React.FC = () => {
                 source={require("../../assets/images/Icons/Profile-Outline.png")} 
                 style={styles.headerProfileIcon}
               />
-              <Text style={styles.headerTitle}>プロフィール表示</Text>
+              <Text style={styles.headerTitle}>View Profile</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate("EditProfile")}
@@ -275,10 +275,10 @@ const MyPageScreen: React.FC = () => {
               <ProfileAvatar uri={profileImage} />
             </TouchableOpacity>
 
-            <Text style={styles.profileName}>{userName || "ユーザー"}</Text>
+            <Text style={styles.profileName}>{userName || "User"}</Text>
 
             <Text style={styles.completionText}>
-              プロフィール充実度: {profileCompletion}%
+              Profile completion: {profileCompletion}%
             </Text>
             <View style={styles.progressBar}>
               <View
@@ -290,7 +290,7 @@ const MyPageScreen: React.FC = () => {
             </View>
 
             <Text style={styles.completionMessage}>
-              プロフィールを充実させてマッチング率アップ！
+              A complete profile gets more matches!
             </Text>
           </LinearGradient>
 
@@ -301,7 +301,7 @@ const MyPageScreen: React.FC = () => {
               onPress={() => setActiveTab('mypage')}
             >
               <Text style={[styles.tabLabel, activeTab === 'mypage' && styles.tabLabelActive]}>
-                アクティビティ
+                Activity
               </Text>
               {activeTab === 'mypage' && <View style={styles.tabIndicator} />}
             </TouchableOpacity>
@@ -310,13 +310,13 @@ const MyPageScreen: React.FC = () => {
               onPress={() => setActiveTab('activity')}
             >
               <Text style={[styles.tabLabel, activeTab === 'activity' && styles.tabLabelActive]}>
-                詳細
+                Details
               </Text>
               {activeTab === 'activity' && <View style={styles.tabIndicator} />}
             </TouchableOpacity>
           </View>
 
-          {/* ── Tab 1: マイページ ─────────────────────── */}
+          {/* ── Tab 1: My Page ─────────────────────── */}
           <View style={activeTab !== 'mypage' ? { display: 'none' } : undefined}>
               {/* Daily Activity Strip — teaser */}
               {(dailyStats.todayProfileViews > 0 || dailyStats.todayLikes > 0 || dailyStats.todayImpressions > 0 || dailyStats.todayPostViews > 0) && (
@@ -327,7 +327,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="eye-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayProfileViews}人</Text>が閲覧
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayProfileViews}</Text> views
                           </Text>
                         </View>
                       )}
@@ -335,7 +335,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="heart-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayLikes}件</Text>のいいね
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayLikes}</Text> likes
                           </Text>
                         </View>
                       )}
@@ -343,7 +343,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="search-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayImpressions}回</Text>表示
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayImpressions}</Text> impressions
                           </Text>
                         </View>
                       )}
@@ -351,7 +351,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="document-text-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayPostViews}回</Text>投稿閲覧
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayPostViews}</Text> post views
                           </Text>
                         </View>
                       )}
@@ -366,17 +366,17 @@ const MyPageScreen: React.FC = () => {
                 <View style={styles.quickStatsTop}>
                   <View style={styles.quickStatItem}>
                     <Text style={styles.quickStatNumber}>{formatStat(dashboardStats.matches)}</Text>
-                    <Text style={styles.quickStatLabel}>つながり</Text>
+                    <Text style={styles.quickStatLabel}>Connections</Text>
                   </View>
                   <View style={styles.quickStatDivider} />
                   <View style={styles.quickStatItem}>
                     <Text style={styles.quickStatNumber}>{formatStat(dashboardStats.likes)}</Text>
-                    <Text style={styles.quickStatLabel}>いいね</Text>
+                    <Text style={styles.quickStatLabel}>Likes</Text>
                   </View>
                   <View style={styles.quickStatDivider} />
                   <View style={styles.quickStatItem}>
                     <Text style={styles.quickStatNumber}>{formatStat(dashboardStats.profileViews)}</Text>
-                    <Text style={styles.quickStatLabel}>閲覧</Text>
+                    <Text style={styles.quickStatLabel}>Views</Text>
                   </View>
                   <View style={styles.quickStatDivider} />
                   <TouchableOpacity
@@ -389,7 +389,7 @@ const MyPageScreen: React.FC = () => {
                       source={require("../../assets/images/Icons/Plan01.png")}
                       style={styles.quickStatStoreIcon}
                     />
-                    <Text style={styles.quickStatLabel}>ストア</Text>
+                    <Text style={styles.quickStatLabel}>Store</Text>
                   </TouchableOpacity>
                 </View>
                 {(dailyStats.todayProfileViews > 0 || dailyStats.yesterdayProfileViews > 0) && (
@@ -397,14 +397,14 @@ const MyPageScreen: React.FC = () => {
                     <Ionicons name="trending-up-outline" size={13} color={Colors.primary} />
                     <Text style={styles.quickStatsDeltaText}>
                       {dailyStats.todayProfileViews > 0
-                        ? `今日 ${dailyStats.todayProfileViews}人が閲覧`
+                        ? `${dailyStats.todayProfileViews} views today`
                         : ''
                       }
                       {dailyStats.todayProfileViews > 0 && dailyStats.yesterdayProfileViews > 0 ? ' · ' : ''}
                       {dailyStats.yesterdayProfileViews > 0
                         ? dailyStats.todayProfileViews >= dailyStats.yesterdayProfileViews
-                          ? `昨日より +${dailyStats.todayProfileViews - dailyStats.yesterdayProfileViews}`
-                          : `昨日: ${dailyStats.yesterdayProfileViews}人`
+                          ? `+${dailyStats.todayProfileViews - dailyStats.yesterdayProfileViews} vs yesterday`
+                          : `Yesterday: ${dailyStats.yesterdayProfileViews}`
                         : ''
                       }
                     </Text>
@@ -412,18 +412,18 @@ const MyPageScreen: React.FC = () => {
                 )}
               </View>
 
-              {/* 会員ステータス Row */}
+              {/* Membership status row */}
               <TouchableOpacity
                 style={styles.membershipRow}
                 onPress={() => navigation.navigate("MembershipStatus")}
               >
                 <View style={styles.membershipRowLeft}>
                   <Ionicons name="card-outline" size={20} color={Colors.text.primary} />
-                  <Text style={styles.membershipRowLabel}>会員ステータス</Text>
+                  <Text style={styles.membershipRowLabel}>Membership</Text>
                 </View>
                 <View style={styles.membershipRowRight}>
                   <Text style={styles.membershipRowStatus}>
-                    {isProMember ? "有料会員" : "無料会員"}
+                    {isProMember ? "Premium" : "Free"}
                   </Text>
                   <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
                 </View>
@@ -442,7 +442,7 @@ const MyPageScreen: React.FC = () => {
                 >
                   <Ionicons name="chatbubble-ellipses" size={18} color={Colors.white} />
                   <Text style={styles.membershipCtaText}>
-                    有料会員ならメッセージし放題
+                    Unlimited messaging with Premium
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -459,7 +459,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>足あと</Text>
+              <Text style={styles.menuItemText}>Visitors</Text>
             </View>
             <View style={styles.menuItemRight}>
               {unreadFootprintCount > 0 && (
@@ -485,7 +485,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>送ったいいね</Text>
+              <Text style={styles.menuItemText}>Likes Sent</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons
@@ -506,7 +506,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>カレンダー</Text>
+              <Text style={styles.menuItemText}>Calendar</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons
@@ -527,7 +527,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>お知らせ</Text>
+              <Text style={styles.menuItemText}>Notifications</Text>
             </View>
             <View style={styles.menuItemRight}>
               {unreadCount > 0 && (
@@ -553,7 +553,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>お問い合わせ</Text>
+              <Text style={styles.menuItemText}>Contact</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons
@@ -574,7 +574,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>設定</Text>
+              <Text style={styles.menuItemText}>Settings</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons
@@ -595,7 +595,7 @@ const MyPageScreen: React.FC = () => {
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>ヘルプ</Text>
+              <Text style={styles.menuItemText}>Help</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons
@@ -608,7 +608,7 @@ const MyPageScreen: React.FC = () => {
               </View>
           </View>
 
-          {/* ── Tab 2: アクティビティ ──────────────────── */}
+          {/* ── Tab 2: Activity ──────────────────── */}
           <View style={activeTab !== 'activity' ? { display: 'none' } : undefined}>
               {/* Daily Activity Strip — full */}
               {(dailyStats.todayProfileViews > 0 || dailyStats.todayLikes > 0 || dailyStats.todayImpressions > 0 || dailyStats.todayPostViews > 0) && (
@@ -619,7 +619,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="eye-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayProfileViews}人</Text>が閲覧
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayProfileViews}</Text> views
                           </Text>
                         </View>
                       )}
@@ -627,7 +627,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="heart-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayLikes}件</Text>のいいね
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayLikes}</Text> likes
                           </Text>
                         </View>
                       )}
@@ -635,7 +635,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="search-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayImpressions}回</Text>表示
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayImpressions}</Text> impressions
                           </Text>
                         </View>
                       )}
@@ -643,7 +643,7 @@ const MyPageScreen: React.FC = () => {
                         <View style={styles.dailyStripItem}>
                           <Ionicons name="document-text-outline" size={13} color={Colors.primary} />
                           <Text style={styles.dailyStripLabel}>
-                            <Text style={styles.dailyStripValue}>{dailyStats.todayPostViews}回</Text>投稿閲覧
+                            <Text style={styles.dailyStripValue}>{dailyStats.todayPostViews}</Text> post views
                           </Text>
                         </View>
                       )}
@@ -651,8 +651,8 @@ const MyPageScreen: React.FC = () => {
                     {dailyStats.yesterdayProfileViews > 0 && (
                       <Text style={styles.dailyStripDelta}>
                         {dailyStats.todayProfileViews >= dailyStats.yesterdayProfileViews
-                          ? `昨日より +${dailyStats.todayProfileViews - dailyStats.yesterdayProfileViews}`
-                          : `昨日: ${dailyStats.yesterdayProfileViews}人`
+                          ? `+${dailyStats.todayProfileViews - dailyStats.yesterdayProfileViews} vs yesterday`
+                          : `Yesterday: ${dailyStats.yesterdayProfileViews}`
                         }
                       </Text>
                     )}
@@ -669,7 +669,7 @@ const MyPageScreen: React.FC = () => {
                     onPress={() => setTooltipKey("matches")}
                   >
                     <View style={styles.dashCellHeader}>
-                      <Text style={styles.dashLabel}>つながり</Text>
+                      <Text style={styles.dashLabel}>Connections</Text>
                       <Ionicons name="information-circle-outline" size={14} color={Colors.gray[300]} />
                     </View>
                     <Text style={styles.dashHeroNumber}>{formatStat(dashboardStats.matches)}</Text>
@@ -682,7 +682,7 @@ const MyPageScreen: React.FC = () => {
                     onPress={() => setTooltipKey("likes")}
                   >
                     <View style={styles.dashCellHeader}>
-                      <Text style={styles.dashLabel}>いいね</Text>
+                      <Text style={styles.dashLabel}>Likes</Text>
                       <Ionicons name="information-circle-outline" size={14} color={Colors.gray[300]} />
                     </View>
                     <Text style={styles.dashHeroNumber} testID="MYPAGE_SCREEN.LIKES_COUNT">
@@ -696,9 +696,9 @@ const MyPageScreen: React.FC = () => {
                 {/* Secondary Row */}
                 <View style={styles.dashSecondaryRow}>
                   {([
-                    { key: "profileViews" as StatsTooltipKey, label: "閲覧", value: dashboardStats.profileViews },
-                    { key: "impressions" as StatsTooltipKey, label: "印象", value: dashboardStats.impressions },
-                    { key: "postViews" as StatsTooltipKey, label: "投稿", value: dashboardStats.postViews },
+                    { key: "profileViews" as StatsTooltipKey, label: "Views", value: dashboardStats.profileViews },
+                    { key: "impressions" as StatsTooltipKey, label: "Impressions", value: dashboardStats.impressions },
+                    { key: "postViews" as StatsTooltipKey, label: "Posts", value: dashboardStats.postViews },
                   ]).map((item, index) => (
                     <React.Fragment key={item.key}>
                       {index > 0 && <View style={styles.dashDividerV} />}
@@ -725,7 +725,7 @@ const MyPageScreen: React.FC = () => {
                 <TouchableOpacity style={styles.menuItem} onPress={handleFootprintPress}>
                   <View style={styles.menuItemLeft}>
                     <Image source={require("../../assets/images/Icons/Footprint.png")} style={styles.menuIcon} resizeMode="contain" />
-                    <Text style={styles.menuItemText}>足あと</Text>
+                    <Text style={styles.menuItemText}>Visitors</Text>
                   </View>
                   <View style={styles.menuItemRight}>
                     {unreadFootprintCount > 0 && (
@@ -739,7 +739,7 @@ const MyPageScreen: React.FC = () => {
                 <TouchableOpacity style={styles.menuItem} onPress={handlePastLikesPress}>
                   <View style={styles.menuItemLeft}>
                     <Image source={require("../../assets/images/Icons/Like.png")} style={styles.menuIcon} resizeMode="contain" />
-                    <Text style={styles.menuItemText}>送ったいいね</Text>
+                    <Text style={styles.menuItemText}>Likes Sent</Text>
                   </View>
                   <View style={styles.menuItemRight}>
                     <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />

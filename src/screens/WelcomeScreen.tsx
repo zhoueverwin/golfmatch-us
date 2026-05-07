@@ -73,11 +73,11 @@ const WelcomeScreen: React.FC = () => {
 
         {/* Content on top of wave */}
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 40 }]}>
-          <Text style={styles.welcomeTitle}>GolfMatchへようこそ！</Text>
+          <Text style={styles.welcomeTitle}>Welcome to GolfMatch!</Text>
           <Text style={styles.welcomeDescription}>
-            ゴルフをきっかけに、素敵な出会いを。{"\n"}
-            プロフィール、ゴルフ可能日、フィード{"\n"}
-            投稿で相手をもっと知れる！
+            New connections that start with golf.{"\n"}
+            Profiles, tee-time availability, and feed{"\n"}
+            posts help you get to know your match!
           </Text>
 
           <TouchableOpacity
@@ -85,9 +85,9 @@ const WelcomeScreen: React.FC = () => {
             onPress={handleGetStarted}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="はじめる"
+            accessibilityLabel="Get started"
           >
-            <Text style={styles.startButtonText}>はじめる！</Text>
+            <Text style={styles.startButtonText}>Get Started</Text>
           </TouchableOpacity>
         </View>
       </View>

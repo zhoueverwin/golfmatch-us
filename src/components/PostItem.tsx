@@ -32,7 +32,7 @@ const ProfileImage = memo(({ uri, name }: { uri: string; name: string }) => (
     contentFit="cover"
     cachePolicy="memory-disk"
     transition={0}
-    accessibilityLabel={`${name}のプロフィール写真`}
+    accessibilityLabel={`${name}'s profile photo`}
   />
 ));
 
@@ -159,7 +159,7 @@ const PostItem: React.FC<PostItemProps> = ({
             style={styles.moreButton}
             onPress={isOwnPost ? handlePostMenu : handleOpenPostMenu}
             accessibilityRole="button"
-            accessibilityLabel="投稿のメニューを開く"
+            accessibilityLabel="Open post menu"
           >
             <Ionicons name="ellipsis-horizontal" size={20} color={Colors.gray[600]} />
           </TouchableOpacity>
@@ -176,12 +176,12 @@ const PostItem: React.FC<PostItemProps> = ({
             </Text>
             {showMoreButton && (
               <TouchableOpacity onPress={handleToggleExpand} activeOpacity={0.7} style={styles.expandButton}>
-                <Text style={styles.moreLink}>もっと見る</Text>
+                <Text style={styles.moreLink}>See more</Text>
               </TouchableOpacity>
             )}
             {isExpanded && exceedsLines && (
               <TouchableOpacity onPress={handleToggleExpand} activeOpacity={0.7} style={styles.expandButton}>
-                <Text style={styles.moreLink}>折りたたむ</Text>
+                <Text style={styles.moreLink}>Show less</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -231,7 +231,7 @@ const PostItem: React.FC<PostItemProps> = ({
             style={styles.actionButton}
             onPress={handleReaction}
             accessibilityRole="button"
-            accessibilityLabel={item.hasReacted ? "リアクションを取り消し" : "リアクション"}
+            accessibilityLabel={item.hasReacted ? "Remove reaction" : "React"}
           >
             <View style={styles.heartIconContainer}>
               <Ionicons
@@ -249,7 +249,7 @@ const PostItem: React.FC<PostItemProps> = ({
               style={[styles.actionButton, !hasMutualLikes && styles.disabledActionButton]}
               onPress={handleMessage}
               accessibilityRole="button"
-              accessibilityLabel={hasMutualLikes ? "メッセージ" : "メッセージ（お互いにいいねが必要）"}
+              accessibilityLabel={hasMutualLikes ? "Message" : "Message (requires mutual like)"}
             >
               <Image
                 source={messageIcon}
@@ -257,7 +257,7 @@ const PostItem: React.FC<PostItemProps> = ({
                 resizeMode="contain"
               />
               <Text style={[styles.actionText, !hasMutualLikes && styles.disabledActionText]}>
-                メッセージ
+                Message
               </Text>
             </TouchableOpacity>
           )}
@@ -268,10 +268,10 @@ const PostItem: React.FC<PostItemProps> = ({
               style={styles.actionButton}
               onPress={handleShare}
               accessibilityRole="button"
-              accessibilityLabel="シェア"
+              accessibilityLabel="Share"
             >
               <Ionicons name="share-outline" size={20} color={Colors.gray[600]} />
-              <Text style={styles.actionText}>シェア</Text>
+              <Text style={styles.actionText}>Share</Text>
             </TouchableOpacity>
           )}
         </View>

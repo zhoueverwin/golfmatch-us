@@ -363,7 +363,7 @@ export class ProfilesService {
   }
 
   /**
-   * Get server-enforced daily recommendations (本日限定).
+   * Get server-enforced daily recommendations (today's picks).
    * Idempotent: returns the same picks for the entire day (JST).
    * Female users get 10 picks, premium males get 5, free males get 3.
    */

@@ -27,10 +27,18 @@ import analytics from '@react-native-firebase/analytics';
 export async function initializeFirebaseAnalytics(): Promise<void> {
   try {
     await analytics().setAnalyticsCollectionEnabled(true);
-    // Disable automatic screen reporting — we track screens manually via
-    // logScreenView() in AppNavigator's onStateChange. Without this,
-    // Firebase auto-reports every screen as "RNSScreen" (the native class name).
-    await analytics().setIsAutoScreenReportingEnabled(false);
+    // Auto screen reporting was previously disabled here via
+    // setIsAutoScreenReportingEnabled(false). That API was removed in
+    // @react-native-firebase/analytics v22+. The current way to disable it is
+    // a build-time config (`google_analytics_automatic_screen_reporting_enabled`
+    // in firebase.json). Until that's wired, fall through and rely on manual
+    // logScreenView() calls in AppNavigator's onStateChange.
+    const a = analytics() as unknown as {
+      setIsAutoScreenReportingEnabled?: (enabled: boolean) => Promise<void>;
+    };
+    if (typeof a.setIsAutoScreenReportingEnabled === 'function') {
+      await a.setIsAutoScreenReportingEnabled(false);
+    }
     console.log('[Firebase] Analytics initialized');
   } catch (error) {
     console.error('[Firebase] Initialization error:', error);

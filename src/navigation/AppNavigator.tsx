@@ -23,7 +23,6 @@ import { useAnnouncements } from "../hooks/useAnnouncements";
 
 // Import screens
 import AuthScreen from "../screens/AuthScreen";
-import EmailAuthScreen from "../screens/EmailAuthScreen";
 import HomeScreen from "../screens/HomeScreen";
 import SearchScreen from "../screens/SearchScreen";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
@@ -142,15 +141,15 @@ const CustomTabBar = (props: BottomTabBarProps) => {
 
           const label =
             route.name === "Home"
-              ? "投稿"
+              ? "Feed"
               : route.name === "Search"
-              ? "さがす"
+              ? "Discover"
               : route.name === "Connections"
-              ? "つながり"
+              ? "Connections"
               : route.name === "Messages"
-              ? "メッセージ"
+              ? "Messages"
               : route.name === "MyPage"
-              ? "マイページ"
+              ? "My Page"
               : "";
 
           return (
@@ -257,27 +256,27 @@ const MainTabNavigator = () => {
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        options={{ tabBarLabel: "さがす" }}
+        options={{ tabBarLabel: "Discover" }}
       />
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarLabel: "投稿" }}
+        options={{ tabBarLabel: "Feed" }}
       />
       <Tab.Screen
         name="Connections"
         component={ConnectionsScreen}
-        options={{ tabBarLabel: "つながり" }}
+        options={{ tabBarLabel: "Connections" }}
       />
       <Tab.Screen
         name="Messages"
         component={MessagesScreen}
-        options={{ tabBarLabel: "メッセージ" }}
+        options={{ tabBarLabel: "Messages" }}
       />
       <Tab.Screen
         name="MyPage"
         component={MyPageScreen}
-        options={{ tabBarLabel: "マイページ" }}
+        options={{ tabBarLabel: "My Page" }}
       />
     </Tab.Navigator>
   );
@@ -344,7 +343,7 @@ const AppNavigatorContent = () => {
     if (!profile) return 0;
     
     // Placeholder values that should be treated as unfilled
-    const PLACEHOLDER_VALUES = ['未設定', '0', 0, '', null, undefined];
+    const PLACEHOLDER_VALUES = ['Not set', '未設定', '0', 0, '', null, undefined];
     
     const isFieldFilled = (field: any): boolean => {
       if (typeof field === 'boolean') return field;
@@ -398,7 +397,7 @@ const AppNavigatorContent = () => {
   const isCachedProfileIncomplete = useCallback((): boolean => {
     if (!cachedProfile) return true;
     const hasGender = !!cachedProfile.gender;
-    const hasPrefecture = !!cachedProfile.prefecture && cachedProfile.prefecture !== '未設定';
+    const hasPrefecture = !!cachedProfile.prefecture && cachedProfile.prefecture !== 'Not set' && cachedProfile.prefecture !== '未設定';
     const hasAge = !!cachedProfile.age && cachedProfile.age > 0;
     const hasPhoto = cachedProfile.profile_pictures && cachedProfile.profile_pictures.length > 0;
     return !hasGender || !hasPrefecture || !hasAge || !hasPhoto;
@@ -514,7 +513,7 @@ const AppNavigatorContent = () => {
         // Essential fields: gender, birth_date/age, prefecture, and at least 1 profile picture
         const hasGender = !!profile.basic?.gender;
         const hasAge = !!profile.basic?.age && parseInt(profile.basic.age.toString()) > 0;
-        const hasPrefecture = !!profile.basic?.prefecture && profile.basic.prefecture !== '未設定';
+        const hasPrefecture = !!profile.basic?.prefecture && profile.basic.prefecture !== 'Not set' && profile.basic.prefecture !== '未設定';
         const hasPhoto = profile.profile_pictures && profile.profile_pictures.length > 0;
 
         const hasEssentialFields = hasGender && hasAge && hasPrefecture && hasPhoto;
@@ -666,7 +665,7 @@ const AppNavigatorContent = () => {
               component={TestAccountSetupScreen}
               options={{
                 headerShown: true,
-                headerTitle: "テストアカウント設定",
+                headerTitle: "Test Account Setup",
                 headerStyle: { backgroundColor: Colors.primary },
                 headerTintColor: Colors.white,
               }}
@@ -785,16 +784,6 @@ const AppNavigatorContent = () => {
               <Stack.Screen
                 name="Auth"
                 component={AuthScreen}
-                options={{
-                  headerShown: false,
-                  gestureEnabled: true,
-                  gestureDirection: "horizontal",
-                  cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-                }}
-              />
-              <Stack.Screen
-                name="EmailAuth"
-                component={EmailAuthScreen}
                 options={{
                   headerShown: false,
                   gestureEnabled: true,

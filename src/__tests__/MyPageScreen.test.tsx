@@ -119,11 +119,11 @@ describe('MyPageScreen - Footprints and Past Likes', () => {
       const { getByText } = renderWithNavigation(<MyPageScreen />);
 
       await waitFor(() => {
-        expect(getByText('足あと')).toBeTruthy();
+        expect(getByText('Visitors')).toBeTruthy();
       });
 
       // Press footprint menu item
-      fireEvent.press(getByText('足あと'));
+      fireEvent.press(getByText('Visitors'));
 
       await waitFor(() => {
         expect(getByText('John')).toBeTruthy();
@@ -139,11 +139,11 @@ describe('MyPageScreen - Footprints and Past Likes', () => {
       const { getByText, queryByText } = renderWithNavigation(<MyPageScreen />);
 
       await waitFor(() => {
-        expect(getByText('足あと')).toBeTruthy();
+        expect(getByText('Visitors')).toBeTruthy();
       });
 
       // Press footprint menu item
-      fireEvent.press(getByText('足あと'));
+      fireEvent.press(getByText('Visitors'));
 
       await waitFor(() => {
         // Badge should not be shown
@@ -214,11 +214,11 @@ describe('MyPageScreen - Footprints and Past Likes', () => {
       const { getByText } = renderWithNavigation(<MyPageScreen />);
 
       await waitFor(() => {
-        expect(getByText('過去のいいね')).toBeTruthy();
+        expect(getByText('Likes Sent')).toBeTruthy();
       });
 
       // Press past likes menu item
-      fireEvent.press(getByText('過去のいいね'));
+      fireEvent.press(getByText('Likes Sent'));
 
       await waitFor(() => {
         expect(getByText('Alice')).toBeTruthy();
@@ -234,11 +234,11 @@ describe('MyPageScreen - Footprints and Past Likes', () => {
       const { getByText, queryByText } = renderWithNavigation(<MyPageScreen />);
 
       await waitFor(() => {
-        expect(getByText('過去のいいね')).toBeTruthy();
+        expect(getByText('Likes Sent')).toBeTruthy();
       });
 
       // Press past likes menu item
-      fireEvent.press(getByText('過去のいいね'));
+      fireEvent.press(getByText('Likes Sent'));
 
       await waitFor(() => {
         // Badge should not be shown
@@ -282,11 +282,11 @@ describe('MyPageScreen - Footprints and Past Likes', () => {
       const { getByText } = renderWithNavigation(<MyPageScreen />);
 
       await waitFor(() => {
-        expect(getByText('足あと')).toBeTruthy();
+        expect(getByText('Visitors')).toBeTruthy();
       });
 
       // App should still render, even with errors
-      expect(getByText('プロフィール')).toBeTruthy();
+      expect(getByText('View Profile')).toBeTruthy();
     });
 
     it('should handle errors when loading past likes', async () => {
@@ -302,11 +302,11 @@ describe('MyPageScreen - Footprints and Past Likes', () => {
       const { getByText } = renderWithNavigation(<MyPageScreen />);
 
       await waitFor(() => {
-        expect(getByText('過去のいいね')).toBeTruthy();
+        expect(getByText('Likes Sent')).toBeTruthy();
       });
 
       // App should still render, even with errors
-      expect(getByText('プロフィール')).toBeTruthy();
+      expect(getByText('View Profile')).toBeTruthy();
     });
   });
 });

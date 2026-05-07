@@ -33,592 +33,592 @@ interface HelpDetail {
 }
 
 const helpDetails: Record<string, HelpDetail> = {
-  // プロフィール
+  // Profile
   "profile-setup": {
     id: "profile-setup",
-    title: "プロフィール項目を設定・変更したい",
+    title: "Set Up or Edit Your Profile",
     description:
-      "ゴルマチに登録されたプロフィール情報は、ゴルマチ利用者全体に公開されます。プロフィールを充実させてマッチング率アップを目指しましょう！",
+      "Your GolfMatch profile is visible to everyone in the community. The more complete your profile, the better your match rate.",
     steps: [
-      "画面下部メニューから「マイページ」を選択",
-      "画面右上の編集アイコンをタップ",
-      "基本情報（名前、年齢、性別、都道府県など）を入力",
-      "ゴルフ情報（スキルレベル、平均スコア、経験年数など）を入力",
-      "自己紹介文を入力して保存",
+      "Tap My Page in the bottom menu",
+      "Tap the edit icon in the top right",
+      "Fill in your basic info (name, age, gender, state, etc.)",
+      "Add your golf info (skill level, average score, years playing, etc.)",
+      "Write a short bio and save",
     ],
-    additionalInfo: "プロフィール充実度は画面に表示されます。各項目を入力すると充実度が上がります。",
+    additionalInfo: "Your profile completion percentage is shown on screen and goes up as you fill in more fields.",
   },
   "main-photo": {
     id: "main-photo",
-    title: "メイン写真の設定・変更をしたい",
+    title: "Set or Change Your Main Photo",
     description:
-      "メイン写真は他のユーザーが最初に見る写真です。明るく、はっきりと写った写真を選びましょう。",
+      "Your main photo is the first thing other users see. Pick a clear, bright photo of your face.",
     steps: [
-      "マイページの編集アイコンをタップ",
-      "プロフィール編集画面を開く",
-      "メイン写真エリアをタップ",
-      "「写真を選択」または「カメラで撮影」を選択",
-      "写真を確認して保存",
+      "Tap the edit icon on My Page",
+      "Open the profile editor",
+      "Tap the main photo area",
+      "Choose Take Photo or Choose from Library",
+      "Review and save",
     ],
     additionalInfo:
-      "顔がはっきり見える写真を推奨します。",
+      "We recommend a photo where your face is clearly visible.",
   },
   "sub-photo": {
     id: "sub-photo",
-    title: "サブ写真の設定・変更をしたい",
+    title: "Add or Change Sub Photos",
     description:
-      "サブ写真を追加して、あなたの魅力をもっと伝えましょう。ゴルフのシーンや趣味の写真がおすすめです。",
+      "Add more photos to show off who you are. Golf shots, hobbies, and lifestyle photos all work great.",
     steps: [
-      "プロフィール編集画面を開く",
-      "サブ写真セクションの「+」をタップ",
-      "写真を選択または撮影",
-      "写真を追加",
+      "Open the profile editor",
+      "Tap the + in the sub-photos section",
+      "Take a photo or choose one from your library",
+      "Save",
     ],
   },
   "photo-permission": {
     id: "photo-permission",
-    title: "写真設定時のアクセス権限について",
+    title: "Photo Library Access",
     description:
-      "写真を設定するには、端末の写真へのアクセス権限が必要です。",
+      "We need access to your device's photo library to set photos.",
     steps: [
-      "端末の設定アプリを開く",
-      "「プライバシー」>「写真」を選択",
-      "ゴルマチアプリを選択",
-      "「すべての写真」へのアクセスを許可",
+      "Open the Settings app on your device",
+      "Go to Privacy > Photos",
+      "Find GolfMatch",
+      "Allow access to All Photos",
     ],
     additionalInfo:
-      "権限が拒否されている場合は、端末の設定から変更してください。",
+      "If you previously denied access, you can change it from your device's settings.",
   },
 
-  // いいね・マッチング
+  // Likes & Matching
   "like-send": {
     id: "like-send",
-    title: "いいねの送り方",
+    title: "Send a Like",
     description:
-      "気になる相手に「いいね」を送ることで、マッチングの可能性が広がります。",
+      "Send a Like to anyone who catches your eye to start a potential match.",
     steps: [
-      "「さがす」タブまたは「ホーム」画面でプロフィールを見つける",
-      "気になる相手のプロフィールをタップ",
-      "ハートアイコンをタップして「いいね」を送る",
+      "Find a profile in the Search or Home tab",
+      "Tap their profile to open it",
+      "Tap the heart icon to send a Like",
     ],
-    additionalInfo: "相手も「いいね」を返すとマッチングが成立します。",
+    additionalInfo: "When they Like you back, you've got a Match.",
   },
   "like-receive": {
     id: "like-receive",
-    title: "いいねの確認方法",
+    title: "See Who Liked You",
     description:
-      "あなたに届いた「いいね」は「つながり」タブで確認できます。",
+      "Likes you've received show up in the Connections tab.",
     steps: [
-      "画面下部の「つながり」タブを選択",
-      "「いいね」タブを選択",
-      "あなたに「いいね」を送ったユーザー一覧を確認",
-      "気になる相手に「いいね」を返してマッチング",
+      "Tap the Connections tab at the bottom",
+      "Switch to the Likes tab",
+      "Browse the list of people who liked you",
+      "Like them back to create a Match",
     ],
   },
   "like-match": {
     id: "like-match",
-    title: "マッチングとは?",
+    title: "What is a Match?",
     description:
-      "お互いに「いいね」を送り合うとマッチングが成立します。マッチング後はメッセージのやり取りが可能になります。",
+      "A Match happens when two users Like each other. Once you've matched, you can start messaging.",
     steps: [
-      "あなたが相手に「いいね」を送る",
-      "相手があなたに「いいね」を返す",
-      "マッチング成立！",
-      "メッセージ画面から会話を始める",
+      "You send a Like to someone",
+      "They send a Like back",
+      "It's a Match!",
+      "Open Messages to start a conversation",
     ],
     additionalInfo:
-      "マッチングが成立すると通知が届きます。メッセージを送るにはメンバーシップへの加入が必要です。",
+      "You'll get a notification when you Match. A Premium membership is required to send messages.",
   },
   "like-history": {
     id: "like-history",
-    title: "過去のいいねを確認したい",
+    title: "Review Your Past Likes",
     description:
-      "あなたが過去に送った「いいね」の履歴を確認できます。",
+      "You can review every Like you've sent.",
     steps: [
-      "画面下部の「マイページ」を選択",
-      "「過去のいいね」をタップ",
-      "送信済みの「いいね」一覧を確認",
+      "Tap My Page at the bottom",
+      "Tap Past Likes",
+      "Browse all the Likes you've sent",
     ],
   },
 
-  // 投稿
+  // Posts
   "post-create": {
     id: "post-create",
-    title: "投稿の作り方",
+    title: "Create a Post",
     description:
-      "ホーム画面から投稿を作成できます。投稿するには本人確認（KYC認証）が必要です。",
+      "Create posts from the Home screen. You'll need to complete identity verification (KYC) first.",
     steps: [
-      "ホーム画面右下の「+」ボタンをタップ",
-      "投稿内容（テキスト）を入力",
-      "必要に応じて写真や動画を追加",
-      "「投稿」ボタンをタップ",
+      "Tap the + button at the bottom right of Home",
+      "Write your post text",
+      "Optionally add photos or video",
+      "Tap Post",
     ],
-    additionalInfo: "投稿するには事前に本人確認を完了する必要があります。",
+    additionalInfo: "You need to finish identity verification before you can post.",
   },
   "post-media": {
     id: "post-media",
-    title: "写真・動画の追加方法",
+    title: "Add Photos or Video",
     description:
-      "投稿に写真や動画を追加して、あなたのゴルフライフをシェアしましょう。",
+      "Bring your posts to life with photos and video from your golf life.",
     steps: [
-      "投稿作成画面で写真/動画アイコンをタップ",
-      "ギャラリーから写真または動画を選択",
-      "写真の場合：アスペクト比を選択してトリミング",
-      "動画の場合：必要に応じてトリミング（最大60秒）",
-      "追加完了後、投稿を公開",
+      "Tap the photo/video icon in the post composer",
+      "Pick a photo or video from your library",
+      "For photos: choose an aspect ratio and crop",
+      "For video: trim if needed (max 60 seconds)",
+      "Publish your post",
     ],
-    additionalInfo: "複数の写真を追加できます。動画は1本まで追加可能です。",
+    additionalInfo: "You can attach multiple photos. Videos are limited to one per post.",
   },
   "post-react": {
     id: "post-react",
-    title: "投稿にリアクションしたい",
+    title: "React to a Post",
     description:
-      "他のユーザーの投稿にリアクション（いいね）を送ることができます。",
+      "Send a reaction (Like) on other users' posts.",
     steps: [
-      "ホーム画面で投稿を確認",
-      "投稿のリアクションボタン（👍）をタップ",
-      "リアクションが送信されます",
+      "Find the post on your Home feed",
+      "Tap the reaction button (👍)",
+      "Your reaction is sent",
     ],
-    additionalInfo: "リアクションを送ると相手に通知が届きます。",
+    additionalInfo: "The post's author will get a notification.",
   },
   "post-delete": {
     id: "post-delete",
-    title: "投稿を削除したい",
+    title: "Delete Your Post",
     description:
-      "自分の投稿を削除できます。削除した投稿は元に戻せません。",
+      "You can delete your own posts. Deleted posts cannot be recovered.",
     steps: [
-      "削除したい自分の投稿を表示",
-      "投稿右上のメニュー（...）をタップ",
-      "「投稿を削除」を選択",
-      "確認して削除",
+      "Open the post you want to delete",
+      "Tap the menu (...) in the top right",
+      "Choose Delete Post",
+      "Confirm to delete",
     ],
   },
 
-  // メッセージ
+  // Messages
   "message-send": {
     id: "message-send",
-    title: "メッセージの送り方",
+    title: "Send a Message",
     description:
-      "マッチングした相手とメッセージでやり取りできます。メッセージ機能を使うにはメンバーシップへの加入が必要です。",
+      "Message anyone you've Matched with. A Premium membership is required to message.",
     steps: [
-      "画面下部の「メッセージ」タブを選択",
-      "会話したい相手を選択",
-      "メッセージ入力欄にテキストを入力",
-      "送信ボタンをタップ",
+      "Tap the Messages tab at the bottom",
+      "Choose the person you want to chat with",
+      "Type your message",
+      "Tap Send",
     ],
-    additionalInfo: "画像や動画も送信できます。",
+    additionalInfo: "You can also send images and videos.",
   },
   "message-read": {
     id: "message-read",
-    title: "メッセージの確認方法",
+    title: "Read New Messages",
     description:
-      "新しいメッセージはプッシュ通知とアプリ内で確認できます。",
+      "You'll see new messages via push notifications and inside the app.",
     steps: [
-      "画面下部の「メッセージ」タブを選択",
-      "未読のメッセージにはバッジが表示されます",
-      "会話をタップして内容を確認",
+      "Tap the Messages tab at the bottom",
+      "Unread conversations show a badge",
+      "Tap a conversation to read",
     ],
   },
   "message-notification": {
     id: "message-notification",
-    title: "メッセージ通知の設定",
+    title: "Message Notification Settings",
     description:
-      "メッセージ通知のオン/オフは設定画面から変更できます。",
+      "You can turn message notifications on or off in Settings.",
     steps: [
-      "マイページから「設定」を選択",
-      "「通知設定」をタップ",
-      "「メッセージ」の通知をオン/オフ",
+      "Open Settings from My Page",
+      "Tap Notifications",
+      "Toggle Messages on or off",
     ],
   },
   "message-block": {
     id: "message-block",
-    title: "ユーザーをブロックしたい",
+    title: "Block a User",
     description:
-      "不快なユーザーをブロックすることで、そのユーザーとのやり取りを防ぐことができます。",
+      "Block users to stop seeing their content and prevent them from contacting you.",
     steps: [
-      "該当ユーザーのプロフィール画面を開く",
-      "右上のメニュー（...）をタップ",
-      "「ブロック」を選択",
-      "確認してブロック実行",
+      "Open the user's profile",
+      "Tap the menu (...) in the top right",
+      "Choose Block",
+      "Confirm",
     ],
     additionalInfo:
-      "ブロックしたユーザーの管理は「設定」>「ブロックリスト」から行えます。",
+      "Manage your blocked users from Settings > Blocked List.",
   },
 
-  // 機能
+  // Features
   "search-feature": {
     id: "search-feature",
-    title: "検索機能の使い方",
+    title: "Using Search",
     description:
-      "「さがす」画面で理想のゴルフパートナーを探すことができます。GolfMatchでは、インテリジェント・マッチングアルゴリズムを使用して、あなたに最適な相手を表示します。",
+      "Find your ideal golf partner from the Search screen. GolfMatch uses an intelligent matching algorithm to surface the people most compatible with you.",
     steps: [
-      "画面下部の「さがす」タブを選択",
-      "「おすすめ」タブ：相性の良いユーザーを表示（推奨）",
-      "「登録順」タブ：新規登録ユーザーを表示",
-      "プロフィールをタップして詳細を確認",
-      "気になる相手に「いいね」を送る",
+      "Tap the Search tab at the bottom",
+      "Recommended tab: shows your most compatible matches (recommended)",
+      "Newest tab: shows newly registered users",
+      "Tap a profile to see details",
+      "Send a Like if you're interested",
     ],
     additionalInfo:
-      "【おすすめタブの仕組み】\n「おすすめ」タブでは、6つの要素を考慮してあなたと相性の良いユーザーを表示します：\n\n1. カレンダーの重複（30点）\n今後30日間の空き日程が一致するユーザーを優先。実際にゴルフに行ける可能性が高い相手を表示します。\n\n2. ゴルフスキルの近さ（25点）\n同じスキルレベル（ビギナー、中級者、上級者、プロ）のユーザーを優先。近いレベルの相手なら、一緒にラウンドしても楽しめます。\n\n3. スコアの近さ（20点）\n平均スコアが近いユーザーを優先。5打以内が最も高く評価されます。\n\n4. 場所の近さ（15点）\n同じ都道府県、または近隣の地域のユーザーを優先。\n\n5. アクティブ度（10点）\n最近ログインしたユーザーを優先。24時間以内が最も高く評価されます。\n\n6. プロフィール完成度（10点）\n写真が3枚以上、自己紹介文が充実、本人確認済みのユーザーを優先。\n\n合計スコアが高い順に表示されます。\n\n【マッチング精度を上げるには】\nカレンダー機能で空き日程を設定することで、より相性の良い相手とマッチングできます。プロフィール画面のカレンダーから「空き日程を設定」をお試しください。\n\n【フィルター機能】\nフィルターを適用すると、条件に合うユーザーのみに絞り込めます：\n・年齢（年代別）\n・都道府県\n・ゴルフスキルレベル\n・平均スコア\n・最終ログイン日",
+      "How the Recommended tab works\nThe Recommended tab ranks users using six factors:\n\n1. Calendar overlap (30 pts)\nUsers whose available days line up with yours over the next 30 days. Higher score means you're more likely to actually play together.\n\n2. Skill compatibility (25 pts)\nUsers at a similar skill level (Beginner, Intermediate, Advanced, Pro). Closer levels make for a better round.\n\n3. Score similarity (20 pts)\nSimilar average scores rank highest, especially within 5 strokes.\n\n4. Location (15 pts)\nUsers in the same or nearby states.\n\n5. Activity (10 pts)\nRecently active users rank higher, with the highest scores for those active in the last 24 hours.\n\n6. Profile completeness (10 pts)\nUsers with 3+ photos, a thoughtful bio, and verified status rank higher.\n\nTotal scores determine the order.\n\nGet better matches\nSet your available days in the Calendar to match with more compatible people. Tap Set Available Days from the calendar on your profile.\n\nFilters\nUse filters to narrow down who you see:\n- Age range\n- State\n- Skill level\n- Average score\n- Last active",
   },
   "filter-feature": {
     id: "filter-feature",
-    title: "フィルター機能について",
+    title: "Using Filters",
     description:
-      "詳細な検索条件を設定することで、より希望に合う相手を見つけることができます。",
+      "Set detailed filters to find people who fit what you're looking for.",
     steps: [
-      "「さがす」画面でフィルターアイコンをタップ",
-      "年齢、地域、スキルレベルなどの条件を設定",
-      "「適用」ボタンをタップ",
+      "Tap the filter icon on the Search screen",
+      "Set conditions like age, location, and skill level",
+      "Tap Apply",
     ],
-    additionalInfo: "フィルター条件はアプリを閉じても保存されます。",
+    additionalInfo: "Your filters are saved between sessions.",
   },
   "calendar-feature": {
     id: "calendar-feature",
-    title: "カレンダー機能の使い方",
+    title: "Using the Calendar",
     description:
-      "カレンダー機能を使って、ゴルフをプレイできる日程を設定しましょう。設定した予定は他のユーザーに表示され、マッチング率アップにつながります。",
+      "Use the calendar to share when you can play golf. Setting your availability helps you match with more compatible people.",
     steps: [
-      "マイページから「カレンダー」を選択",
-      "日付をタップして状態を切り替え",
-      "緑（○）：ゴルフ可能日として設定",
-      "赤（×）：ゴルフ不可として設定",
-      "グレー（−）：未設定に戻す",
-      "右上の「保存」ボタンをタップ",
+      "Tap Calendar from My Page",
+      "Tap a date to cycle through statuses",
+      "Green (○): available for golf",
+      "Red (×): unavailable",
+      "Gray (−): not set",
+      "Tap Save in the top right",
     ],
-    additionalInfo: "日付をタップするたびに「可能→不可→未設定」の順で状態が切り替わります。月を左右にスワイプして他の月も設定できます。",
+    additionalInfo: "Each tap cycles a date through Available → Unavailable → Not Set. Swipe left or right to change months.",
   },
   "connections-feature": {
     id: "connections-feature",
-    title: "つながり機能について",
+    title: "Connections",
     description:
-      "「つながり」画面では、あなたに「いいね」を送ってくれたユーザーとマッチングしたユーザーを確認できます。",
+      "The Connections tab shows everyone who liked you and everyone you've matched with.",
     steps: [
-      "画面下部の「つながり」タブを選択",
-      "「いいね」タブ：あなたに届いた「いいね」を確認",
-      "「マッチ」タブ：マッチング済みのユーザーを確認",
+      "Tap the Connections tab at the bottom",
+      "Likes tab: people who Liked you",
+      "Matches tab: people you've matched with",
     ],
   },
   "footprints-feature": {
     id: "footprints-feature",
-    title: "足あと機能について",
+    title: "Profile Visitors",
     description:
-      "あなたのプロフィールを見たユーザーを確認できます。",
+      "See who has viewed your profile.",
     steps: [
-      "マイページから「足あと」を選択",
-      "あなたのプロフィールを閲覧したユーザー一覧を確認",
-      "気になる相手をタップしてプロフィールを見る",
+      "Tap Visitors from My Page",
+      "Browse the list of people who viewed your profile",
+      "Tap any of them to see their profile",
     ],
   },
 
-  // メンバーシップ
+  // Membership
   "membership-benefits": {
     id: "membership-benefits",
-    title: "メンバーシップの特典",
+    title: "Premium Benefits",
     description:
-      "メンバーシップに加入すると、メッセージ機能が解放されます。",
+      "Premium members can send unlimited messages.",
     steps: [
-      "マッチした相手とメッセージし放題",
-      "気になる相手との距離が一気に縮まる",
-      "いつでも解約可能・追加料金なし",
+      "Unlimited messaging with anyone you've matched with",
+      "Build deeper connections faster",
+      "Cancel anytime, no extra fees",
     ],
-    additionalInfo: "メンバーシップは月額¥3,000です。",
+    additionalInfo: "Premium is $30/month.",
   },
   "membership-purchase": {
     id: "membership-purchase",
-    title: "メンバーシップの購入方法",
+    title: "Subscribe to Premium",
     description:
-      "ストア画面からメンバーシップを購入できます。",
+      "Buy a Premium membership from the Store screen.",
     steps: [
-      "マイページから「ストア」を選択",
-      "メンバーシップの内容を確認",
-      "「購入する」ボタンをタップ",
-      "App Store / Google Play での支払いを完了",
+      "Tap Store from My Page",
+      "Review what's included",
+      "Tap Subscribe",
+      "Complete payment via the App Store or Google Play",
     ],
   },
   "membership-cancel": {
     id: "membership-cancel",
-    title: "メンバーシップの解約方法",
+    title: "Cancel Premium",
     description:
-      "メンバーシップの解約は端末の設定から行います。",
+      "Cancel your Premium membership from your device's settings.",
     steps: [
-      "iOSの場合：設定 > Apple ID > サブスクリプション",
-      "Androidの場合：Google Play > メニュー > 定期購入",
-      "ゴルマチを選択",
-      "「解約」を選択",
+      "iOS: Settings > Apple ID > Subscriptions",
+      "Android: Google Play > Menu > Subscriptions",
+      "Find GolfMatch",
+      "Tap Cancel Subscription",
     ],
-    additionalInfo: "解約しても、現在の請求期間が終了するまでは機能を利用できます。",
+    additionalInfo: "After cancelling, you'll keep Premium features until your current billing period ends.",
   },
   "membership-restore": {
     id: "membership-restore",
-    title: "購入を復元したい",
+    title: "Restore a Purchase",
     description:
-      "機種変更などで購入情報が反映されていない場合は、購入の復元を行ってください。",
+      "If you switched devices and your subscription isn't showing up, restore your purchase.",
     steps: [
-      "マイページから「ストア」を選択",
-      "画面下部の「購入を復元」をタップ",
-      "Apple ID / Googleアカウントで認証",
-      "購入情報が復元されます",
+      "Tap Store from My Page",
+      "Tap Restore Purchases at the bottom",
+      "Sign in with your Apple ID or Google account",
+      "Your purchase will be restored",
     ],
   },
 
-  // 本人確認
+  // Identity Verification
   "kyc-process": {
     id: "kyc-process",
-    title: "本人確認の手順",
+    title: "Identity Verification Steps",
     description:
-      "本人確認を完了すると、プロフィールに認証バッジが表示されます。",
+      "Once verified, a verified badge will appear on your profile.",
     steps: [
-      "マイページから「設定」を選択",
-      "「本人確認認証」をタップ",
-      "本人確認書類の種類を選択",
-      "書類の表面・裏面を撮影",
-      "顔写真（セルフィー）を撮影",
-      "書類と一緒に写った写真を撮影",
-      "ゴルフをしている写真を撮影",
-      "送信して審査を待つ",
+      "Tap Settings from My Page",
+      "Tap Identity Verification",
+      "Choose your ID document type",
+      "Take photos of the front and back of your ID",
+      "Take a selfie",
+      "Take a photo holding your ID next to your face",
+      "Take a photo of yourself playing golf",
+      "Submit and wait for review",
     ],
   },
   "kyc-documents": {
     id: "kyc-documents",
-    title: "使用できる本人確認書類",
+    title: "Accepted ID Documents",
     description:
-      "以下の書類を使用して本人確認ができます。",
+      "You can verify your identity with any of the following.",
     steps: [
-      "マイナンバーカード",
-      "運転免許証",
-      "パスポート",
-      "健康保険証",
+      "State ID Card",
+      "Driver's License",
+      "Passport",
+      "Health Insurance Card",
     ],
-    additionalInfo: "書類は有効期限内のものをご使用ください。",
+    additionalInfo: "Make sure your document is not expired.",
   },
   "kyc-required": {
     id: "kyc-required",
-    title: "本人確認が必要な理由",
+    title: "Why We Require Verification",
     description:
-      "本人確認は、安全なコミュニティを維持するために実施しています。認証済みユーザーは信頼性が高まり、マッチング率も向上します。",
+      "We verify identities to keep the community safe. Verified users earn more trust and tend to get more matches.",
   },
   "kyc-failed": {
     id: "kyc-failed",
-    title: "本人確認ができない場合",
+    title: "If Verification Fails",
     description:
-      "本人確認ができない場合は、以下の点を確認してください。",
+      "If your verification didn't go through, check the following.",
     steps: [
-      "書類が鮮明に写っているか確認",
-      "書類の四隅がすべて写っているか確認",
-      "書類の有効期限を確認",
-      "顔写真が明るく、はっきり写っているか確認",
-      "それでも解決しない場合はお問い合わせください",
+      "Make sure your document photo is sharp and in focus",
+      "All four corners of the document must be visible",
+      "Make sure your document is not expired",
+      "Your selfie should be bright and clear",
+      "If you still need help, contact support",
     ],
   },
 
-  // 通報・ブロック
+  // Reports & Blocks
   "report-user": {
     id: "report-user",
-    title: "ユーザーを通報したい",
+    title: "Report a User",
     description:
-      "不適切な行動をしているユーザーを通報できます。",
+      "Report users behaving inappropriately.",
     steps: [
-      "該当ユーザーのプロフィール画面を開く",
-      "右上のメニュー（...）をタップ",
-      "「通報」を選択",
-      "通報理由を選択",
-      "詳細を入力して送信（10文字以上）",
+      "Open the user's profile",
+      "Tap the menu (...) in the top right",
+      "Choose Report",
+      "Select a reason",
+      "Add details and submit (10 characters minimum)",
     ],
   },
   "report-reason": {
     id: "report-reason",
-    title: "通報理由の選択方法",
+    title: "How to Choose a Report Reason",
     description:
-      "通報する際は、適切な理由を選択してください。",
+      "When reporting, please select the most appropriate reason.",
     steps: [
-      "不適切なコンテンツ：暴力的、性的な内容",
-      "スパム：迷惑な広告や繰り返しの投稿",
-      "嫌がらせ：いじめ、脅迫行為",
-      "詐欺：詐欺行為やなりすまし",
-      "不適切な画像/動画：不適切なメディア",
-      "誤った情報：虚偽の情報の拡散",
-      "その他：上記以外の問題",
+      "Inappropriate content: violent or sexual material",
+      "Spam: unwanted ads or repetitive posts",
+      "Harassment: bullying or threats",
+      "Fraud: scams or impersonation",
+      "Inappropriate images/videos: explicit media",
+      "Misinformation: spreading false information",
+      "Other: anything else",
     ],
   },
   "block-user": {
     id: "block-user",
-    title: "ユーザーをブロックしたい",
+    title: "Block a User",
     description:
-      "不快なユーザーをブロックすると、お互いのプロフィールやメッセージが非表示になります。",
+      "Blocking a user hides each other's profiles and messages.",
     steps: [
-      "該当ユーザーのプロフィール画面を開く",
-      "右上のメニュー（...）をタップ",
-      "「ブロック」を選択",
-      "確認してブロック実行",
+      "Open the user's profile",
+      "Tap the menu (...) in the top right",
+      "Choose Block",
+      "Confirm",
     ],
     additionalInfo:
-      "ブロックしたユーザーは「設定」>「ブロックリスト」から解除できます。",
+      "You can unblock users from Settings > Blocked List.",
   },
   "hidden-posts": {
     id: "hidden-posts",
-    title: "投稿を非表示にしたい",
+    title: "Hide a Post",
     description:
-      "見たくない投稿を非表示にすることができます。",
+      "Hide posts you don't want to see.",
     steps: [
-      "非表示にしたい投稿のメニュー（...）をタップ",
-      "「投稿を非表示」を選択",
-      "非表示が完了",
+      "Tap the menu (...) on the post",
+      "Choose Hide Post",
+      "Done",
     ],
     additionalInfo:
-      "非表示にした投稿は「設定」>「非表示リスト」から確認・解除できます。",
+      "Manage hidden posts from Settings > Hidden List, where you can also unhide them.",
   },
   "report-safety": {
     id: "report-safety",
-    title: "安全に利用するために",
+    title: "Stay Safe",
     description:
-      "安全にゴルマチを利用するために、以下の点にご注意ください。",
+      "Use GolfMatch safely by following these guidelines.",
     steps: [
-      "メッセージで個人情報（住所、電話番号など）を共有しない",
-      "金銭の要求には応じない",
-      "初めて会う場合は公共の場所を選ぶ",
-      "不審な行動があればすぐに通報",
+      "Don't share personal info (address, phone number) in messages",
+      "Don't send money to anyone",
+      "When meeting in person for the first time, choose a public place",
+      "Report any suspicious behavior right away",
     ],
   },
 
-  // 安全・モデレーション
+  // Safety & Moderation
   "moderation-overview": {
     id: "moderation-overview",
-    title: "投稿の監視体制について",
+    title: "Content Moderation",
     description:
-      "GolfMatchでは、すべてのユーザーが安心して利用できるコミュニティを維持するため、投稿の監視体制を整えています。",
+      "GolfMatch has dedicated moderation in place to keep the community safe for everyone.",
     steps: [
-      "【人的審査】専門スタッフが投稿内容を確認し、不適切なコンテンツ（暴力、性的表現、スパムなど）を監視します",
-      "【24時間体制】監視体制は24時間365日稼働しています",
-      "【迅速な対応】違反コンテンツは発見次第、速やかに削除・対応します",
+      "Human review: trained staff review reports and watch for inappropriate content (violence, sexual content, spam, etc.)",
+      "24/7 coverage: moderation runs 24 hours a day, 365 days a year",
+      "Fast response: violating content is removed promptly once identified",
     ],
     additionalInfo:
-      "ユーザーの皆様からの通報も重要な監視手段です。不適切なコンテンツを見つけた場合は、投稿のメニューから「通報」をお願いします。すべての通報は真摯に受け止め、適切に対応いたします。",
+      "Reports from users are essential to our moderation. If you see something inappropriate, please use the Report option in the post menu. We take every report seriously.",
   },
   "moderation-guidelines": {
     id: "moderation-guidelines",
-    title: "コミュニティガイドライン",
+    title: "Community Guidelines",
     description:
-      "GolfMatchは、ゴルフを通じた健全な出会いの場を提供します。以下のガイドラインを守って、楽しいコミュニティを一緒に作りましょう。",
+      "GolfMatch is a place to meet new people through golf. Help us keep it a great community by following these guidelines.",
     steps: [
-      "【禁止されるコンテンツ】暴力的・性的な表現、差別的発言、個人情報の無断公開",
-      "【禁止される行為】スパム行為、詐欺・勧誘、なりすまし、嫌がらせ",
-      "【推奨される行動】礼儀正しいコミュニケーション、ゴルフに関連した投稿、本人確認の完了",
-      "【写真のガイドライン】本人の写真を使用、不適切な画像の禁止、著作権の尊重",
+      "Prohibited content: violent or sexual content, hate speech, sharing personal info without consent",
+      "Prohibited behavior: spam, scams, solicitation, impersonation, harassment",
+      "Encouraged behavior: be respectful, post about golf, complete identity verification",
+      "Photo guidelines: use photos of yourself, no inappropriate images, respect copyright",
     ],
     additionalInfo:
-      "ガイドラインに違反した場合、警告・投稿削除・アカウント停止などの措置を取る場合があります。詳細は利用規約をご確認ください。",
+      "Violations may result in warnings, post removal, or account suspension. See our Terms of Service for details.",
   },
   "moderation-action": {
     id: "moderation-action",
-    title: "違反コンテンツへの対応",
+    title: "How We Handle Violations",
     description:
-      "コミュニティガイドラインに違反するコンテンツが確認された場合、以下の対応を行います。",
+      "When we identify content that violates the community guidelines, we take the following actions.",
     steps: [
-      "【軽微な違反】該当コンテンツの削除、ユーザーへの注意喚起",
-      "【重大な違反】コンテンツの即時削除、アカウントの一時停止",
-      "【繰り返しの違反】アカウントの永久停止",
-      "【法的措置が必要な場合】関係当局への報告・協力",
+      "Minor violations: removing the content and warning the user",
+      "Serious violations: immediate removal and temporary account suspension",
+      "Repeat violations: permanent account ban",
+      "Legal matters: cooperation with relevant authorities when required",
     ],
     additionalInfo:
-      "対応についてご不明な点がある場合は、お問い合わせからご連絡ください。なお、個別の対応内容についてはお答えできない場合があります。",
+      "If you have questions about a moderation action, please contact support. Note that we may not be able to share details about specific cases.",
   },
 
-  // 退会
+  // Account Deletion
   "withdrawal-process": {
     id: "withdrawal-process",
-    title: "退会手続きの方法",
+    title: "How to Delete Your Account",
     description:
-      "退会するとすべてのデータが削除されます。退会は慎重にご検討ください。",
+      "Deleting your account erases all of your data. Please consider carefully before doing so.",
     steps: [
-      "マイページから「設定」を選択",
-      "「退会」をタップ",
-      "注意事項を確認",
-      "確認欄に「退会する」と入力",
-      "「アカウントを削除」をタップ",
+      "Tap Settings from My Page",
+      "Tap Delete Account",
+      "Read the warnings",
+      "Type \"delete\" to confirm",
+      "Tap Delete Account",
     ],
-    additionalInfo: "退会後、データは復元できません。",
+    additionalInfo: "Deleted data cannot be recovered.",
   },
   "withdrawal-data": {
     id: "withdrawal-data",
-    title: "退会時のデータ取り扱い",
+    title: "What Happens to Your Data",
     description:
-      "退会後、以下のデータがすべて削除されます。",
+      "After you delete your account, the following data is removed.",
     steps: [
-      "プロフィール情報",
-      "投稿した写真・動画",
-      "メッセージ履歴",
-      "マッチング・いいね履歴",
-      "カレンダー設定",
+      "Profile information",
+      "Photos and videos you posted",
+      "Message history",
+      "Match and Like history",
+      "Calendar settings",
     ],
     additionalInfo:
-      "退会後のデータ復元はできません。必要な情報は事前にバックアップしてください。",
+      "Data cannot be restored after deletion. Back up anything you need beforehand.",
   },
 
-  // 不具合
+  // Bugs
   "bug-report": {
     id: "bug-report",
-    title: "不具合を報告したい",
+    title: "Report a Bug",
     description:
-      "不具合を発見した場合は、お問い合わせから報告してください。",
+      "If you find a bug, please report it through Contact Support.",
     steps: [
-      "マイページから「お問い合わせ」を選択",
-      "問い合わせ内容に不具合の詳細を入力",
-      "発生した状況をできるだけ詳しく記載",
-      "送信",
+      "Tap Contact Support from My Page",
+      "Describe the bug in detail",
+      "Include the steps you took when it happened",
+      "Submit",
     ],
   },
   "bug-common": {
     id: "bug-common",
-    title: "よくある不具合と対処法",
+    title: "Common Issues and Fixes",
     description:
-      "よくある不具合とその対処法をご紹介します。",
+      "Quick fixes for common issues.",
     steps: [
-      "アプリが起動しない → アプリを完全に終了して再起動",
-      "写真が表示されない → インターネット接続を確認",
-      "通知が来ない → 端末の通知設定とアプリの通知設定を確認",
-      "ログインできない → メールアドレスを確認、再度ログインを試す",
+      "App won't start → fully close the app and reopen",
+      "Photos not loading → check your internet connection",
+      "Not getting notifications → check your device and app notification settings",
+      "Can't sign in → double-check your email and try again",
     ],
   },
   "bug-app-update": {
     id: "bug-app-update",
-    title: "アプリの更新方法",
+    title: "Update the App",
     description:
-      "最新版のアプリを使用することで、不具合が解消される場合があります。",
+      "Keeping the app up to date often fixes bugs.",
     steps: [
-      "App Store または Google Play ストアを開く",
-      "「ゴルマチ」を検索",
-      "「アップデート」ボタンが表示されていればタップ",
-      "更新完了を待つ",
+      "Open the App Store or Google Play",
+      "Search for GolfMatch",
+      "Tap Update if it's available",
+      "Wait for the update to finish",
     ],
   },
 
-  // その他
+  // Other
   "privacy-policy": {
     id: "privacy-policy",
-    title: "プライバシーポリシー",
+    title: "Privacy Policy",
     description:
-      "プライバシーポリシーはウェブサイトで確認できます。下のリンクをタップしてご確認ください。",
+      "Read our Privacy Policy on the web. Tap the link below to open it.",
     link: "https://www.golfmatch.info/?page=privacypolicy-jp",
   },
   "terms-of-service": {
     id: "terms-of-service",
-    title: "利用規約",
+    title: "Terms of Service",
     description:
-      "利用規約はウェブサイトで確認できます。下のリンクをタップしてご確認ください。",
+      "Read our Terms of Service on the web. Tap the link below to open it.",
     link: "https://www.golfmatch.info/?page=termsofuse-jp",
   },
   "contact-support": {
     id: "contact-support",
-    title: "サポートへのお問い合わせ",
+    title: "Contact Support",
     description:
-      "ヘルプで解決しない場合は、お問い合わせからご連絡ください。",
+      "If this Help Center didn't answer your question, please reach out.",
     steps: [
-      "マイページから「お問い合わせ」を選択",
-      "問い合わせ内容を入力",
-      "送信",
+      "Tap Contact Support from My Page",
+      "Write your message",
+      "Submit",
     ],
-    additionalInfo: "返信は「お問い合わせ」画面の「返信」タブで確認できます。",
+    additionalInfo: "Replies appear in the Replies tab on the Contact Support screen.",
   },
 };
 
@@ -633,12 +633,12 @@ const HelpDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="ヘルプ"
+          title="Help"
           showBackButton
           onBackPress={() => navigation.goBack()}
         />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>ヘルプ情報が見つかりませんでした</Text>
+          <Text style={styles.errorText}>Help article not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -651,7 +651,7 @@ const HelpDetailScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="ヘルプ・お問い合わせ"
+        title="Help & Support"
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
@@ -668,7 +668,7 @@ const HelpDetailScreen: React.FC = () => {
 
           {detail.steps && detail.steps.length > 0 && (
             <View style={styles.stepsContainer}>
-              <Text style={styles.stepsTitle}>■手順</Text>
+              <Text style={styles.stepsTitle}>Steps</Text>
               {detail.steps.map((step, index) => (
                 <View key={index} style={styles.stepItem}>
                   <Text style={styles.stepNumber}>{index + 1}:</Text>
@@ -689,21 +689,21 @@ const HelpDetailScreen: React.FC = () => {
               activeOpacity={0.8}
             >
               <Text style={styles.linkButtonText}>
-                {detail.id === "privacy-policy" ? "プライバシーポリシーを開く" :
-                 detail.id === "terms-of-service" ? "利用規約を開く" : "リンクを開く"}
+                {detail.id === "privacy-policy" ? "Open Privacy Policy" :
+                 detail.id === "terms-of-service" ? "Open Terms of Service" : "Open Link"}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
         <View style={styles.contactSection}>
-          <Text style={styles.contactText}>ヘルプで解決しない場合</Text>
+          <Text style={styles.contactText}>Still need help?</Text>
           <TouchableOpacity
             style={styles.contactButton}
             onPress={handleContactPress}
             activeOpacity={0.8}
           >
-            <Text style={styles.contactButtonText}>お問い合わせ</Text>
+            <Text style={styles.contactButtonText}>Contact Support</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

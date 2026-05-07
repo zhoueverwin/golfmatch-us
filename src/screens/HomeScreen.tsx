@@ -334,11 +334,11 @@ const HomeScreen: React.FC = () => {
           userImage,
         });
       } else {
-        Alert.alert("エラー", "チャットの作成に失敗しました");
+        Alert.alert("Error", "Failed to start the chat.");
       }
     } catch (error) {
       console.error("Failed to handle message:", error);
-      Alert.alert("エラー", "メッセージ機能でエラーが発生しました");
+      Alert.alert("Error", "Something went wrong while opening messages.");
     }
   }, [profileId, navigation]);
 
@@ -353,8 +353,8 @@ const HomeScreen: React.FC = () => {
       handleMessage(userId, userName, userImage);
     } else {
       Alert.alert(
-        "メッセージを送信できません",
-        "お互いにいいねを送る必要があります。まず相手のプロフィールをいいねしてください。",
+        "Can't send a message yet",
+        "You both need to like each other first. Try liking their profile.",
         [{ text: "OK" }]
       );
     }
@@ -384,18 +384,18 @@ const HomeScreen: React.FC = () => {
 
 
   const handlePostMenu = (post: Post) => {
-    Alert.alert("投稿の管理", "操作を選択してください", [
+    Alert.alert("Manage Post", "Choose an action.", [
       {
-        text: "編集",
+        text: "Edit",
         onPress: () => handleEditPost(post),
       },
       {
-        text: "削除",
+        text: "Delete",
         style: "destructive",
         onPress: () => handleDeletePost(post.id),
       },
       {
-        text: "キャンセル",
+        text: "Cancel",
         style: "cancel",
       },
     ]);
@@ -475,15 +475,15 @@ const HomeScreen: React.FC = () => {
 
   const handleDeletePost = (postId: string) => {
     Alert.alert(
-      "投稿を削除",
-      "この投稿を削除してもよろしいですか？この操作は元に戻せません。",
+      "Delete Post",
+      "Are you sure you want to delete this post? This can't be undone.",
       [
         {
-          text: "キャンセル",
+          text: "Cancel",
           style: "cancel",
         },
         {
-          text: "削除",
+          text: "Delete",
           style: "destructive",
           onPress: () => confirmDeletePost(postId),
         },
@@ -494,23 +494,23 @@ const HomeScreen: React.FC = () => {
   const confirmDeletePost = async (postId: string) => {
     try {
       if (!profileId) {
-        Alert.alert("エラー", "ユーザー情報が見つかりません");
+        Alert.alert("Error", "We couldn't find your user info.");
         return;
       }
 
       // Call the API to delete from database
       const result = await DataProvider.deletePost(postId, profileId);
-      
+
       if (result.success) {
         // Refetch posts to remove deleted post
         await refetch();
         console.log("Post deleted successfully:", postId);
       } else {
-        Alert.alert("エラー", result.error || "投稿の削除に失敗しました");
+        Alert.alert("Error", result.error || "Failed to delete the post.");
       }
     } catch (error) {
       console.error("Error deleting post:", error);
-      Alert.alert("エラー", "投稿の削除中にエラーが発生しました");
+      Alert.alert("Error", "Something went wrong while deleting the post.");
     }
   };
 
@@ -542,10 +542,10 @@ const HomeScreen: React.FC = () => {
     try {
       await hiddenPostsService.hidePost(profileId, menuPost.postId);
       setHiddenPostIds((prev) => new Set([...prev, menuPost.postId]));
-      Alert.alert("非表示", "この投稿を非表示にしました。");
+      Alert.alert("Hidden", "This post has been hidden.");
     } catch (error) {
       console.error("Error hiding post:", error);
-      Alert.alert("エラー", "投稿の非表示に失敗しました。");
+      Alert.alert("Error", "Failed to hide the post.");
     }
   }, [profileId, menuPost]);
 
@@ -556,13 +556,13 @@ const HomeScreen: React.FC = () => {
       const result = await blocksService.blockUser(profileId, menuPost.userId);
       if (result.success) {
         setBlockedUserIds((prev) => new Set([...prev, menuPost.userId]));
-        Alert.alert("ブロック完了", `${menuPost.userName}さんをブロックしました。`);
+        Alert.alert("Blocked", `You've blocked ${menuPost.userName}.`);
       } else {
-        Alert.alert("エラー", result.error || "ブロックに失敗しました。");
+        Alert.alert("Error", result.error || "Failed to block this user.");
       }
     } catch (error) {
       console.error("Error blocking user:", error);
-      Alert.alert("エラー", "ブロックに失敗しました。");
+      Alert.alert("Error", "Failed to block this user.");
     }
   }, [profileId, menuPost]);
 
@@ -672,7 +672,7 @@ const HomeScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container} edges={[]}>
         <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-        <Loading text="フィードを読み込み中..." fullScreen />
+        <Loading text="Loading your feed..." fullScreen />
       </SafeAreaView>
     );
   }
@@ -715,8 +715,8 @@ const HomeScreen: React.FC = () => {
           style={styles.headerButton}
           onPress={() => setShowPostModal(true)}
           accessibilityRole="button"
-          accessibilityLabel="新しい投稿を作成"
-          accessibilityHint="投稿作成画面を開きます"
+          accessibilityLabel="Create new post"
+          accessibilityHint="Opens the post composer"
         >
           <View style={styles.addButtonCircle}>
             <Image
@@ -745,7 +745,7 @@ const HomeScreen: React.FC = () => {
             style={[styles.tab, activeTab === "recommended" && styles.activeTab]}
             onPress={() => setActiveTab("recommended")}
             accessibilityRole="tab"
-            accessibilityLabel="おすすめの投稿を表示"
+            accessibilityLabel="Show recommended posts"
             accessibilityState={{ selected: activeTab === "recommended" }}
           >
             <Text
@@ -754,14 +754,14 @@ const HomeScreen: React.FC = () => {
                 activeTab === "recommended" && styles.activeTabText,
               ]}
             >
-              おすすめ
+              For You
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === "following" && styles.activeTab]}
             onPress={() => setActiveTab("following")}
             accessibilityRole="tab"
-            accessibilityLabel="フォロー中の投稿を表示"
+            accessibilityLabel="Show posts from people you follow"
             accessibilityState={{ selected: activeTab === "following" }}
           >
             <Text
@@ -770,7 +770,7 @@ const HomeScreen: React.FC = () => {
                 activeTab === "following" && styles.activeTabText,
               ]}
             >
-              フォロー中
+              Following
             </Text>
           </TouchableOpacity>
         </View>
@@ -808,9 +808,9 @@ const HomeScreen: React.FC = () => {
             ) : (
               <EmptyState
                 icon="home-outline"
-                title="まだ投稿がありません"
-                subtitle="新しい投稿を待っています"
-                buttonTitle="プロフィールを探す"
+                title="No posts yet"
+                subtitle="Check back soon for new posts."
+                buttonTitle="Discover Profiles"
                 onButtonPress={() => navigation.navigate("Search" as any)}
               />
             )
@@ -856,9 +856,9 @@ const HomeScreen: React.FC = () => {
             ) : (
               <EmptyState
                 icon="home-outline"
-                title="まだ投稿がありません"
-                subtitle="新しい投稿を待っています"
-                buttonTitle="プロフィールを探す"
+                title="No posts yet"
+                subtitle="Check back soon for new posts."
+                buttonTitle="Discover Profiles"
                 onButtonPress={() => navigation.navigate("Search" as any)}
               />
             )

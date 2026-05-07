@@ -48,50 +48,50 @@ function SettingsScreen(): React.ReactElement {
   const settingsItems: SettingItem[] = [
     {
       id: "kyc",
-      title: "本人確認認証",
-      subtitle: "身分証明書で本人確認",
+      title: "Identity Verification",
+      subtitle: "Verify your identity with an ID",
       icon: "shield-checkmark",
       onPress: () => navigation.navigate("KycVerification"),
     },
     {
       id: "accountLinking",
-      title: "アカウント連携",
-      subtitle: "メールアドレス・SNSの連携管理",
+      title: "Linked Accounts",
+      subtitle: "Manage email and social sign-in connections",
       icon: "link",
       onPress: () => navigation.navigate("AccountLinking"),
     },
     {
       id: "notifications",
-      title: "通知設定",
-      subtitle: "プッシュ通知の管理",
+      title: "Notification Settings",
+      subtitle: "Manage push notifications",
       icon: "notifications",
       onPress: () => navigation.navigate("NotificationSettings"),
     },
     {
       id: "blocked",
-      title: "ブロックリスト",
-      subtitle: "ブロックしたユーザーの管理",
+      title: "Blocked Users",
+      subtitle: "Manage users you've blocked",
       icon: "ban",
       onPress: () => navigation.navigate("BlockedUsers"),
     },
     {
       id: "hidden",
-      title: "非表示リスト",
-      subtitle: "非表示にした投稿の管理",
+      title: "Hidden Posts",
+      subtitle: "Manage posts you've hidden",
       icon: "eye-off",
       onPress: () => navigation.navigate("HiddenPosts"),
     },
     {
       id: "about",
-      title: "アプリについて",
+      title: "About",
       subtitle: "https://www.golfmatch.info/",
       icon: "information-circle",
       onPress: () => Linking.openURL("https://www.golfmatch.info/"),
     },
     {
       id: "delete",
-      title: "退会",
-      subtitle: "アカウントとデータを削除",
+      title: "Delete Account",
+      subtitle: "Permanently delete your account and data",
       icon: "trash",
       onPress: () => navigation.navigate("DeleteAccount"),
       danger: true,
@@ -101,7 +101,7 @@ function SettingsScreen(): React.ReactElement {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="各種設定"
+        title="Settings"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -156,7 +156,7 @@ function SettingsScreen(): React.ReactElement {
             onPress={handleSignOut}
           >
             <Ionicons name="log-out" size={24} color={Colors.error} />
-            <Text style={styles.signOutText}>ログアウト</Text>
+            <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

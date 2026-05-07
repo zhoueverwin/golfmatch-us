@@ -41,15 +41,15 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-  { name: "プロフィール閲覧", free: true, premium: true },
-  { name: "いいね送信", free: true, premium: true },
-  { name: "マッチング", free: true, premium: true },
-  { name: "投稿の閲覧・作成", free: true, premium: true },
-  { name: "検索（性別・年齢・地域・スキル等）", free: false, premium: true },
-  { name: "メッセージ送信", free: false, premium: true },
-  { name: "並び替えオプション", free: false, premium: true },
-  { name: "毎日のおすすめ", free: true, premium: true, freeNote: "3枚", premiumNote: "5枚", femaleNote: "10枚" },
-  { name: "おすすめ・本日限定で上位表示", free: false, premium: true },
+  { name: "View profiles", free: true, premium: true },
+  { name: "Send Likes", free: true, premium: true },
+  { name: "Matching", free: true, premium: true },
+  { name: "View and create posts", free: true, premium: true },
+  { name: "Search (gender, age, location, skill, etc.)", free: false, premium: true },
+  { name: "Send messages", free: false, premium: true },
+  { name: "Sorting options", free: false, premium: true },
+  { name: "Daily recommendations", free: true, premium: true, freeNote: "3", premiumNote: "5", femaleNote: "10" },
+  { name: "Featured placement in recommendations", free: false, premium: true },
 ];
 
 // KYC status display configuration
@@ -57,11 +57,11 @@ const KYC_STATUS_CONFIG: Record<
   KycStatus,
   { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
-  approved: { label: "確認済み", color: Colors.success, icon: "checkmark-circle" },
-  pending_review: { label: "審査中", color: Colors.warning, icon: "time" },
-  retry: { label: "再提出が必要", color: Colors.error, icon: "alert-circle" },
-  rejected: { label: "否認", color: Colors.error, icon: "close-circle" },
-  not_started: { label: "未確認", color: Colors.gray[400], icon: "remove-circle" },
+  approved: { label: "Verified", color: Colors.success, icon: "checkmark-circle" },
+  pending_review: { label: "Under review", color: Colors.warning, icon: "time" },
+  retry: { label: "Resubmission required", color: Colors.error, icon: "alert-circle" },
+  rejected: { label: "Rejected", color: Colors.error, icon: "close-circle" },
+  not_started: { label: "Not verified", color: Colors.gray[400], icon: "remove-circle" },
 };
 
 const MembershipStatusScreen: React.FC = () => {
@@ -96,16 +96,16 @@ const MembershipStatusScreen: React.FC = () => {
       }
     } catch (error) {
       Alert.alert(
-        "サブスクリプション管理",
+        "Manage Subscription",
         Platform.OS === "ios"
-          ? "設定アプリ → Apple ID → サブスクリプション からサブスクリプションを管理できます。"
-          : "Google Play ストア → メニュー → 定期購入 からサブスクリプションを管理できます。"
+          ? "You can manage your subscription in Settings → Apple ID → Subscriptions."
+          : "You can manage your subscription in Google Play Store → Menu → Subscriptions."
       );
     }
   };
 
   const formatExpirationDate = (date: Date): string => {
-    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日まで`;
+    return `Until ${date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
   };
 
   const kycConfig = KYC_STATUS_CONFIG[kycStatus];
@@ -137,7 +137,7 @@ const MembershipStatusScreen: React.FC = () => {
                   style={styles.statusDiamondIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.statusLabelPremium}>有料会員</Text>
+                <Text style={styles.statusLabelPremium}>Premium Member</Text>
               </View>
               {expirationDate && (
                 <Text style={styles.expirationText}>
@@ -147,7 +147,7 @@ const MembershipStatusScreen: React.FC = () => {
               {willRenew && (
                 <View style={styles.renewBadge}>
                   <Ionicons name="refresh" size={14} color={Colors.white} />
-                  <Text style={styles.renewText}>自動更新</Text>
+                  <Text style={styles.renewText}>Auto-renews</Text>
                 </View>
               )}
             </LinearGradient>
@@ -161,23 +161,23 @@ const MembershipStatusScreen: React.FC = () => {
                   style={styles.statusDiamondIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.statusLabelFree}>無料会員</Text>
+                <Text style={styles.statusLabelFree}>Free Member</Text>
               </View>
               <Text style={styles.upgradeHint}>
-                アップグレードで全機能を解放
+                Upgrade to unlock all features
               </Text>
             </View>
           </TouchableOpacity>
         )}
 
-        {/* Section B: 本人確認 (Identity Verification) */}
+        {/* Section B: Identity Verification */}
         <TouchableOpacity
           style={styles.kycCard}
           onPress={() => navigation.navigate("KycVerification")}
         >
           <View style={styles.kycContent}>
             <View style={styles.kycLeft}>
-              <Text style={styles.kycTitle}>本人確認</Text>
+              <Text style={styles.kycTitle}>Identity Verification</Text>
               <View style={styles.kycBadge}>
                 <Ionicons
                   name={kycConfig.icon}
@@ -199,22 +199,22 @@ const MembershipStatusScreen: React.FC = () => {
 
         {/* Section C: Feature Comparison Table */}
         <View style={styles.tableCard}>
-          <Text style={styles.tableTitle}>機能比較</Text>
+          <Text style={styles.tableTitle}>Feature Comparison</Text>
           <Text style={styles.tableSummary}>
-            有料会員になると、おすすめや検索で上位に表示され、メッセージも送れるため、マッチしやすくなります。
+            Premium members rank higher in recommendations and search, and can send messages — making it easier to connect and match.
           </Text>
 
           {/* Table Header */}
           <View style={styles.tableHeader}>
             <View style={styles.tableFeatureCol}>
-              <Text style={styles.tableHeaderText}>機能</Text>
+              <Text style={styles.tableHeaderText}>Feature</Text>
             </View>
             <View style={styles.tableStatusCol}>
-              <Text style={styles.tableHeaderText}>無料会員</Text>
+              <Text style={styles.tableHeaderText}>Free</Text>
             </View>
             <View style={styles.tableStatusCol}>
               <Text style={[styles.tableHeaderText, styles.premiumHeaderText]}>
-                有料会員
+                Premium
               </Text>
             </View>
           </View>
@@ -278,14 +278,14 @@ const MembershipStatusScreen: React.FC = () => {
           {/* Footnote for female users */}
           {currentUser?.gender === "female" && (
             <Text style={styles.tableFootnote}>
-              ※ 女性会員はメッセージを無料で送信できます
+              * Women can send messages for free.
             </Text>
           )}
         </View>
 
         {/* Section D: Badge Introduction */}
         <View style={styles.badgeCard}>
-          <Text style={styles.badgeCardTitle}>バッジについて</Text>
+          <Text style={styles.badgeCardTitle}>About Badges</Text>
 
           {/* Premium badge */}
           <View style={styles.badgeRow}>
@@ -295,9 +295,9 @@ const MembershipStatusScreen: React.FC = () => {
               resizeMode="contain"
             />
             <View style={styles.badgeRowText}>
-              <Text style={styles.badgeRowTitle}>有料会員バッジ</Text>
+              <Text style={styles.badgeRowTitle}>Premium Badge</Text>
               <Text style={styles.badgeRowDesc}>
-                有料会員になると、プロフィール・投稿・検索結果などでお名前の横にゴールドバッジが表示されます。信頼感がアップし、マッチ率の向上が期待できます。
+                Premium members get a gold badge next to their name across profiles, posts, and search results. It builds trust and helps you stand out — leading to more matches.
               </Text>
             </View>
           </View>
@@ -312,21 +312,21 @@ const MembershipStatusScreen: React.FC = () => {
               resizeMode="contain"
             />
             <View style={styles.badgeRowText}>
-              <Text style={styles.badgeRowTitle}>本人確認バッジ</Text>
+              <Text style={styles.badgeRowTitle}>Verified Badge</Text>
               <Text style={styles.badgeRowDesc}>
-                本人確認を完了すると、お名前の横にブルーバッジが表示されます。お相手に安心感を与え、より多くの「いいね」やマッチにつながります。
+                Once you complete identity verification, a blue badge appears next to your name. It reassures others you're real — leading to more Likes and matches.
               </Text>
             </View>
           </View>
 
           {/* Example display */}
           <View style={styles.badgeExampleBox}>
-            <Text style={styles.badgeExampleLabel}>表示例</Text>
+            <Text style={styles.badgeExampleLabel}>Example</Text>
             <View style={styles.badgeExample}>
               <View style={styles.badgeExampleAvatar}>
                 <Ionicons name="person" size={18} color={Colors.gray[400]} />
               </View>
-              <Text style={styles.badgeExampleName}>ゴルフ太郎</Text>
+              <Text style={styles.badgeExampleName}>Alex</Text>
               <Image
                 source={require("../../assets/images/badges/Verify.png")}
                 style={styles.badgeExampleIcon}
@@ -349,7 +349,7 @@ const MembershipStatusScreen: React.FC = () => {
               onPress={handleManageSubscription}
             >
               <Text style={styles.manageButtonText}>
-                サブスクリプションを管理
+                Manage Subscription
               </Text>
             </TouchableOpacity>
           ) : (
@@ -364,10 +364,10 @@ const MembershipStatusScreen: React.FC = () => {
                   end={{ x: 1, y: 0 }}
                   style={styles.upgradeButton}
                 >
-                  <Text style={styles.upgradeButtonText}>有料会員になる</Text>
+                  <Text style={styles.upgradeButtonText}>Become a Premium Member</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <Text style={styles.priceLabel}>月額 ¥3,000</Text>
+              <Text style={styles.priceLabel}>¥3,000 / month</Text>
             </>
           )}
         </View>

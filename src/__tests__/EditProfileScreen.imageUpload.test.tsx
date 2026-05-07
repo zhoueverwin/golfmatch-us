@@ -40,18 +40,18 @@ describe('EditProfileScreen - Image Upload', () => {
         basic: {
           name: 'Test User',
           age: '30',
-          prefecture: '東京都',
-          blood_type: 'A型',
+          prefecture: 'Tokyo',
+          blood_type: 'A',
           height: '170',
-          body_type: '普通',
-          smoking: '吸わない',
+          body_type: 'Average',
+          smoking: 'Non-smoker',
         },
         golf: {
-          skill_level: 'ビギナー',
+          skill_level: 'Beginner',
           average_score: '90',
-          experience: '1年',
-          transportation: '車',
-          available_days: '週末',
+          experience: '1 year',
+          transportation: 'Car',
+          available_days: 'Weekends',
         },
         bio: 'Test bio',
         profile_pictures: [],
@@ -91,7 +91,7 @@ describe('EditProfileScreen - Image Upload', () => {
 
       // Simulate selecting an image (would trigger handlePhotoChange in real app)
       // Then save
-      const saveButton = getByText('保存');
+      const saveButton = getByText('Save');
       fireEvent.press(saveButton);
 
       await waitFor(() => {
@@ -131,13 +131,13 @@ describe('EditProfileScreen - Image Upload', () => {
       // Simulate image selection with local path
       // (In real test, would need to manipulate state)
 
-      const saveButton = getByText('保存');
+      const saveButton = getByText('Save');
       fireEvent.press(saveButton);
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'エラー',
-          expect.stringContaining('アップロードに失敗しました')
+          'Error',
+          expect.stringContaining('Upload failed')
         );
       });
 
@@ -161,19 +161,19 @@ describe('EditProfileScreen - Image Upload', () => {
           basic: {
             name: 'Test User',
             age: '30',
-            prefecture: '東京都',
-            blood_type: 'A型',
+            prefecture: 'Tokyo',
+            blood_type: 'A',
             height: '170',
-            body_type: '普通',
-            smoking: '吸わない',
+            body_type: 'Average',
+            smoking: 'Non-smoker',
           },
           golf: {
-            skill_level: 'ビギナー',
+            skill_level: 'Beginner',
             average_score: '90',
-            experience: '1年',
-            transportation: '車',
+            experience: '1 year',
+            transportation: 'Car',
             play_fee: '¥10000',
-            available_days: '週末',
+            available_days: 'Weekends',
           },
           bio: 'Test bio',
           profile_pictures: ['https://supabase.example.com/existing-image.jpg'],
@@ -186,7 +186,7 @@ describe('EditProfileScreen - Image Upload', () => {
         expect(getByText('Test User')).toBeTruthy();
       });
 
-      const saveButton = getByText('保存');
+      const saveButton = getByText('Save');
       fireEvent.press(saveButton);
 
       await waitFor(() => {
@@ -263,19 +263,19 @@ describe('EditProfileScreen - Image Upload', () => {
           basic: {
             name: 'Test User',
             age: '30',
-            prefecture: '東京都',
-            blood_type: 'A型',
+            prefecture: 'Tokyo',
+            blood_type: 'A',
             height: '170',
-            body_type: '普通',
-            smoking: '吸わない',
+            body_type: 'Average',
+            smoking: 'Non-smoker',
           },
           golf: {
-            skill_level: 'ビギナー',
+            skill_level: 'Beginner',
             average_score: '90',
-            experience: '1年',
-            transportation: '車',
+            experience: '1 year',
+            transportation: 'Car',
             play_fee: '¥10000',
-            available_days: '週末',
+            available_days: 'Weekends',
           },
           bio: 'Test bio',
           profile_pictures: [
@@ -335,8 +335,8 @@ describe('EditProfileScreen - Image Upload', () => {
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'エラー',
-          'ライブラリの使用許可が必要です'
+          'Error',
+          'Permission to access the photo library is required'
         );
       });
     });
@@ -385,7 +385,7 @@ describe('EditProfileScreen - Image Upload', () => {
       });
 
       // Simulate save with image
-      const saveButton = getByText('保存');
+      const saveButton = getByText('Save');
       fireEvent.press(saveButton);
 
       await waitFor(() => {
@@ -411,13 +411,13 @@ describe('EditProfileScreen - Image Upload', () => {
         expect(getByText('Test User')).toBeTruthy();
       });
 
-      const saveButton = getByText('保存');
+      const saveButton = getByText('Save');
       fireEvent.press(saveButton);
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          '保存完了',
-          'プロフィールが正常に更新されました',
+          'Saved',
+          'Your profile has been updated',
           expect.any(Array)
         );
       });

@@ -107,7 +107,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
   onSaveToGallery,
   onInstagramShare,
   isLoading = false,
-  title = 'シェア',
+  title = 'Share',
   shareMessage = '',
 }) => {
   const insets = useSafeAreaInsets();
@@ -221,12 +221,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
               await Linking.openURL(lineAppUrl);
               dismissModal();
             } else {
-              Alert.alert('LINEが見つかりません', 'LINEアプリをインストールしてください');
+              Alert.alert('LINE not found', 'Please install the LINE app');
             }
           }
         } catch (error) {
           console.error('LINE share error:', error);
-          Alert.alert('エラー', 'LINEでのシェアに失敗しました');
+          Alert.alert('Error', 'Failed to share to LINE');
         }
         break;
       }
@@ -247,12 +247,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
               await Linking.openURL(xAppUrl);
               dismissModal();
             } else {
-              Alert.alert('Xが見つかりません', 'Xアプリをインストールしてください');
+              Alert.alert('X not found', 'Please install the X app');
             }
           }
         } catch (error) {
           console.error('X share error:', error);
-          Alert.alert('エラー', 'Xでのシェアに失敗しました');
+          Alert.alert('Error', 'Failed to share to X');
         }
         break;
       }
@@ -280,11 +280,11 @@ const ShareModal: React.FC<ShareModalProps> = ({
             await Linking.openURL(smsUrl);
             dismissModal();
           } else {
-            Alert.alert('エラー', 'メッセージアプリを開けませんでした');
+            Alert.alert('Error', "Couldn't open the Messages app");
           }
         } catch (error) {
           console.error('Messages share error:', error);
-          Alert.alert('エラー', 'メッセージでのシェアに失敗しました');
+          Alert.alert('Error', 'Failed to share via Messages');
         }
         break;
       }
@@ -309,7 +309,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
     { id: 'instagram' as const, name: 'Instagram', icon: InstagramIcon },
     { id: 'x' as const, name: 'X', icon: XIcon },
     { id: 'line' as const, name: 'LINE', icon: LINEIcon },
-    { id: 'messages' as const, name: 'メッセージ', icon: MessagesIcon },
+    { id: 'messages' as const, name: 'Messages', icon: MessagesIcon },
   ];
 
   return (
@@ -344,7 +344,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.loadingText}>画像を生成中...</Text>
+              <Text style={styles.loadingText}>Generating image...</Text>
             </View>
           ) : (
             <>
@@ -379,7 +379,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 <View style={styles.iconContainer}>
                   <Ionicons name="apps-outline" size={22} color={Colors.primary} />
                 </View>
-                <Text style={styles.menuText}>その他のアプリ</Text>
+                <Text style={styles.menuText}>More apps</Text>
                 <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
               </TouchableOpacity>
 
@@ -391,7 +391,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 <View style={styles.iconContainer}>
                   <Ionicons name="download-outline" size={22} color={Colors.primary} />
                 </View>
-                <Text style={styles.menuText}>画像を保存</Text>
+                <Text style={styles.menuText}>Save image</Text>
                 <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
               </TouchableOpacity>
 
@@ -400,7 +400,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 onPress={handleClose}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelText}>キャンセル</Text>
+                <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
             </>
           )}

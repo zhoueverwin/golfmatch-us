@@ -38,21 +38,6 @@ import { userInteractionService } from "../services/userInteractionService";
 interface AuthContextType extends AuthState {
   profileId: string | null; // Profile ID from profiles table
   userProfile: CachedProfile | null; // Cached profile data (fetched once on login)
-  signInWithPhone: (
-    phoneNumber: string,
-  ) => Promise<{ success: boolean; error?: string; messageId?: string }>;
-  verifyOTP: (
-    phoneNumber: string,
-    token: string,
-  ) => Promise<{ success: boolean; error?: string; session?: Session }>;
-  signInWithEmail: (
-    email: string,
-    password: string,
-  ) => Promise<{ success: boolean; error?: string; session?: Session }>;
-  signUpWithEmail: (
-    email: string,
-    password: string,
-  ) => Promise<{ success: boolean; error?: string; session?: Session }>;
   signInWithGoogle: () => Promise<{
     success: boolean;
     error?: string;
@@ -63,17 +48,9 @@ interface AuthContextType extends AuthState {
     error?: string;
     session?: Session;
   }>;
-  signInWithLine: (lineAccessToken: string, lineIdToken?: string) => Promise<{
-    success: boolean;
-    error?: string;
-    session?: Session;
-  }>;
   linkEmail: (
     email: string,
     password: string,
-  ) => Promise<{ success: boolean; error?: string; message?: string }>;
-  linkPhone: (
-    phoneNumber: string,
   ) => Promise<{ success: boolean; error?: string; message?: string }>;
   linkGoogle: () => Promise<{
     success: boolean;
@@ -135,8 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   // Check if user is banned
                   if ((res.data as any).is_banned === true) {
                     Alert.alert(
-                      "アカウント停止",
-                      "アカウントが停止されました。ご不明な点がございましたらお問い合わせください。",
+                      "Account suspended",
+                      "Your account has been suspended. If you have any questions, please contact us.",
                       [{ text: "OK" }]
                     );
                     setProfileId(null);
@@ -224,15 +201,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     ...authState,
     profileId,
     userProfile,
-    signInWithPhone: authService.sendOTP.bind(authService),
-    verifyOTP: authService.verifyOTP.bind(authService),
-    signInWithEmail: authService.signInWithEmail.bind(authService),
-    signUpWithEmail: authService.signUpWithEmail.bind(authService),
     signInWithGoogle: authService.signInWithGoogle.bind(authService),
     signInWithApple: authService.signInWithApple.bind(authService),
-    signInWithLine: authService.signInWithLine.bind(authService),
     linkEmail: authService.linkEmail.bind(authService),
-    linkPhone: authService.linkPhone.bind(authService),
     linkGoogle: authService.linkGoogle.bind(authService),
     linkApple: authService.linkApple.bind(authService),
     signOut: authService.signOut.bind(authService),

@@ -40,7 +40,7 @@ describe('ProfileScreen', () => {
 
       const { getByText } = render(<ProfileScreen />);
       
-      expect(getByText('プロフィールを読み込み中...')).toBeTruthy();
+      expect(getByText('Loading profile...')).toBeTruthy();
     });
 
     it('should display profile data after loading', async () => {
@@ -48,8 +48,8 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Test User',
         age: 30,
-        prefecture: '東京都',
-        golf_skill_level: 'ビギナー',
+        prefecture: 'New York',
+        golf_skill_level: 'Beginner',
         average_score: 90,
         bio: 'Test bio',
         profile_pictures: ['https://example.com/photo.jpg'],
@@ -74,12 +74,12 @@ describe('ProfileScreen', () => {
       const { getByText, queryByText } = render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(queryByText('プロフィールを読み込み中...')).toBeNull();
+        expect(queryByText('Loading profile...')).toBeNull();
       });
 
       expect(getByText('Test User')).toBeTruthy();
-      expect(getByText(/東京都/)).toBeTruthy();
-      expect(getByText(/30歳/)).toBeTruthy();
+      expect(getByText(/Tokyo/)).toBeTruthy();
+      expect(getByText(/30/)).toBeTruthy();
     });
 
     it('should display error state when profile fails to load', async () => {
@@ -94,7 +94,7 @@ describe('ProfileScreen', () => {
         expect(getByText('Failed to load profile')).toBeTruthy();
       });
 
-      expect(getByText('再試行')).toBeTruthy();
+      expect(getByText('Retry')).toBeTruthy();
     });
 
     it('should handle retry button click', async () => {
@@ -109,7 +109,7 @@ describe('ProfileScreen', () => {
             id: 'test-user-id',
             name: 'Test User',
             age: 30,
-            prefecture: '東京都',
+            prefecture: 'Tokyo',
             profile_pictures: [],
           },
         });
@@ -130,7 +130,7 @@ describe('ProfileScreen', () => {
         expect(getByText('Network error')).toBeTruthy();
       });
 
-      const retryButton = getByText('再試行');
+      const retryButton = getByText('Retry');
       fireEvent.press(retryButton);
 
       await waitFor(() => {
@@ -147,7 +147,7 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Test User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
       };
 
@@ -203,7 +203,7 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Verified User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
         is_verified: true,
       };
@@ -238,7 +238,7 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Unverified User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
         is_verified: false,
       };
@@ -275,7 +275,7 @@ describe('ProfileScreen', () => {
         id: 'other-user-id',
         name: 'Other User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
       };
 
@@ -300,7 +300,7 @@ describe('ProfileScreen', () => {
         expect(getByText('Other User')).toBeTruthy();
       });
 
-      expect(getByText('いいね')).toBeTruthy();
+      expect(getByText('Like')).toBeTruthy();
     });
 
     it('should not show like button for own profile', async () => {
@@ -312,7 +312,7 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Current User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
       };
 
@@ -337,7 +337,7 @@ describe('ProfileScreen', () => {
         expect(getByText('Current User')).toBeTruthy();
       });
 
-      expect(queryByText('いいね')).toBeNull();
+      expect(queryByText('Like')).toBeNull();
     });
 
     it('should handle like button press', async () => {
@@ -345,7 +345,7 @@ describe('ProfileScreen', () => {
         id: 'other-user-id',
         name: 'Other User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
       };
 
@@ -373,7 +373,7 @@ describe('ProfileScreen', () => {
         expect(getByText('Other User')).toBeTruthy();
       });
 
-      const likeButton = getByText('いいね');
+      const likeButton = getByText('Like');
       fireEvent.press(likeButton);
 
       await waitFor(() => {
@@ -388,7 +388,7 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Test User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
       };
 
@@ -428,7 +428,7 @@ describe('ProfileScreen', () => {
         expect(getByText('Test User')).toBeTruthy();
       });
 
-      expect(getByText('投稿')).toBeTruthy();
+      expect(getByText('Posts')).toBeTruthy();
       // Posts would be rendered in grid (would need more specific assertions)
     });
 
@@ -437,7 +437,7 @@ describe('ProfileScreen', () => {
         id: 'test-user-id',
         name: 'Test User',
         age: 30,
-        prefecture: '東京都',
+        prefecture: 'Tokyo',
         profile_pictures: [],
       };
 

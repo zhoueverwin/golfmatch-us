@@ -63,15 +63,15 @@ const AgeDecadeSelector: React.FC<AgeDecadeSelectorProps> = ({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={Colors.gray[600]} />
           </TouchableOpacity>
-          <Text style={styles.title}>年齢</Text>
+          <Text style={styles.title}>Age</Text>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={styles.clearButton}>クリア</Text>
+            <Text style={styles.clearButton}>Clear</Text>
           </TouchableOpacity>
         </View>
 
         {/* Content */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.subtitle}>複数選択可能</Text>
+          <Text style={styles.subtitle}>Select multiple</Text>
           {AGE_DECADES.map((decade) => {
             const isSelected = tempSelected.includes(decade.value);
             return (
@@ -101,8 +101,8 @@ const AgeDecadeSelector: React.FC<AgeDecadeSelectorProps> = ({
           <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
             <Text style={styles.applyButtonText}>
               {tempSelected.length > 0
-                ? `${tempSelected.length}件を適用`
-                : "適用"}
+                ? `Apply ${tempSelected.length}`
+                : "Apply"}
             </Text>
           </TouchableOpacity>
         </View>

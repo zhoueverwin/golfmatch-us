@@ -151,9 +151,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>こだわり条件</Text>
+          <Text style={styles.title}>Filters</Text>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={styles.clearButton}>クリア</Text>
+            <Text style={styles.clearButton}>Clear</Text>
           </TouchableOpacity>
         </View>
 
@@ -161,7 +161,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           {/* Gender Filter (premium only) */}
           <FilterItem
             icon="person-outline"
-            title="性別"
+            title="Gender"
             value={getGenderLabel(filters.gender)}
             onPress={() => setShowGenderSelector(true)}
             locked={!isPremium}
@@ -170,7 +170,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           {/* Age Decade Filter */}
           <FilterItem
             icon="calendar-outline"
-            title="年齢"
+            title="Age"
             value={getAgeDecadesLabel(filters.age_decades)}
             onPress={() => setShowAgeSelector(true)}
             locked={!isPremium}
@@ -179,7 +179,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           {/* Prefecture Filter */}
           <FilterItem
             icon="location-outline"
-            title="居住地"
+            title="State"
             value={getPrefectureLabel(filters.prefecture)}
             onPress={() => setShowPrefectureSelector(true)}
             locked={!isPremium}
@@ -188,7 +188,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           {/* Skill Level Filter */}
           <FilterItem
             icon="golf-outline"
-            title="ゴルフレベル"
+            title="Skill Level"
             value={getSkillLevelLabel(filters.golf_skill_level)}
             onPress={() => setShowSkillLevelSelector(true)}
             locked={!isPremium}
@@ -197,7 +197,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           {/* Average Score Filter */}
           <FilterItem
             icon="stats-chart-outline"
-            title="平均スコア (以下)"
+            title="Average Score (or below)"
             value={getScoreLabel(filters.average_score_max)}
             onPress={() => setShowScoreSelector(true)}
             locked={!isPremium}
@@ -206,7 +206,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           {/* Last Login Filter */}
           <FilterItem
             icon="time-outline"
-            title="最終ログイン"
+            title="Last Login"
             value={getLastLoginLabel(filters.last_login_days)}
             onPress={() => setShowLastLoginSelector(true)}
             locked={!isPremium}
@@ -221,8 +221,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
           >
             <Text style={styles.applyButtonText}>
               {activeFilterCount > 0
-                ? `${activeFilterCount}件の条件を適用`
-                : "条件を適用"}
+                ? `Apply ${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"}`
+                : "Apply filters"}
             </Text>
           </TouchableOpacity>
 
@@ -230,7 +230,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
             style={[styles.button, styles.closeButton]}
             onPress={onClose}
           >
-            <Text style={styles.closeButtonText}>閉じる</Text>
+            <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

@@ -33,7 +33,7 @@ const FootprintsScreen: React.FC = () => {
   const [footprintUsers, setFootprintUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Count of unviewed footprints for the "すべて既読" button
+  // Count of unviewed footprints for the "Mark all read" button
   const unviewedCount = footprintUsers.filter(item => item.isNew).length;
 
   const loadFootprints = async () => {
@@ -120,13 +120,13 @@ const FootprintsScreen: React.FC = () => {
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
     if (diffInMinutes < 1) {
-      return "たった今";
+      return "Just now";
     } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}分前`;
+      return `${diffInMinutes}m ago`;
     } else if (diffInHours < 24) {
-      return `${diffInHours}時間前`;
+      return `${diffInHours}h ago`;
     } else {
-      return `${diffInDays}日前`;
+      return `${diffInDays}d ago`;
     }
   };
 
@@ -140,7 +140,7 @@ const FootprintsScreen: React.FC = () => {
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.name}</Text>
         <View style={styles.userDetails}>
-          {item.age && <Text style={styles.userDetail}>{item.age}歳</Text>}
+          {item.age && <Text style={styles.userDetail}>{item.age}</Text>}
           {item.location && (
             <Text style={styles.userDetail}>・{String(item.location)}</Text>
           )}
@@ -161,9 +161,9 @@ const FootprintsScreen: React.FC = () => {
         size={48}
         color={Colors.gray[400]}
       />
-      <Text style={styles.emptyTitle}>まだ足あとがありません</Text>
+      <Text style={styles.emptyTitle}>No profile views yet</Text>
       <Text style={styles.emptySubtitle}>
-        プロフィールを見た人がここに表示されます
+        People who viewed your profile will appear here
       </Text>
     </View>
   );
@@ -174,7 +174,7 @@ const FootprintsScreen: React.FC = () => {
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>足あとを読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading profile views...</Text>
         </View>
       </SafeAreaView>
     );
@@ -186,7 +186,7 @@ const FootprintsScreen: React.FC = () => {
 
       {/* Header */}
       <StandardHeader
-        title="足あと"
+        title="Profile Views"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
         rightComponent={
@@ -195,7 +195,7 @@ const FootprintsScreen: React.FC = () => {
               style={styles.markAllButton}
               onPress={handleMarkAllAsRead}
             >
-              <Text style={styles.markAllText} numberOfLines={1}>すべて既読</Text>
+              <Text style={styles.markAllText} numberOfLines={1}>Mark all read</Text>
             </TouchableOpacity>
           ) : undefined
         }

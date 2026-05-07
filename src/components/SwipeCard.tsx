@@ -274,10 +274,10 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         {isTop && (
           <>
             <Animated.View style={[styles.stampOverlay, styles.likeStamp, likeOverlayStyle]}>
-              <Text style={styles.likeStampText}>いいね!</Text>
+              <Text style={styles.likeStampText}>LIKE!</Text>
             </Animated.View>
             <Animated.View style={[styles.stampOverlay, styles.skipStamp, skipOverlayStyle]}>
-              <Text style={styles.skipStampText}>スキップ</Text>
+              <Text style={styles.skipStampText}>SKIP</Text>
             </Animated.View>
           </>
         )}
@@ -337,13 +337,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
                   ) : user.gender === "female" ? (
                     <Ionicons name="female" size={14} color="#FF6B8A" />
                   ) : null}
-                  <Text style={styles.ageText}>{age}歳</Text>
+                  <Text style={styles.ageText}>{age}</Text>
                 </View>
               </View>
               <View style={styles.locationRow}>
                 <Image source={PinOutlineIcon} style={styles.pinIcon} />
                 <Text style={styles.locationText}>
-                  {user.prefecture || "未設定"}
+                  {user.prefecture || "Not set"}
                 </Text>
               </View>
               {(user.golf_skill_level || user.average_score) && (
@@ -625,12 +625,12 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
               <Animated.View
                 style={[styles.stampOverlay, styles.likeStamp, likeOverlayStyle]}
               >
-                <Text style={styles.likeStampText}>いいね!</Text>
+                <Text style={styles.likeStampText}>LIKE!</Text>
               </Animated.View>
               <Animated.View
                 style={[styles.stampOverlay, styles.skipStamp, skipOverlayStyle]}
               >
-                <Text style={styles.skipStampText}>スキップ</Text>
+                <Text style={styles.skipStampText}>SKIP</Text>
               </Animated.View>
             </>
           )}
@@ -689,13 +689,13 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
                   ) : user.gender === "female" ? (
                     <Ionicons name="female" size={14} color="#FF6B8A" />
                   ) : null}
-                  <Text style={styles.ageText}>{age}歳</Text>
+                  <Text style={styles.ageText}>{age}</Text>
                 </View>
                 </View>
                 <View style={styles.locationRow}>
                   <Image source={PinOutlineIcon} style={styles.pinIcon} />
                   <Text style={styles.locationText}>
-                    {user.prefecture || "未設定"}
+                    {user.prefecture || "Not set"}
                   </Text>
                 </View>
                 {(user.golf_skill_level || user.average_score) && (

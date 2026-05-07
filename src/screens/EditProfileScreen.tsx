@@ -88,7 +88,7 @@ const EditProfileScreen: React.FC = () => {
   const formLoadedRef = useRef(false); // Track if initial load completed to prevent re-render race conditions
   const [isNewUser, setIsNewUser] = useState(false); // Track if this is initial profile setup
   const [birthDatePickerVisible, setBirthDatePickerVisible] = useState(false);
-  const [isVerified, setIsVerified] = useState(false); // Track if user is verified (本人確認済み)
+  const [isVerified, setIsVerified] = useState(false); // Track if user is verified
   const [bioEditorVisible, setBioEditorVisible] = useState(false);
   const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
@@ -123,8 +123,8 @@ const EditProfileScreen: React.FC = () => {
       const onBackPress = () => {
         if (isNewUser) {
           Alert.alert(
-            "プロフィールを完成させてください",
-            "アプリを使用するには、基本情報の入力が必要です。",
+            "Finish Your Profile",
+            "Please fill in the basic info before using the app.",
             [{ text: "OK" }]
           );
           return true; // Prevent default back behavior
@@ -171,7 +171,7 @@ const EditProfileScreen: React.FC = () => {
         // For existing users without gender, leave empty so they must select
         gender: profile.basic?.gender?.trim() || "",
         prefecture: profile.basic?.prefecture?.trim() || "",
-        play_prefecture: (profile as any).play_prefecture || [], // プレー地域 (max 3)
+        play_prefecture: (profile as any).play_prefecture || [], // Where the user typically plays (max 3)
         golf_skill_level: profile.golf?.skill_level || "",
         average_score: profile.golf?.average_score || "",
         bio: profile.bio || "",
@@ -191,7 +191,7 @@ const EditProfileScreen: React.FC = () => {
       setFormData(currentProfile);
       formLoadedRef.current = true;
 
-      // Check if user is verified (本人確認済み)
+      // Check if user is verified
       setIsVerified(profile.status?.is_verified === true);
 
       // Check if this is a new user (essential fields not filled)
@@ -200,7 +200,7 @@ const EditProfileScreen: React.FC = () => {
       const hasBirthDate = !!currentProfile.birth_date;
       const hasAge = hasBirthDate || (!!currentProfile.age.trim() && parseInt(currentProfile.age) > 0);
       const hasGender = !!currentProfile.gender.trim();
-      const hasPrefecture = !!currentProfile.prefecture.trim() && currentProfile.prefecture !== '未設定';
+      const hasPrefecture = !!currentProfile.prefecture.trim() && currentProfile.prefecture !== 'Not set';
 
       const isNewUserSetup = !hasName || !hasAge || !hasGender || !hasPrefecture;
       setIsNewUser(isNewUserSetup);
@@ -210,7 +210,7 @@ const EditProfileScreen: React.FC = () => {
       setIsNewUser(true); // Treat as new user on error
     } finally {
       setLoading(false);
-      // Wait for UI to settle before allowing input - prevents Japanese IME crashes
+      // Wait for UI to settle before allowing input - prevents IME crashes
       // This ensures the form is fully rendered before user can interact
       InteractionManager.runAfterInteractions(() => {
         setFormReady(true);
@@ -220,8 +220,8 @@ const EditProfileScreen: React.FC = () => {
 
   // Gender mapping for display
   const genderLabels: Record<string, string> = {
-    male: "男性",
-    female: "女性",
+    male: "Male",
+    female: "Female",
   };
 
   const getGenderDisplayLabel = (value: string): string => {
@@ -229,7 +229,7 @@ const EditProfileScreen: React.FC = () => {
   };
 
   // Use useCallback to prevent recreation of handler on each render
-  // This helps prevent Japanese IME crashes by keeping stable references
+  // This helps prevent IME crashes by keeping stable references
   const handleInputChange = useCallback((
     field: keyof ProfileFormData,
     value: string | string[],
@@ -245,12 +245,12 @@ const EditProfileScreen: React.FC = () => {
 
   // Photo slot labels (golf-themed)
   const PHOTO_SLOT_LABELS = [
-    "メイン",
-    "ゴルフ場",
-    "スイング",
-    "パッティング",
-    "ゴルフウェア",
-    "趣味",
+    "Main",
+    "Golf Course",
+    "Swing",
+    "Putting",
+    "Golf Outfit",
+    "Hobby",
   ];
 
   const setPhotoAtSlot = (slotIndex: number, uri: string) => {
@@ -277,7 +277,7 @@ const EditProfileScreen: React.FC = () => {
         await ImagePicker.requestCameraPermissionsAsync();
 
       if (permissionResult.granted === false) {
-        Alert.alert("エラー", "カメラの使用許可が必要です");
+        Alert.alert("Error", "Camera access is required");
         return;
       }
 
@@ -292,7 +292,7 @@ const EditProfileScreen: React.FC = () => {
         setPhotoAtSlot(slotIndex, result.assets[0].uri);
       }
     } catch (_error) {
-      Alert.alert("エラー", "写真の撮影に失敗しました");
+      Alert.alert("Error", "Failed to take photo");
     }
   };
 
@@ -302,7 +302,7 @@ const EditProfileScreen: React.FC = () => {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (permissionResult.granted === false) {
-        Alert.alert("エラー", "ライブラリの使用許可が必要です");
+        Alert.alert("Error", "Photo library access is required");
         return;
       }
 
@@ -317,7 +317,7 @@ const EditProfileScreen: React.FC = () => {
         setPhotoAtSlot(slotIndex, result.assets[0].uri);
       }
     } catch (_error) {
-      Alert.alert("エラー", "写真の選択に失敗しました");
+      Alert.alert("Error", "Failed to choose photo");
     }
   };
 
@@ -325,7 +325,7 @@ const EditProfileScreen: React.FC = () => {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["キャンセル", "カメラで撮影", "ライブラリから選択"],
+          options: ["Cancel", "Take Photo", "Choose from Library"],
           cancelButtonIndex: 0,
         },
         (buttonIndex) => {
@@ -337,10 +337,10 @@ const EditProfileScreen: React.FC = () => {
         },
       );
     } else {
-      Alert.alert("写真を選択", "写真の選択方法を選んでください", [
-        { text: "キャンセル", style: "cancel" },
-        { text: "カメラで撮影", onPress: () => openCameraForSlot(slotIndex) },
-        { text: "ライブラリから選択", onPress: () => openImageLibraryForSlot(slotIndex) },
+      Alert.alert("Choose Photo", "How would you like to add a photo?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Take Photo", onPress: () => openCameraForSlot(slotIndex) },
+        { text: "Choose from Library", onPress: () => openImageLibraryForSlot(slotIndex) },
       ]);
     }
   };
@@ -352,7 +352,7 @@ const EditProfileScreen: React.FC = () => {
       if (Platform.OS === "ios") {
         ActionSheetIOS.showActionSheetWithOptions(
           {
-            options: ["キャンセル", "写真を変更", "写真を削除"],
+            options: ["Cancel", "Change Photo", "Delete Photo"],
             cancelButtonIndex: 0,
             destructiveButtonIndex: 2,
           },
@@ -365,10 +365,10 @@ const EditProfileScreen: React.FC = () => {
           },
         );
       } else {
-        Alert.alert("写真の操作", "操作を選んでください", [
-          { text: "キャンセル", style: "cancel" },
-          { text: "写真を変更", onPress: () => showPickerForSlot(slotIndex) },
-          { text: "写真を削除", style: "destructive", onPress: () => removePhotoAtSlot(slotIndex) },
+        Alert.alert("Photo Options", "Choose an action", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Change Photo", onPress: () => showPickerForSlot(slotIndex) },
+          { text: "Delete Photo", style: "destructive", onPress: () => removePhotoAtSlot(slotIndex) },
         ]);
       }
     } else {
@@ -386,30 +386,30 @@ const EditProfileScreen: React.FC = () => {
     // Profile picture is required for new users (slot 0 must be filled)
     const hasMainPhoto = formData.profile_pictures.length > 0 && formData.profile_pictures[0] !== "";
     if (isNewUser && !hasMainPhoto) {
-      missingFields.push("プロフィール写真（メイン）");
+      missingFields.push("Main Profile Photo");
     }
 
     if (!formData.name.trim()) {
-      missingFields.push("名前");
+      missingFields.push("Name");
     }
 
     // Require birth_date for all users
     if (!formData.birth_date) {
-      missingFields.push("生年月日");
+      missingFields.push("Date of Birth");
     }
 
     if (!formData.gender.trim()) {
-      missingFields.push("性別");
+      missingFields.push("Gender");
     }
 
     if (!formData.prefecture.trim()) {
-      missingFields.push("居住地");
+      missingFields.push("Location");
     }
 
     if (missingFields.length > 0) {
       Alert.alert(
-        "必須項目が未入力です",
-        `以下の項目を入力してください：\n${missingFields.join("、")}`,
+        "Required Fields Missing",
+        `Please fill in:\n${missingFields.join(", ")}`,
         [{ text: "OK" }]
       );
       setSaving(false);
@@ -445,7 +445,7 @@ const EditProfileScreen: React.FC = () => {
 
             if (error) {
               console.error(`Failed to upload image ${i + 1}:`, error);
-              Alert.alert("エラー", `画像${i + 1}のアップロードに失敗しました: ${error}`);
+              Alert.alert("Error", `Failed to upload image ${i + 1}: ${error}`);
               setSaving(false);
               return;
             }
@@ -457,7 +457,7 @@ const EditProfileScreen: React.FC = () => {
             }
           } catch (error: any) {
             console.error(`Error uploading image ${i + 1}:`, error);
-            Alert.alert("エラー", `画像のアップロード中にエラーが発生しました`);
+            Alert.alert("Error", `Something went wrong while uploading images`);
             setSaving(false);
             return;
           }
@@ -492,9 +492,9 @@ const EditProfileScreen: React.FC = () => {
         },
         bio: formData.bio,
         profile_pictures: uploadedProfilePictures, // Use uploaded URLs instead of local paths
-        status: "アクティブ",
+        status: "active",
         location: `${formData.prefecture} ${calculatedAge}`,
-        play_prefecture: formData.play_prefecture, // プレー地域
+        play_prefecture: formData.play_prefecture, // Where the user typically plays
       };
 
       console.log("Updating profile for user ID:", currentUserId);
@@ -514,7 +514,7 @@ const EditProfileScreen: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
       console.log("✅ React Query cache invalidated for profile");
 
-      Alert.alert("保存完了", "プロフィールが正常に更新されました", [
+      Alert.alert("Saved", "Your profile has been updated.", [
         {
           text: "OK",
           onPress: () => {
@@ -532,7 +532,7 @@ const EditProfileScreen: React.FC = () => {
       ]);
     } catch (_error) {
       console.error("Save error:", _error);
-      Alert.alert("エラー", "保存に失敗しました。もう一度お試しください。");
+      Alert.alert("Error", "Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -541,16 +541,16 @@ const EditProfileScreen: React.FC = () => {
   const handleCancel = () => {
     if (isNewUser) {
       Alert.alert(
-        "プロフィールを完成させてください",
-        "アプリを使用するには、基本情報の入力が必要です。",
+        "Finish Your Profile",
+        "Please fill in the basic info before using the app.",
         [{ text: "OK" }]
       );
       return;
     }
-    Alert.alert("変更を破棄", "変更内容が失われます。よろしいですか？", [
-      { text: "キャンセル", style: "cancel" },
+    Alert.alert("Discard Changes?", "Your changes will be lost. Are you sure?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "破棄",
+        text: "Discard",
         style: "destructive",
         onPress: () => navigation.goBack(),
       },
@@ -560,8 +560,8 @@ const EditProfileScreen: React.FC = () => {
   const handleBack = () => {
     if (isNewUser) {
       Alert.alert(
-        "プロフィールを完成させてください",
-        "アプリを使用するには、基本情報の入力が必要です。",
+        "Finish Your Profile",
+        "Please fill in the basic info before using the app.",
         [{ text: "OK" }]
       );
       return;
@@ -690,10 +690,10 @@ const EditProfileScreen: React.FC = () => {
         })}
       </View>
       {disabled && (
-        <Text style={styles.lockedFieldHint}>本人確認済みのため変更できません</Text>
+        <Text style={styles.lockedFieldHint}>Can't be changed after verification</Text>
       )}
       {required && !formData[field] && (
-        <Text style={styles.requiredHint}>この項目は必須です</Text>
+        <Text style={styles.requiredHint}>This field is required</Text>
       )}
     </View>
   );
@@ -705,8 +705,8 @@ const EditProfileScreen: React.FC = () => {
     options: string[],
     required = false,
   ) => {
-    // For gender modal, show Japanese labels
-    const displayValue = field === "gender" && formData[field] 
+    // For gender modal, show display labels
+    const displayValue = field === "gender" && formData[field]
       ? getGenderDisplayLabel(formData[field])
       : formData[field];
     
@@ -732,12 +732,12 @@ const EditProfileScreen: React.FC = () => {
             styles.modalSelectText,
             !formData[field] && styles.modalSelectPlaceholder
           ]}>
-            {displayValue || `${label}を選択してください`}
+            {displayValue || `Select ${label}`}
           </Text>
           <Ionicons name="chevron-down" size={20} color={Colors.gray[500]} />
         </TouchableOpacity>
         {required && !formData[field] && (
-          <Text style={styles.requiredHint}>この項目は必須です</Text>
+          <Text style={styles.requiredHint}>This field is required</Text>
         )}
       </View>
     );
@@ -768,14 +768,14 @@ const EditProfileScreen: React.FC = () => {
       ? rawValue
       : (rawValue ? [rawValue as string] : []);
     const displayText = selectedValues.length > 0
-      ? selectedValues.join("、")
-      : `${label}を選択してください（最大${maxSelections}つ）`;
+      ? selectedValues.join(", ")
+      : `Select ${label} (up to ${maxSelections})`;
 
     return (
       <View style={styles.inputField}>
         <View style={styles.labelRow}>
           <Text style={styles.inputLabel}>{label}</Text>
-          <Text style={styles.optionalHint}>（最大{maxSelections}つ）</Text>
+          <Text style={styles.optionalHint}>(up to {maxSelections})</Text>
         </View>
         <TouchableOpacity
           style={styles.modalSelectButton}
@@ -844,7 +844,7 @@ const EditProfileScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-        <Loading text="プロフィールを読み込み中..." fullScreen />
+        <Loading text="Loading profile..." fullScreen />
       </SafeAreaView>
     );
   }
@@ -866,7 +866,7 @@ const EditProfileScreen: React.FC = () => {
             onPress={handleBack}
             accessible
             accessibilityRole="button"
-            accessibilityLabel="戻る"
+            accessibilityLabel="Back"
           >
             <Image
               source={require("../../assets/images/Icons/Arrow-LeftGrey.png")}
@@ -874,12 +874,12 @@ const EditProfileScreen: React.FC = () => {
               resizeMode="contain"
               fadeDuration={0}
             />
-            <Text style={styles.backLabel}>戻る</Text>
+            <Text style={styles.backLabel}>Back</Text>
           </TouchableOpacity>
         )}
 
         <Text style={styles.headerTitle}>
-          {isNewUser ? "プロフィール設定" : "プロフィール編集"}
+          {isNewUser ? "Set Up Profile" : "Edit Profile"}
         </Text>
 
         <TouchableOpacity
@@ -888,7 +888,7 @@ const EditProfileScreen: React.FC = () => {
           onPress={handleSave}
         >
           <Text style={[styles.saveText, saving && styles.savingText]}>
-            {saving ? "保存中..." : "保存"}
+            {saving ? "Saving..." : "Save"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -907,9 +907,9 @@ const EditProfileScreen: React.FC = () => {
           {isNewUser && (
             <View>
               <Text style={styles.welcomeText}>
-                プロフィールを設定してください。
+                Let's set up your profile.
               </Text>
-              <Text style={styles.requiredNote}>* 印は必須項目です</Text>
+              <Text style={styles.requiredNote}>* Required</Text>
             </View>
           )}
 
@@ -917,7 +917,7 @@ const EditProfileScreen: React.FC = () => {
           <View style={styles.photoGridSection}>
             <View style={styles.photoGridHeader}>
               <View style={styles.photoLabelRow}>
-                <Text style={styles.photoGridTitle}>プロフィール写真</Text>
+                <Text style={styles.photoGridTitle}>Profile Photos</Text>
                 {isNewUser && <Text style={styles.requiredIndicator}>*</Text>}
               </View>
             </View>
@@ -1011,14 +1011,14 @@ const EditProfileScreen: React.FC = () => {
 
           {/* Basic Information */}
           <Card style={styles.sectionCard} shadow="small">
-            <Text style={styles.sectionTitle}>基本情報</Text>
+            <Text style={styles.sectionTitle}>Basic Info</Text>
 
-            {renderInputField("名前", "name", "名前を入力してください", false, true)}
+            {renderInputField("Name", "name", "Enter your name", false, true)}
 
             {/* Birth Date Picker Field */}
             <View style={styles.inputField}>
               <View style={styles.labelRow}>
-                <Text style={styles.inputLabel}>生年月日</Text>
+                <Text style={styles.inputLabel}>Date of Birth</Text>
                 <Text style={styles.requiredIndicator}>*</Text>
                 {isVerified && (
                   <Ionicons name="lock-closed" size={14} color={Colors.gray[400]} style={{ marginLeft: 4 }} />
@@ -1044,218 +1044,226 @@ const EditProfileScreen: React.FC = () => {
                 ]}>
                   {formData.birth_date
                     ? formatBirthDateJapanese(formData.birth_date)
-                    : "生年月日を選択してください"}
+                    : "Select your date of birth"}
                 </Text>
                 <Ionicons name="calendar-outline" size={20} color={isVerified ? Colors.gray[300] : Colors.gray[500]} />
               </TouchableOpacity>
               {isVerified && (
-                <Text style={styles.lockedFieldHint}>本人確認済みのため変更できません</Text>
+                <Text style={styles.lockedFieldHint}>Can't be changed after verification</Text>
               )}
               {!isVerified && !formData.birth_date && (
-                <Text style={styles.requiredHint}>この項目は必須です</Text>
+                <Text style={styles.requiredHint}>This field is required</Text>
               )}
             </View>
 
             {/* Calculated Age Display (read-only) */}
             {formData.birth_date && (
               <View style={styles.inputField}>
-                <Text style={styles.inputLabel}>年齢</Text>
+                <Text style={styles.inputLabel}>Age</Text>
                 <View style={styles.readOnlyField}>
                   <Text style={styles.readOnlyText}>
-                    {calculateAge(formData.birth_date)}歳
+                    {calculateAge(formData.birth_date)} years old
                   </Text>
                 </View>
               </View>
             )}
-            
-            {renderSelectField("性別", "gender", [
+
+            {renderSelectField("Gender", "gender", [
               "male",
               "female",
             ], true, genderLabels, isVerified)}
 
-            {renderModalSelectField("居住地", "prefecture", [
-              "北海道",
-              "青森県",
-              "岩手県",
-              "宮城県",
-              "秋田県",
-              "山形県",
-              "福島県",
-              "茨城県",
-              "栃木県",
-              "群馬県",
-              "埼玉県",
-              "千葉県",
-              "東京都",
-              "神奈川県",
-              "新潟県",
-              "富山県",
-              "石川県",
-              "福井県",
-              "山梨県",
-              "長野県",
-              "岐阜県",
-              "静岡県",
-              "愛知県",
-              "三重県",
-              "滋賀県",
-              "京都府",
-              "大阪府",
-              "兵庫県",
-              "奈良県",
-              "和歌山県",
-              "鳥取県",
-              "島根県",
-              "岡山県",
-              "広島県",
-              "山口県",
-              "徳島県",
-              "香川県",
-              "愛媛県",
-              "高知県",
-              "福岡県",
-              "佐賀県",
-              "長崎県",
-              "熊本県",
-              "大分県",
-              "宮崎県",
-              "鹿児島県",
-              "沖縄県",
+            {renderModalSelectField("State", "prefecture", [
+              "Alabama",
+              "Alaska",
+              "Arizona",
+              "Arkansas",
+              "California",
+              "Colorado",
+              "Connecticut",
+              "Delaware",
+              "Florida",
+              "Georgia",
+              "Hawaii",
+              "Idaho",
+              "Illinois",
+              "Indiana",
+              "Iowa",
+              "Kansas",
+              "Kentucky",
+              "Louisiana",
+              "Maine",
+              "Maryland",
+              "Massachusetts",
+              "Michigan",
+              "Minnesota",
+              "Mississippi",
+              "Missouri",
+              "Montana",
+              "Nebraska",
+              "Nevada",
+              "New Hampshire",
+              "New Jersey",
+              "New Mexico",
+              "New York",
+              "North Carolina",
+              "North Dakota",
+              "Ohio",
+              "Oklahoma",
+              "Oregon",
+              "Pennsylvania",
+              "Rhode Island",
+              "South Carolina",
+              "South Dakota",
+              "Tennessee",
+              "Texas",
+              "Utah",
+              "Vermont",
+              "Virginia",
+              "Washington",
+              "West Virginia",
+              "Wisconsin",
+              "Wyoming",
+              "Washington, D.C.",
             ], true)}
 
-            {renderSelectField("血液型", "blood_type", [
-              "A型",
-              "B型",
-              "O型",
-              "AB型",
+            {renderSelectField("Blood Type", "blood_type", [
+              "A",
+              "B",
+              "O",
+              "AB",
             ])}
-            {renderInputField("身長 (cm)", "height", "身長を入力してください")}
+            {renderInputField("Height (cm)", "height", "Enter your height")}
 
-            {renderSelectField("体型", "body_type", [
-              "やせ型",
-              "普通",
-              "ぽっちゃり",
-              "筋肉質",
+            {renderSelectField("Body Type", "body_type", [
+              "Slim",
+              "Average",
+              "Curvy",
+              "Athletic",
             ])}
-            {renderSelectField("タバコ", "smoking", [
-              "吸わない",
-              "吸う",
-              "時々吸う",
+            {renderSelectField("Smoking", "smoking", [
+              "Non-smoker",
+              "Smoker",
+              "Occasionally",
             ])}
-            
-            {renderSelectField("好きなクラブ", "favorite_club", [
-              "ドライバー",
-              "フェアウェイウッド",
-              "ユーティリティ",
-              "アイアン",
-              "ウェッジ",
-              "パター",
+
+            {renderSelectField("Favorite Club", "favorite_club", [
+              "Driver",
+              "Fairway Wood",
+              "Hybrid",
+              "Iron",
+              "Wedge",
+              "Putter",
             ])}
-            
-            {renderModalSelectField("16 パーソナリティ", "personality_type", [
-              "INTJ - 建築家",
-              "INTP - 論理学者",
-              "ENTJ - 指揮官",
-              "ENTP - 討論者",
-              "INFJ - 提唱者",
-              "INFP - 仲介者",
-              "ENFJ - 主人公",
-              "ENFP - 広報運動家",
-              "ISTJ - 管理者",
-              "ISFJ - 擁護者",
-              "ESTJ - 幹部",
-              "ESFJ - 領事官",
-              "ISTP - 職人",
-              "ISFP - 冒険家",
-              "ESTP - 起業家",
-              "ESFP - エンターテイナー",
+
+            {renderModalSelectField("16 Personalities", "personality_type", [
+              "INTJ - Architect",
+              "INTP - Logician",
+              "ENTJ - Commander",
+              "ENTP - Debater",
+              "INFJ - Advocate",
+              "INFP - Mediator",
+              "ENFJ - Protagonist",
+              "ENFP - Campaigner",
+              "ISTJ - Logistician",
+              "ISFJ - Defender",
+              "ESTJ - Executive",
+              "ESFJ - Consul",
+              "ISTP - Virtuoso",
+              "ISFP - Adventurer",
+              "ESTP - Entrepreneur",
+              "ESFP - Entertainer",
             ])}
           </Card>
 
           {/* Golf Profile */}
           <Card style={styles.sectionCard} shadow="small">
-            <Text style={styles.sectionTitle}>ゴルフプロフィール</Text>
+            <Text style={styles.sectionTitle}>Golf Profile</Text>
 
-            {renderInputFieldWithSuffix("ゴルフ歴", "golf_experience", "例: 2", "年")}
+            {renderInputFieldWithSuffix("Years Playing", "golf_experience", "e.g. 2", "yrs")}
 
-            {renderSelectField("ゴルフレベル", "golf_skill_level", [
-              "ビギナー",
-              "中級者",
-              "上級者",
-              "プロ",
+            {renderSelectField("Skill Level", "golf_skill_level", [
+              "Beginner",
+              "Intermediate",
+              "Advanced",
+              "Pro",
             ])}
-            {/* Note: Values match database constraint (Japanese) */}
+            {/* Note: Values are persisted to DB; update DB constraint if needed */}
 
-            {renderInputField("平均スコア", "average_score", "例: 120-130台")}
-            {renderInputField("ベストスコア", "best_score", "例: 88")}
+            {renderInputField("Average Score", "average_score", "e.g. 120-130")}
+            {renderInputField("Best Score", "best_score", "e.g. 88")}
 
-            {renderSelectField("移動手段", "transportation", [
-              "送迎不要",
-              "送迎希望",
-              "どちらでも可",
-            ])}
-
-            {renderSelectField("ラウンド可能日", "available_days", [
-              "平日",
-              "週末",
-              "不定期",
-              "いつでも",
+            {renderSelectField("Transportation", "transportation", [
+              "I'll drive myself",
+              "Need a ride",
+              "Either works",
             ])}
 
-            {renderMultiSelectModalField("プレー地域", "play_prefecture", [
-              "北海道",
-              "青森県",
-              "岩手県",
-              "宮城県",
-              "秋田県",
-              "山形県",
-              "福島県",
-              "茨城県",
-              "栃木県",
-              "群馬県",
-              "埼玉県",
-              "千葉県",
-              "東京都",
-              "神奈川県",
-              "新潟県",
-              "富山県",
-              "石川県",
-              "福井県",
-              "山梨県",
-              "長野県",
-              "岐阜県",
-              "静岡県",
-              "愛知県",
-              "三重県",
-              "滋賀県",
-              "京都府",
-              "大阪府",
-              "兵庫県",
-              "奈良県",
-              "和歌山県",
-              "鳥取県",
-              "島根県",
-              "岡山県",
-              "広島県",
-              "山口県",
-              "徳島県",
-              "香川県",
-              "愛媛県",
-              "高知県",
-              "福岡県",
-              "佐賀県",
-              "長崎県",
-              "熊本県",
-              "大分県",
-              "宮崎県",
-              "鹿児島県",
-              "沖縄県",
+            {renderSelectField("Available Days", "available_days", [
+              "Weekdays",
+              "Weekends",
+              "Flexible",
+              "Anytime",
+            ])}
+
+            {renderMultiSelectModalField("Where I Play", "play_prefecture", [
+              "Alabama",
+              "Alaska",
+              "Arizona",
+              "Arkansas",
+              "California",
+              "Colorado",
+              "Connecticut",
+              "Delaware",
+              "Florida",
+              "Georgia",
+              "Hawaii",
+              "Idaho",
+              "Illinois",
+              "Indiana",
+              "Iowa",
+              "Kansas",
+              "Kentucky",
+              "Louisiana",
+              "Maine",
+              "Maryland",
+              "Massachusetts",
+              "Michigan",
+              "Minnesota",
+              "Mississippi",
+              "Missouri",
+              "Montana",
+              "Nebraska",
+              "Nevada",
+              "New Hampshire",
+              "New Jersey",
+              "New Mexico",
+              "New York",
+              "North Carolina",
+              "North Dakota",
+              "Ohio",
+              "Oklahoma",
+              "Oregon",
+              "Pennsylvania",
+              "Rhode Island",
+              "South Carolina",
+              "South Dakota",
+              "Tennessee",
+              "Texas",
+              "Utah",
+              "Vermont",
+              "Virginia",
+              "Washington",
+              "West Virginia",
+              "Wisconsin",
+              "Wyoming",
+              "Washington, D.C.",
             ], 3)}
           </Card>
 
           {/* Bio Section */}
           <Card style={styles.sectionCard} shadow="small">
-            <Text style={styles.sectionTitle}>自己紹介</Text>
+            <Text style={styles.sectionTitle}>About Me</Text>
             <TouchableOpacity
               style={styles.bioPreview}
               onPress={() => setBioEditorVisible(true)}
@@ -1265,7 +1273,7 @@ const EditProfileScreen: React.FC = () => {
                 style={formData.bio ? styles.bioPreviewText : styles.bioPreviewPlaceholder}
                 numberOfLines={4}
               >
-                {formData.bio || 'あなたについて教えてください...'}
+                {formData.bio || 'Tell us a little about yourself...'}
               </Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
             </TouchableOpacity>
@@ -1274,7 +1282,7 @@ const EditProfileScreen: React.FC = () => {
           <View style={styles.actionButtons}>
             <Button
               testID="EDIT_PROFILE_SCREEN.SAVE_BTN"
-              title={isNewUser ? "プロフィールを保存して始める" : "保存"}
+              title={isNewUser ? "Save and Get Started" : "Save"}
               onPress={handleSave}
               variant="primary"
               size="large"
@@ -1285,7 +1293,7 @@ const EditProfileScreen: React.FC = () => {
             {!isNewUser && (
               <Button
                 testID="EDIT_PROFILE_SCREEN.CANCEL_BOTTOM_BTN"
-                title="キャンセル"
+                title="Cancel"
                 onPress={handleCancel}
                 variant="outline"
                 size="large"
@@ -1321,8 +1329,8 @@ const EditProfileScreen: React.FC = () => {
                 data={modalOptions}
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => {
-                  // Show Japanese labels for gender options in modal
-                  const displayText = modalField === "gender" 
+                  // Show display labels for gender options in modal
+                  const displayText = modalField === "gender"
                     ? getGenderDisplayLabel(item)
                     : item;
                   
@@ -1379,7 +1387,7 @@ const EditProfileScreen: React.FC = () => {
                   {(() => {
                     const raw = formData[multiSelectField as keyof ProfileFormData];
                     return Array.isArray(raw) ? raw.length : (raw ? 1 : 0);
-                  })()} / {multiSelectMax} 選択中
+                  })()} / {multiSelectMax} selected
                 </Text>
               </View>
 
@@ -1432,7 +1440,7 @@ const EditProfileScreen: React.FC = () => {
                   style={styles.multiSelectDoneButton}
                   onPress={() => setMultiSelectModalVisible(false)}
                 >
-                  <Text style={styles.multiSelectDoneText}>完了</Text>
+                  <Text style={styles.multiSelectDoneText}>Done</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1450,8 +1458,8 @@ const EditProfileScreen: React.FC = () => {
         {/* Bio Full-Screen Editor */}
         <FullScreenTextEditor
           visible={bioEditorVisible}
-          title="自己紹介"
-          placeholder="あなたについて教えてください..."
+          title="About Me"
+          placeholder="Tell us a little about yourself..."
           value={formData.bio}
           maxLength={1000}
           onSave={(text) => handleInputChange("bio", text)}

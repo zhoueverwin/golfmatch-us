@@ -61,7 +61,7 @@ describe('HomeScreen Integration Tests with Real Supabase Data', () => {
 
       // Wait for loading to complete
       await waitFor(() => {
-        expect(queryByText('読み込み中...')).toBeNull();
+        expect(queryByText('Loading...')).toBeNull();
       }, { timeout: 10000 });
 
       // Verify posts are loaded

@@ -164,36 +164,32 @@ const ConnectionsScreen: React.FC = () => {
   );
 
   const getAgeRange = (age: number): string => {
-    if (age < 30) return "20代";
-    if (age < 40) return "30代";
-    if (age < 50) return "40代";
-    return "50代";
+    if (age < 30) return "20s";
+    if (age < 40) return "30s";
+    if (age < 50) return "40s";
+    return "50s";
   };
 
   const getSkillLevelText = (level: string | null | undefined): string => {
-    if (!level) return "未設定";
-    
+    if (!level) return "Not set";
+
     switch (level) {
-      // Japanese values (from database)
-      case "ビギナー":
-        return "ビギナー";
-      case "中級者":
-        return "中級者";
-      case "上級者":
-        return "上級者";
-      case "プロ":
-        return "プロ";
-      // English values (for backward compatibility)
+      case "Beginner":
+      case "Intermediate":
+      case "Advanced":
+      case "Pro":
+        return level;
+      // Lowercase variants from older clients
       case "beginner":
-        return "ビギナー";
+        return "Beginner";
       case "intermediate":
-        return "中級者";
+        return "Intermediate";
       case "advanced":
-        return "上級者";
+        return "Advanced";
       case "professional":
-        return "プロ";
+        return "Pro";
       default:
-        return "未設定";
+        return "Not set";
     }
   };
 
@@ -226,7 +222,7 @@ const ConnectionsScreen: React.FC = () => {
           });
         }, 1000);
       } else {
-        Alert.alert("エラー", "いいねの送信に失敗しました");
+        Alert.alert("Error", "Failed to send Like.");
         setLikedBackUsers((prev) => {
           const newSet = new Set(prev);
           newSet.delete(profileId);
@@ -235,7 +231,7 @@ const ConnectionsScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('[ConnectionsScreen] Error liking back:', error);
-      Alert.alert("エラー", "いいねの送信に失敗しました");
+      Alert.alert("Error", "Failed to send Like.");
       setLikedBackUsers((prev) => {
         const newSet = new Set(prev);
         newSet.delete(profileId);
@@ -249,7 +245,7 @@ const ConnectionsScreen: React.FC = () => {
     try {
       const currentUserId = user?.id || process.env.EXPO_PUBLIC_TEST_USER_ID;
       if (!currentUserId) {
-        Alert.alert("エラー", "ログインが必要です");
+        Alert.alert("Error", "Please sign in first.");
         return;
       }
 
@@ -257,9 +253,9 @@ const ConnectionsScreen: React.FC = () => {
       const userProfile = connections.find(
         (item) => item.profile.id === profileId,
       )?.profile;
-      
+
       if (!userProfile) {
-        Alert.alert("エラー", "ユーザー情報が見つかりません");
+        Alert.alert("Error", "We couldn't find that user's info.");
         return;
       }
 
@@ -278,11 +274,11 @@ const ConnectionsScreen: React.FC = () => {
           userImage: userProfile.profile_pictures?.[0] || "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
         });
       } else {
-        Alert.alert("エラー", "チャットの作成に失敗しました: " + (chatResponse.error || "不明なエラー"));
+        Alert.alert("Error", "Failed to start chat: " + (chatResponse.error || "Unknown error"));
       }
     } catch (error) {
       console.error("[ConnectionsScreen] Error starting chat:", error);
-      Alert.alert("エラー", "チャットの作成に失敗しました");
+      Alert.alert("Error", "Failed to start chat.");
     }
   };
 
@@ -308,7 +304,7 @@ const ConnectionsScreen: React.FC = () => {
               <Text
                 style={[styles.tabText, activeTab === "like" && styles.activeTabText]}
               >
-                {`いいね${likesCount > 0 ? `(${likesCount})` : ""}`}
+                {`Likes${likesCount > 0 ? ` (${likesCount})` : ""}`}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -318,14 +314,14 @@ const ConnectionsScreen: React.FC = () => {
               <Text
                 style={[styles.tabText, activeTab === "match" && styles.activeTabText]}
               >
-                {`マッチ${matchesCount > 0 ? `(${matchesCount})` : ""}`}
+                {`Matches${matchesCount > 0 ? ` (${matchesCount})` : ""}`}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -342,7 +338,7 @@ const ConnectionsScreen: React.FC = () => {
           <Image
             source={{ uri: item.profile.profile_pictures[0] }}
             style={styles.profileImage}
-            accessibilityLabel={`${item.profile.name}のプロフィール写真`}
+            accessibilityLabel={`${item.profile.name}'s profile photo`}
           />
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
@@ -356,7 +352,7 @@ const ConnectionsScreen: React.FC = () => {
               )}
             </View>
             <Text style={styles.ageLocation} numberOfLines={2}>
-              {item.profile.prefecture}・{getAgeRange(item.profile.birth_date ? calculateAge(item.profile.birth_date) : item.profile.age)} {item.timestamp}
+              {item.profile.prefecture} · {getAgeRange(item.profile.birth_date ? calculateAge(item.profile.birth_date) : item.profile.age)} {item.timestamp}
             </Text>
           </View>
         </TouchableOpacity>
@@ -365,8 +361,8 @@ const ConnectionsScreen: React.FC = () => {
           <Button
             title={
               item.hasLikedBack || likedBackUsers.has(item.profile.id)
-                ? "いいね済み"
-                : "いいね返し"
+                ? "Liked"
+                : "Like Back"
             }
             onPress={() => handleLikeBack(item.profile.id)}
             variant={
@@ -379,7 +375,7 @@ const ConnectionsScreen: React.FC = () => {
           />
         ) : (
           <Button
-            title="メッセージを送る"
+            title="Send Message"
             onPress={() => handleStartChat(item.profile.id)}
             variant="primary"
             size="small"
@@ -406,7 +402,7 @@ const ConnectionsScreen: React.FC = () => {
                 activeTab === "like" && styles.activeTabText,
               ]}
             >
-              {`いいね${likesCount > 0 ? `(${likesCount})` : ""}`}
+              {`Likes${likesCount > 0 ? ` (${likesCount})` : ""}`}
             </Text>
           </TouchableOpacity>
 
@@ -420,7 +416,7 @@ const ConnectionsScreen: React.FC = () => {
                 activeTab === "match" && styles.activeTabText,
               ]}
             >
-              {`マッチ${matchesCount > 0 ? `(${matchesCount})` : ""}`}
+              {`Matches${matchesCount > 0 ? ` (${matchesCount})` : ""}`}
             </Text>
           </TouchableOpacity>
           </View>
@@ -431,8 +427,8 @@ const ConnectionsScreen: React.FC = () => {
         <View style={styles.femaleBanner}>
           <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
           <View style={styles.femaleBannerTextContainer}>
-            <Text style={styles.femaleBannerTitle}>最初のメッセージを送ってみましょう！</Text>
-            <Text style={styles.femaleBannerSubtitle}>あなたからのメッセージで会話が始まります</Text>
+            <Text style={styles.femaleBannerTitle}>Send the first message!</Text>
+            <Text style={styles.femaleBannerSubtitle}>Start the conversation with a quick hello.</Text>
           </View>
         </View>
       )}
@@ -448,14 +444,14 @@ const ConnectionsScreen: React.FC = () => {
           <EmptyState
             icon={activeTab === "like" ? "heart-outline" : "people-outline"}
             title={
-              activeTab === "like" ? "いいねがありません" : "マッチがありません"
+              activeTab === "like" ? "No Likes yet" : "No matches yet"
             }
             subtitle={
               activeTab === "like"
-                ? "プロフィールを充実させて、いいねをもらいましょう"
-                : "いいねを送って、マッチを増やしましょう"
+                ? "Complete your profile to start receiving Likes."
+                : "Send Likes to find your matches."
             }
-            buttonTitle="プロフィールを探す"
+            buttonTitle="Discover Profiles"
             onButtonPress={() => navigation.navigate("Search" as any)}
           />
         }

@@ -430,7 +430,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               onPress={handlePlayAgain}
             >
               <Ionicons name="refresh" size={40} color={Colors.white} />
-              <Text style={styles.playAgainText}>リプレイ</Text>
+              <Text style={styles.playAgainText}>Replay</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -448,7 +448,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             )}
             <View style={styles.loadingContent}>
               <ActivityIndicator size="large" color={Colors.white} />
-              <Text style={styles.loadingText}>動画を読み込み中...</Text>
+              <Text style={styles.loadingText}>Loading video...</Text>
             </View>
           </View>
         )}
@@ -459,8 +459,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <Ionicons name="videocam-off-outline" size={40} color={Colors.gray[400]} />
             <Text style={styles.errorText}>
               {!isValidUri
-                ? "動画を表示できません"
-                : "動画の読み込みに失敗しました"}
+                ? "Unable to display video"
+                : "Failed to load video"}
             </Text>
             {isValidUri && (
               <TouchableOpacity
@@ -470,7 +470,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 activeOpacity={0.7}
               >
                 <Ionicons name="refresh" size={16} color={Colors.white} style={{ marginRight: 4 }} />
-                <Text style={styles.retryButtonText}>再試行</Text>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             )}
           </View>

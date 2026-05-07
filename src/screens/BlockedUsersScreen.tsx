@@ -81,7 +81,7 @@ const BlockedUsersScreen: React.FC = () => {
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -89,15 +89,15 @@ const BlockedUsersScreen: React.FC = () => {
   };
 
   const handleUnblock = (user: BlockedUser) => {
-    const userName = user.blocked_user?.name || "このユーザー";
+    const userName = user.blocked_user?.name || "this user";
 
     Alert.alert(
-      "ブロック解除",
-      `${userName}さんのブロックを解除しますか？\n解除すると、この相手の投稿やメッセージが再び表示されるようになります。`,
+      "Unblock User",
+      `Unblock ${userName}?\nTheir posts and messages will be visible to you again.`,
       [
-        { text: "キャンセル", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "解除する",
+          text: "Unblock",
           onPress: async () => {
             if (!profileId) return;
 
@@ -114,13 +114,13 @@ const BlockedUsersScreen: React.FC = () => {
                 setBlockedUsers((prev) =>
                   prev.filter((u) => u.id !== user.id)
                 );
-                Alert.alert("完了", `${userName}さんのブロックを解除しました。`);
+                Alert.alert("Done", `${userName} has been unblocked.`);
               } else {
-                Alert.alert("エラー", result.error || "ブロック解除に失敗しました。");
+                Alert.alert("Error", result.error || "Failed to unblock user.");
               }
             } catch (error) {
               console.error("Error unblocking user:", error);
-              Alert.alert("エラー", "ブロック解除に失敗しました。");
+              Alert.alert("Error", "Failed to unblock user.");
             } finally {
               setUnblockingId(null);
             }
@@ -136,7 +136,7 @@ const BlockedUsersScreen: React.FC = () => {
 
   const renderBlockedUser = ({ item }: { item: BlockedUser }) => {
     const isUnblocking = unblockingId === item.id;
-    const userName = item.blocked_user?.name || "不明なユーザー";
+    const userName = item.blocked_user?.name || "Unknown user";
     const profilePicture = getProfilePicture(
       item.blocked_user?.profile_pictures || [],
       0
@@ -159,7 +159,7 @@ const BlockedUsersScreen: React.FC = () => {
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{userName}</Text>
             <Text style={styles.blockedDate}>
-              {formatDate(item.created_at)}にブロック
+              Blocked on {formatDate(item.created_at)}
             </Text>
           </View>
         </TouchableOpacity>
@@ -172,7 +172,7 @@ const BlockedUsersScreen: React.FC = () => {
           {isUnblocking ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Text style={styles.unblockButtonText}>解除</Text>
+            <Text style={styles.unblockButtonText}>Unblock</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -183,13 +183,13 @@ const BlockedUsersScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="ブロックリスト"
+          title="Blocked Users"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -198,7 +198,7 @@ const BlockedUsersScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="ブロックリスト"
+        title="Blocked Users"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -206,8 +206,8 @@ const BlockedUsersScreen: React.FC = () => {
       {blockedUsers.length === 0 ? (
         <View style={styles.emptyContainer}>
           <EmptyState
-            title="ブロック中のユーザーはいません"
-            subtitle="ブロックしたユーザーはここに表示されます。"
+            title="No blocked users"
+            subtitle="Users you block will appear here."
             icon="ban-outline"
           />
         </View>
@@ -229,7 +229,7 @@ const BlockedUsersScreen: React.FC = () => {
             <View style={styles.listHeader}>
               <Ionicons name="information-circle-outline" size={20} color={Colors.text.secondary} />
               <Text style={styles.listHeaderText}>
-                ブロックを解除すると、相手の投稿やメッセージが再び表示されます。
+                Unblocking a user will make their posts and messages visible to you again.
               </Text>
             </View>
           }

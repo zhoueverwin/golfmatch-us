@@ -77,9 +77,9 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
   // Locked message bubble for non-premium males viewing incoming messages
   if (isLocked && !isFromUser) {
     const placeholderText =
-      item.type === "image" ? "写真が送信されました" :
-      item.type === "video" ? "動画が送信されました" :
-      "メッセージが届いています...";
+      item.type === "image" ? "A photo was sent" :
+      item.type === "video" ? "A video was sent" :
+      "You have a new message...";
 
     return (
       <View style={[styles.messageBubble, styles.otherMessage, styles.lockedMessageBubble]}>
@@ -91,7 +91,7 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
         </View>
         <TouchableOpacity style={styles.unlockButton} onPress={onUnlockPress} activeOpacity={0.7}>
           <Ionicons name="lock-closed" size={14} color={Colors.white} />
-          <Text style={styles.unlockButtonText}>開封する</Text>
+          <Text style={styles.unlockButtonText}>Unlock</Text>
         </TouchableOpacity>
         <View style={styles.messageFooter}>
           <Text style={[styles.messageTimestamp, styles.otherTimestamp]}>
@@ -322,7 +322,7 @@ const ChatScreen: React.FC = () => {
 
   const currentUserId = user?.id || process.env.EXPO_PUBLIC_TEST_USER_ID;
 
-  // Navigate to Store when user taps "開封する" on a locked message
+  // Navigate to Store when user taps "Unlock" on a locked message
   const handleUnlockPress = useCallback(() => {
     navigation.navigate("Store");
   }, [navigation]);
@@ -343,38 +343,38 @@ const ChatScreen: React.FC = () => {
     const diffMonths = Math.floor(diffDays / 30);
     
     // Format time as HH:MM
-    const timeString = date.toLocaleTimeString("ja-JP", {
+    const timeString = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
-    
+
     // Today
     if (diffDays === 0) {
-      return `今日 ${timeString}`;
+      return `Today ${timeString}`;
     }
-    
+
     // Yesterday
     if (diffDays === 1) {
-      return `昨日 ${timeString}`;
+      return `Yesterday ${timeString}`;
     }
-    
+
     // Within a week (2-6 days ago)
     if (diffDays < 7) {
-      return `${diffDays}日前`;
+      return `${diffDays}d ago`;
     }
-    
+
     // Within a month (1-4 weeks ago)
     if (diffDays < 30) {
-      return `${diffWeeks}週間前`;
+      return `${diffWeeks}w ago`;
     }
-    
+
     // Within a year (1-11 months ago)
     if (diffMonths < 12) {
-      return `${diffMonths}ヶ月前`;
+      return `${diffMonths}mo ago`;
     }
-    
+
     // Older than a year - show date
-    return date.toLocaleDateString("ja-JP", {
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "numeric",
       day: "numeric",
@@ -491,8 +491,8 @@ const ChatScreen: React.FC = () => {
     const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (mediaPermission.status !== "granted") {
       Alert.alert(
-        "フォトライブラリの許可が必要です",
-        "写真を選択するには許可が必要です。",
+        "Photo Library Access Needed",
+        "We need permission to choose photos.",
       );
     }
 
@@ -500,8 +500,8 @@ const ChatScreen: React.FC = () => {
     const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
     if (cameraPermission.status !== "granted") {
       Alert.alert(
-        "カメラの許可が必要です",
-        "写真を撮影するには許可が必要です。",
+        "Camera Access Needed",
+        "We need permission to take photos.",
       );
     }
   };
@@ -555,7 +555,7 @@ const ChatScreen: React.FC = () => {
         }
       }
     } catch (error) {
-      Alert.alert("エラー", "メッセージの読み込みに失敗しました。");
+      Alert.alert("Error", "Failed to load messages.");
     } finally {
       setLoading(false);
     }
@@ -644,16 +644,16 @@ const ChatScreen: React.FC = () => {
       const result = await blocksService.blockUser(currentUserId, userId);
       if (result.success) {
         Alert.alert(
-          "ブロック完了",
-          `${userName}さんをブロックしました。`,
+          "Blocked",
+          `You've blocked ${userName}.`,
           [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       } else {
-        Alert.alert("エラー", result.error || "ブロックに失敗しました。");
+        Alert.alert("Error", result.error || "Failed to block user.");
       }
     } catch (error) {
       console.error("[ChatScreen] Error blocking user:", error);
-      Alert.alert("エラー", "ブロックに失敗しました。");
+      Alert.alert("Error", "Failed to block user.");
     }
   };
 
@@ -689,13 +689,13 @@ const ChatScreen: React.FC = () => {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 60) {
-      return `${minutes}分前`;
+      return `${minutes}m ago`;
     } else if (hours < 24) {
-      return `${hours}時間前`;
+      return `${hours}h ago`;
     } else if (days < 7) {
-      return `${days}日前`;
+      return `${days}d ago`;
     } else {
-      return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+      return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
     }
   };
 
@@ -704,7 +704,7 @@ const ChatScreen: React.FC = () => {
     if (!messageText && !mediaUrl) return;
 
     if (!currentUserId) {
-      Alert.alert("エラー", "ユーザーIDが見つかりません。");
+      Alert.alert("Error", "User ID not found.");
       return;
     }
 
@@ -716,7 +716,7 @@ const ChatScreen: React.FC = () => {
       await loadVerificationStatus();
       // Check again after loading
       if (!cachedVerificationStatus) {
-        Alert.alert("エラー", "認証状態の確認に失敗しました。");
+        Alert.alert("Error", "Couldn't verify your account status.");
         return;
       }
     }
@@ -724,12 +724,12 @@ const ChatScreen: React.FC = () => {
     if (!cachedVerificationStatus.isVerified
         && cachedVerificationStatus.kycRequiredForMessaging) {
       Alert.alert(
-        "本人確認が必要です",
-        "メッセージを送信するには本人確認（KYC認証）が必要です。マイページから本人確認を完了してください。",
+        "Identity Verification Required",
+        "You need to complete identity verification (KYC) before sending messages. Finish verification from My Page.",
         [
-          { text: "キャンセル", style: "cancel" },
+          { text: "Cancel", style: "cancel" },
           {
-            text: "本人確認へ",
+            text: "Verify Now",
             onPress: () => navigation.navigate("KycVerification"),
           },
         ]
@@ -774,17 +774,17 @@ const ChatScreen: React.FC = () => {
           });
         } catch (stateError) {
           console.error("[ChatScreen] Failed to display message:", stateError);
-          showToast("メッセージの表示に失敗しました", "error");
+          showToast("Couldn't display message", "error");
         }
 
         setNewMessage("");
       } else {
-        Alert.alert("エラー", "メッセージの送信に失敗しました。");
-        showToast("メッセージの送信に失敗しました", "error");
+        Alert.alert("Error", "Failed to send message.");
+        showToast("Couldn't send message", "error");
       }
     } catch (error) {
-      Alert.alert("エラー", "メッセージの送信に失敗しました。");
-      showToast("メッセージの送信に失敗しました", "error");
+      Alert.alert("Error", "Failed to send message.");
+      showToast("Couldn't send message", "error");
     } finally {
       setSending(false);
     }
@@ -839,7 +839,7 @@ const ChatScreen: React.FC = () => {
       return publicUrl;
     } catch (error) {
       console.error('[ChatScreen] Error uploading image:', error);
-      Alert.alert("エラー", "画像のアップロードに失敗しました。");
+      Alert.alert("Error", "Failed to upload image.");
       return null;
     }
   };
@@ -852,8 +852,8 @@ const ChatScreen: React.FC = () => {
         const newPermission = await ImagePicker.requestCameraPermissionsAsync();
         if (!newPermission.granted) {
           Alert.alert(
-            "カメラの許可が必要です",
-            "写真を撮影するには設定からカメラの許可を有効にしてください。",
+            "Camera Access Needed",
+            "Enable camera access in Settings to take photos.",
           );
           return;
         }
@@ -876,7 +876,7 @@ const ChatScreen: React.FC = () => {
     } catch (error) {
       console.error('[ChatScreen] Camera error:', error);
       setSending(false);
-      Alert.alert("エラー", "カメラの起動に失敗しました。");
+      Alert.alert("Error", "Couldn't open the camera.");
     }
   };
 
@@ -898,7 +898,7 @@ const ChatScreen: React.FC = () => {
       }
     } catch (_error) {
       setSending(false);
-      Alert.alert("エラー", "画像の選択に失敗しました。");
+      Alert.alert("Error", "Failed to choose image.");
     }
   };
 
@@ -951,7 +951,7 @@ const ChatScreen: React.FC = () => {
       return publicUrl;
     } catch (error) {
       console.error('[ChatScreen] Error uploading video:', error);
-      Alert.alert("エラー", "動画のアップロードに失敗しました。");
+      Alert.alert("Error", "Failed to upload video.");
       return null;
     }
   };
@@ -975,7 +975,7 @@ const ChatScreen: React.FC = () => {
       }
     } catch (_error) {
       setSending(false);
-      Alert.alert("エラー", "動画の選択に失敗しました。");
+      Alert.alert("Error", "Failed to choose video.");
     }
   };
 
@@ -1034,7 +1034,7 @@ const ChatScreen: React.FC = () => {
               ]}
               resizeMode="contain"
             />
-            <Text style={styles.backLabel}>戻る</Text>
+            <Text style={styles.backLabel}>Back</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -1043,7 +1043,7 @@ const ChatScreen: React.FC = () => {
       </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>メッセージを読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading messages...</Text>
         </View>
       </SafeAreaView>
     );
@@ -1068,7 +1068,7 @@ const ChatScreen: React.FC = () => {
                   ]}
                   resizeMode="contain"
                 />
-                <Text style={styles.backLabel}>戻る</Text>
+                <Text style={styles.backLabel}>Back</Text>
               </View>
             </TouchableOpacity>
 
@@ -1080,11 +1080,11 @@ const ChatScreen: React.FC = () => {
           <View style={styles.headerUserInfo}>
             <Text style={styles.headerName}>{userName}</Text>
             {isOnline === true && (
-              <Text style={styles.headerStatus}>オンライン</Text>
+              <Text style={styles.headerStatus}>Online</Text>
             )}
             {isOnline === false && lastActiveAt && (
               <Text style={styles.headerStatusOffline}>
-                最後にアクセス: {formatLastActive(lastActiveAt)}
+                Last active: {formatLastActive(lastActiveAt)}
               </Text>
             )}
           </View>
@@ -1094,7 +1094,7 @@ const ChatScreen: React.FC = () => {
           style={styles.headerMenuButton}
           onPress={() => setShowUserMenu(true)}
           accessibilityRole="button"
-          accessibilityLabel="メニュー"
+          accessibilityLabel="Menu"
         >
           <Ionicons name="ellipsis-horizontal" size={22} color={Colors.gray[600]} />
         </TouchableOpacity>
@@ -1137,7 +1137,7 @@ const ChatScreen: React.FC = () => {
                 </TouchableOpacity>
                 <View style={styles.emptyCardMatchBadge}>
                   <Ionicons name="heart" size={14} color={Colors.white} />
-                  <Text style={styles.emptyCardMatchText}>マッチ成立！</Text>
+                  <Text style={styles.emptyCardMatchText}>It's a Match!</Text>
                 </View>
               </View>
 
@@ -1159,8 +1159,8 @@ const ChatScreen: React.FC = () => {
                         <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
                       </View>
                       <View>
-                        <Text style={styles.promoBannerTitle}>有料会員ならメッセージし放題</Text>
-                        <Text style={styles.promoBannerSubtitle}>{userName}さんにメッセージを送ろう</Text>
+                        <Text style={styles.promoBannerTitle}>Premium members message anyone, anytime</Text>
+                        <Text style={styles.promoBannerSubtitle}>Send {userName} a message</Text>
                       </View>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={Colors.white} />
@@ -1170,17 +1170,17 @@ const ChatScreen: React.FC = () => {
 
               {/* Prompt */}
               <Ionicons name="chatbubble-ellipses-outline" size={32} color={Colors.primary} style={{ marginBottom: Spacing.sm }} />
-              <Text style={styles.emptyTitle}>メッセージを送ってみましょう！</Text>
+              <Text style={styles.emptyTitle}>Send the first message!</Text>
               <Text style={styles.emptySubtitle}>
-                挨拶やゴルフの話題から始めてみませんか？
+                Try a quick hello or chat about golf.
               </Text>
 
               {/* Suggestion chips */}
               <View style={styles.suggestionChipsContainer}>
                 {[
-                  `${userName}さん、はじめまして！マッチありがとうございます😊 最近ゴルフ行かれましたか？⛳`,
-                  `${userName}さん、こんにちは！普段どのあたりのコースでプレーされてますか？🏌️`,
-                  `${userName}さんとぜひ一緒にラウンドしてみたいです！ご都合の良い日はありますか？⛳`,
+                  `Hey ${userName}, thanks for the match! 😊 Played any golf lately? ⛳`,
+                  `Hi ${userName}! Which courses do you usually play? 🏌️`,
+                  `${userName}, would love to play a round sometime! Any days that work for you? ⛳`,
                 ].map((text) => (
                   <TouchableOpacity
                     key={text}
@@ -1207,9 +1207,9 @@ const ChatScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <Ionicons name="lock-closed" size={16} color={Colors.primary} />
-            <Text style={styles.lockedInputText}>有料会員になるとメッセージを送信できます</Text>
+            <Text style={styles.lockedInputText}>Become a premium member to send messages</Text>
             <View style={styles.lockedInputButton}>
-              <Text style={styles.lockedInputButtonText}>詳しく見る</Text>
+              <Text style={styles.lockedInputButtonText}>Learn more</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -1225,7 +1225,7 @@ const ChatScreen: React.FC = () => {
                 style={[styles.iconTouchable, { marginRight: ICON_SPACING }]}
                 onPress={() => setMediaIconsVisible((v) => !v)}
                 accessibilityRole="button"
-                accessibilityLabel={mediaIconsVisible ? "隠す" : "表示"}
+                accessibilityLabel={mediaIconsVisible ? "Hide" : "Show"}
                 hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
               >
                 <Image
@@ -1285,7 +1285,7 @@ const ChatScreen: React.FC = () => {
             <TextInput
               ref={textInputRef}
               style={styles.textInput}
-              placeholder="メッセージを入力..."
+              placeholder="Type a message..."
               placeholderTextColor={Colors.gray[400]}
               value={newMessage}
               onChangeText={(text) => {
@@ -1383,7 +1383,7 @@ const ChatScreen: React.FC = () => {
         >
           <View style={styles.emojiPickerContainer}>
             <View style={styles.emojiPickerHeader}>
-              <Text style={styles.emojiPickerTitle}>絵文字を選択</Text>
+              <Text style={styles.emojiPickerTitle}>Pick an Emoji</Text>
               <TouchableOpacity onPress={() => setShowEmojiPicker(false)}>
                 <Ionicons name="close" size={24} color={Colors.text.primary} />
               </TouchableOpacity>

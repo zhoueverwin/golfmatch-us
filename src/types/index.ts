@@ -63,7 +63,6 @@ export interface PostComment {
 export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
-  EmailAuth: undefined;
   Main: undefined;
   Chat: { chatId: string; userId: string; userName: string; userImage: string };
   Profile: { userId: string; refresh?: boolean };

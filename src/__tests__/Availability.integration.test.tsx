@@ -62,7 +62,7 @@ describe("Availability Integration Tests", () => {
         testDate,
         true,
         ["09:00", "14:00"],
-        "テスト可能日"
+        "Test available day"
       );
 
       expect(result.success).toBe(true);
@@ -70,7 +70,7 @@ describe("Availability Integration Tests", () => {
       expect(result.data?.date).toBe(testDate);
       expect(result.data?.is_available).toBe(true);
       expect(result.data?.time_slots).toEqual(["09:00", "14:00"]);
-      expect(result.data?.notes).toBe("テスト可能日");
+      expect(result.data?.notes).toBe("Test available day");
     });
 
     it("updates existing availability", async () => {
@@ -80,7 +80,7 @@ describe("Availability Integration Tests", () => {
         testDate,
         true,
         ["09:00"],
-        "午前のみ"
+        "Morning only"
       );
 
       // Then update it
@@ -89,12 +89,12 @@ describe("Availability Integration Tests", () => {
         testDate,
         false,
         [],
-        "予定変更"
+        "Schedule changed"
       );
 
       expect(result.success).toBe(true);
       expect(result.data?.is_available).toBe(false);
-      expect(result.data?.notes).toBe("予定変更");
+      expect(result.data?.notes).toBe("Schedule changed");
     });
 
     it("handles availability without time slots", async () => {
@@ -116,25 +116,25 @@ describe("Availability Integration Tests", () => {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-01`,
           is_available: true,
           time_slots: ["09:00", "14:00"],
-          notes: "週末可能",
+          notes: "Weekends available",
         },
         {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-08`,
           is_available: true,
           time_slots: ["09:00"],
-          notes: "午前のみ",
+          notes: "Morning only",
         },
         {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-15`,
           is_available: false,
           time_slots: [],
-          notes: "予定あり",
+          notes: "Has plans",
         },
         {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-22`,
           is_available: true,
           time_slots: ["14:00"],
-          notes: "午後のみ",
+          notes: "Afternoon only",
         },
       ];
 
@@ -166,7 +166,7 @@ describe("Availability Integration Tests", () => {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-01`,
           is_available: true,
           time_slots: ["09:00"],
-          notes: "初回設定",
+          notes: "Initial setting",
         },
       ];
 
@@ -183,7 +183,7 @@ describe("Availability Integration Tests", () => {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-15`,
           is_available: true,
           time_slots: ["14:00"],
-          notes: "更新後",
+          notes: "Updated",
         },
       ];
 
@@ -214,7 +214,7 @@ describe("Availability Integration Tests", () => {
           date: `${testYear}-${String(testMonth).padStart(2, "0")}-01`,
           is_available: true,
           time_slots: ["09:00"],
-          notes: "削除予定",
+          notes: "To be deleted",
         },
       ];
 
@@ -256,7 +256,7 @@ describe("Availability Integration Tests", () => {
         testDate,
         true,
         ["09:00"],
-        "削除テスト"
+        "Delete test"
       );
 
       // Then delete it
@@ -320,7 +320,7 @@ describe("Availability Integration Tests", () => {
           date: "2025-12-15",
           is_available: true,
           time_slots: ["09:00"],
-          notes: "12月",
+          notes: "December",
         },
       ];
 
@@ -402,7 +402,7 @@ describe("Availability Integration Tests", () => {
         leapYearDate,
         true,
         ["09:00"],
-        "うるう年"
+        "Leap year"
       );
 
       expect(result.success).toBe(true);
@@ -420,7 +420,7 @@ describe("Availability Integration Tests", () => {
         lastDay,
         true,
         ["09:00"],
-        "月末"
+        "End of month"
       );
 
       await DataProvider.setAvailability(
@@ -428,7 +428,7 @@ describe("Availability Integration Tests", () => {
         firstDay,
         true,
         ["09:00"],
-        "月初"
+        "Start of month"
       );
 
       // Query November - should only get November data
@@ -446,7 +446,7 @@ describe("Availability Integration Tests", () => {
     });
 
     it("handles very long notes", async () => {
-      const longNotes = "あ".repeat(500); // 500 character note
+      const longNotes = "a".repeat(500); // 500 character note
       const testDate = `${testYear}-${String(testMonth).padStart(2, "0")}-05`;
 
       const result = await DataProvider.setAvailability(
@@ -484,7 +484,7 @@ describe("Availability Integration Tests", () => {
         testDate,
         true,
         manyTimeSlots,
-        "終日可能"
+        "Available all day"
       );
 
       expect(result.success).toBe(true);

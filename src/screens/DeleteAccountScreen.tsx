@@ -28,16 +28,16 @@ type DeleteAccountScreenNavigationProp = StackNavigationProp<
 >;
 
 const WITHDRAWAL_REASONS = [
-  { code: "found_partner_here", label: "このアプリでゴルフ仲間が見つかった" },
-  { code: "found_partner_other", label: "他のサービスでゴルフ仲間が見つかった" },
-  { code: "no_matches", label: "マッチングしない・仲間が見つからない" },
-  { code: "no_preferred_users", label: "近くにゴルフ仲間がいない" },
-  { code: "too_expensive", label: "料金が高い" },
-  { code: "hard_to_use", label: "使い方がわからない・使いにくい" },
-  { code: "not_playing_golf", label: "ゴルフをする機会が減った" },
-  { code: "privacy_concern", label: "プライバシーが心配" },
-  { code: "taking_break", label: "しばらく休みたい" },
-  { code: "other", label: "その他（自由入力）" },
+  { code: "found_partner_here", label: "I found golf partners on this app" },
+  { code: "found_partner_other", label: "I found golf partners somewhere else" },
+  { code: "no_matches", label: "I'm not getting matches or finding partners" },
+  { code: "no_preferred_users", label: "No golf partners nearby" },
+  { code: "too_expensive", label: "It's too expensive" },
+  { code: "hard_to_use", label: "It's confusing or hard to use" },
+  { code: "not_playing_golf", label: "I'm not playing golf as much" },
+  { code: "privacy_concern", label: "Privacy concerns" },
+  { code: "taking_break", label: "Taking a break" },
+  { code: "other", label: "Other (please specify)" },
 ] as const;
 
 const DeleteAccountScreen: React.FC = () => {
@@ -50,7 +50,7 @@ const DeleteAccountScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
-  const CONFIRM_WORD = "退会する";
+  const CONFIRM_WORD = "DELETE";
 
   const isReasonValid =
     selectedReason !== null &&
@@ -67,8 +67,8 @@ const DeleteAccountScreen: React.FC = () => {
   const handleDeleteAccount = async () => {
     if (confirmText !== CONFIRM_WORD) {
       Alert.alert(
-        "確認",
-        `「${CONFIRM_WORD}」と入力してください`,
+        "Confirm",
+        `Please type "${CONFIRM_WORD}" to continue`,
         [{ text: "OK" }]
       );
       return;
@@ -78,15 +78,15 @@ const DeleteAccountScreen: React.FC = () => {
       selectedReason === "other" ? otherReasonText.trim() : null;
 
     Alert.alert(
-      "最終確認",
-      "本当にアカウントを削除しますか？\n\nこの操作は取り消せません。すべてのデータが完全に削除されます。",
+      "Final Confirmation",
+      "Are you sure you want to delete your account?\n\nThis cannot be undone. All your data will be permanently deleted.",
       [
         {
-          text: "キャンセル",
+          text: "Cancel",
           style: "cancel",
         },
         {
-          text: "削除する",
+          text: "Delete",
           style: "destructive",
           onPress: async () => {
             setIsDeleting(true);
@@ -97,15 +97,15 @@ const DeleteAccountScreen: React.FC = () => {
               );
               if (!result.success) {
                 Alert.alert(
-                  "エラー",
-                  result.error || "アカウントの削除に失敗しました",
+                  "Error",
+                  result.error || "Failed to delete account",
                   [{ text: "OK" }]
                 );
               }
             } catch (error) {
               Alert.alert(
-                "エラー",
-                "アカウントの削除に失敗しました。しばらくしてからもう一度お試しください。",
+                "Error",
+                "Failed to delete account. Please try again later.",
                 [{ text: "OK" }]
               );
             } finally {
@@ -120,7 +120,7 @@ const DeleteAccountScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="退会"
+        title="Delete Account"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -139,42 +139,42 @@ const DeleteAccountScreen: React.FC = () => {
           <View style={styles.warningIconContainer}>
             <Ionicons name="warning" size={48} color={Colors.error} />
           </View>
-          <Text style={styles.warningTitle}>アカウントを削除しますか？</Text>
+          <Text style={styles.warningTitle}>Delete your account?</Text>
           <Text style={styles.warningDescription}>
-            アカウントを削除すると、以下のデータがすべて削除されます。この操作は取り消すことができません。
+            Deleting your account will permanently remove all of the following data. This cannot be undone.
           </Text>
         </View>
 
         <View style={styles.dataListSection}>
-          <Text style={styles.sectionTitle}>削除されるデータ</Text>
+          <Text style={styles.sectionTitle}>Data that will be deleted</Text>
           <View style={styles.dataItem}>
             <Ionicons name="person" size={20} color={Colors.text.secondary} />
-            <Text style={styles.dataItemText}>プロフィール情報</Text>
+            <Text style={styles.dataItemText}>Profile information</Text>
           </View>
           <View style={styles.dataItem}>
             <Ionicons name="heart" size={20} color={Colors.text.secondary} />
-            <Text style={styles.dataItemText}>いいね・マッチング履歴</Text>
+            <Text style={styles.dataItemText}>Likes and match history</Text>
           </View>
           <View style={styles.dataItem}>
             <Ionicons name="chatbubbles" size={20} color={Colors.text.secondary} />
-            <Text style={styles.dataItemText}>メッセージ履歴</Text>
+            <Text style={styles.dataItemText}>Message history</Text>
           </View>
           <View style={styles.dataItem}>
             <Ionicons name="images" size={20} color={Colors.text.secondary} />
-            <Text style={styles.dataItemText}>投稿・写真</Text>
+            <Text style={styles.dataItemText}>Posts and photos</Text>
           </View>
           <View style={styles.dataItem}>
             <Ionicons name="calendar" size={20} color={Colors.text.secondary} />
-            <Text style={styles.dataItemText}>カレンダー・予定</Text>
+            <Text style={styles.dataItemText}>Calendar and events</Text>
           </View>
           <View style={styles.dataItem}>
             <Ionicons name="notifications" size={20} color={Colors.text.secondary} />
-            <Text style={styles.dataItemText}>通知設定・履歴</Text>
+            <Text style={styles.dataItemText}>Notification settings and history</Text>
           </View>
         </View>
 
         <View style={styles.reasonSection}>
-          <Text style={styles.sectionTitle}>退会理由を選んでください</Text>
+          <Text style={styles.sectionTitle}>Why are you leaving?</Text>
           {WITHDRAWAL_REASONS.map((reason) => (
             <TouchableOpacity
               key={reason.code}
@@ -198,7 +198,7 @@ const DeleteAccountScreen: React.FC = () => {
           {selectedReason === "other" && (
             <TextInput
               style={styles.otherReasonInput}
-              placeholder="退会理由を入力してください"
+              placeholder="Tell us why you're leaving"
               placeholderTextColor={Colors.gray[400]}
               value={otherReasonText}
               onChangeText={setOtherReasonText}
@@ -212,7 +212,7 @@ const DeleteAccountScreen: React.FC = () => {
 
         <View style={styles.confirmSection}>
           <Text style={styles.confirmLabel}>
-            退会を確認するには「{CONFIRM_WORD}」と入力してください
+            Type "{CONFIRM_WORD}" to confirm
           </Text>
           <TextInput
             ref={inputRef}
@@ -240,7 +240,7 @@ const DeleteAccountScreen: React.FC = () => {
             ) : (
               <>
                 <Ionicons name="trash" size={20} color={Colors.white} />
-                <Text style={styles.deleteButtonText}>アカウントを削除</Text>
+                <Text style={styles.deleteButtonText}>Delete Account</Text>
               </>
             )}
           </TouchableOpacity>
@@ -250,7 +250,7 @@ const DeleteAccountScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             disabled={isDeleting}
           >
-            <Text style={styles.cancelButtonText}>キャンセル</Text>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
         </ScrollView>

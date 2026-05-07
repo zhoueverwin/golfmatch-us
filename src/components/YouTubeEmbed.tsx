@@ -38,7 +38,7 @@ const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({ video, postId: _postId }) =
         onPress={handlePlay}
         activeOpacity={0.85}
         accessibilityRole="button"
-        accessibilityLabel="YouTube動画を再生"
+        accessibilityLabel="Play YouTube video"
       >
         <ExpoImage
           source={{ uri: video.thumbnailUrl }}

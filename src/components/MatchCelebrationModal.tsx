@@ -47,10 +47,10 @@ interface MatchCelebrationModalProps {
 }
 
 const getMessageTemplates = (otherUserName: string): string[] => [
-  `${otherUserName}さん、マッチありがとうございます！\n趣味が近い気がするので、いろいろお話できたらうれしいです！`,
-  `こんにちは！${otherUserName}さんのプロフィール拝見しました。\nぜひ一緒にラウンドしましょう！⛳`,
-  `はじめまして！\nどのコースでよくプレーされますか？\n今度ご一緒できたらうれしいです！`,
-  `${otherUserName}さん、はじめまして！\nゴルフのお話できるの楽しみです😊`,
+  `Hi ${otherUserName}, thanks for the match!\nLooks like we have a lot in common — would love to chat!`,
+  `Hi! I checked out your profile, ${otherUserName}.\nLet's go play a round together! ⛳`,
+  `Nice to meet you!\nWhich courses do you usually play?\nWould love to play together sometime!`,
+  `Hi ${otherUserName}, nice to meet you!\nLooking forward to talking golf with you 😊`,
 ];
 
 const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
@@ -200,9 +200,9 @@ const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
                   ]}
                 >
                   <Text style={styles.matchName}>
-                    {matchData.otherUser.name}さんと
+                    You matched with
                   </Text>
-                  <Text style={styles.matchTitle}>マッチングしました！</Text>
+                  <Text style={styles.matchTitle}>{matchData.otherUser.name}!</Text>
                 </Animated.View>
 
                 {/* Profile Images with Heart */}
@@ -260,7 +260,7 @@ const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
                       color={Colors.white}
                     />
                     <Text style={styles.messageSectionTitle}>
-                      あなたからメッセージしてみよう
+                      Send the first message
                     </Text>
                   </View>
 
@@ -295,7 +295,7 @@ const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
                         </Text>
                         {selectedTemplate === index && isSending && (
                           <View style={styles.sendingIndicator}>
-                            <Text style={styles.sendingText}>送信中...</Text>
+                            <Text style={styles.sendingText}>Sending...</Text>
                           </View>
                         )}
                       </TouchableOpacity>
@@ -306,7 +306,7 @@ const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
                   <View style={styles.inputContainer}>
                     <TextInput
                       style={styles.messageInput}
-                      placeholder="メッセージを入力"
+                      placeholder="Type a message"
                       placeholderTextColor="rgba(255,255,255,0.5)"
                       value={customMessage}
                       onChangeText={setCustomMessage}
@@ -337,7 +337,7 @@ const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
 
                   {/* Moderation Notice */}
                   <Text style={styles.moderationNotice}>
-                    健全なサービスを運営する目的で運営者がメッセージ内容を確認・削除する場合があります。
+                    To keep the community safe, moderators may review or remove messages.
                   </Text>
                 </Animated.View>
 
@@ -355,7 +355,7 @@ const MatchCelebrationModal: React.FC<MatchCelebrationModalProps> = ({
                     onPress={handleContinue}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.continueText}>続ける</Text>
+                    <Text style={styles.continueText}>Continue</Text>
                   </TouchableOpacity>
                 </Animated.View>
               </ScrollView>

@@ -10,8 +10,8 @@ export interface User {
   gender: "male" | "female";
   location: string;
   prefecture: string;
-  play_prefecture?: string[]; // Prefectures where user typically plays golf (プレー地域) - max 3
-  golf_skill_level: "ビギナー" | "中級者" | "上級者" | "プロ";
+  play_prefecture?: string[]; // Prefectures where user typically plays golf (max 3)
+  golf_skill_level: "Beginner" | "Intermediate" | "Advanced" | "Pro";
   average_score?: number;
   bio?: string;
   profile_pictures: string[];
@@ -126,7 +126,7 @@ export interface ConnectionItem {
 }
 
 export interface SearchFilters {
-  // Age filtering by decade (e.g., [20, 30] for 20代 and 30代)
+  // Age filtering by decade (e.g., [20, 30] for 20s and 30s)
   age_decades?: number[];
   // Converted age range (computed from age_decades)
   age_min?: number;
@@ -170,7 +170,7 @@ export interface UserProfile {
   };
   bio: string;
   profile_pictures: string[];
-  play_prefecture?: string[]; // Prefectures where user typically plays golf (プレー地域) - max 3
+  play_prefecture?: string[]; // Prefectures where user typically plays golf (max 3)
   status?: {
     is_verified: boolean;
     is_premium?: boolean;

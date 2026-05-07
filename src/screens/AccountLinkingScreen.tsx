@@ -35,7 +35,7 @@ interface ProviderInfo {
 }
 
 const PROVIDER_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  email: { label: "メールアドレス", icon: "mail", color: "#EA4335" },
+  email: { label: "Email", icon: "mail", color: "#EA4335" },
   google: { label: "Google", icon: "logo-google", color: "#4285F4" },
   apple: { label: "Apple ID", icon: "logo-apple", color: "#000000" },
   line: { label: "LINE", icon: "chatbubble", color: "#06C755" },
@@ -90,15 +90,15 @@ const AccountLinkingScreen: React.FC = () => {
 
   const handleLinkEmail = async () => {
     if (!emailRegex.test(email)) {
-      Alert.alert("エラー", "有効なメールアドレスを入力してください");
+      Alert.alert("Error", "Please enter a valid email address.");
       return;
     }
     if (password.length < 8) {
-      Alert.alert("エラー", "パスワードは8文字以上で入力してください");
+      Alert.alert("Error", "Password must be at least 8 characters.");
       return;
     }
     if (password !== passwordConfirm) {
-      Alert.alert("エラー", "パスワードが一致しません");
+      Alert.alert("Error", "Passwords do not match.");
       return;
     }
 
@@ -108,19 +108,19 @@ const AccountLinkingScreen: React.FC = () => {
 
     if (result.success) {
       Alert.alert(
-        "連携完了",
-        "メールアドレスの連携が完了しました。次回からメールアドレスとパスワードでもログインできます。",
+        "Account Linked",
+        "Your email has been linked. You can now sign in with your email and password.",
         [{ text: "OK", onPress: () => { fetchIdentities(); setEmail(""); setPassword(""); setPasswordConfirm(""); } }]
       );
     } else {
-      Alert.alert("エラー", result.error || "メールアドレスの連携に失敗しました");
+      Alert.alert("Error", result.error || "Failed to link email address.");
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="アカウント連携"
+        title="Linked Accounts"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -134,9 +134,9 @@ const AccountLinkingScreen: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 連携状況 */}
+          {/* Linking status */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>現在の連携状況</Text>
+            <Text style={styles.sectionTitle}>Current Linked Accounts</Text>
             {loading ? (
               <ActivityIndicator
                 color={Colors.primary}
@@ -160,25 +160,25 @@ const AccountLinkingScreen: React.FC = () => {
                         size={18}
                         color={Colors.primary}
                       />
-                      <Text style={styles.linkedText}>連携済み</Text>
+                      <Text style={styles.linkedText}>Linked</Text>
                     </View>
                   ) : (
-                    <Text style={styles.unlinkedText}>未連携</Text>
+                    <Text style={styles.unlinkedText}>Not linked</Text>
                   )}
                 </View>
               ))
             )}
           </View>
 
-          {/* メール連携フォーム */}
+          {/* Email link form */}
           {!isEmailLinked && !loading && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>メールアドレスを連携</Text>
+              <Text style={styles.sectionTitle}>Link an Email Address</Text>
               <Text style={styles.description}>
-                メールアドレスとパスワードを設定すると、メールアドレスでもログインできるようになります。
+                Set an email and password to also sign in with your email address.
               </Text>
 
-              <Text style={styles.inputLabel}>メールアドレス</Text>
+              <Text style={styles.inputLabel}>Email</Text>
               <TextInput
                 style={styles.input}
                 placeholder="example@email.com"
@@ -191,10 +191,10 @@ const AccountLinkingScreen: React.FC = () => {
                 editable={!isLinking}
               />
 
-              <Text style={styles.inputLabel}>パスワード（8文字以上）</Text>
+              <Text style={styles.inputLabel}>Password (at least 8 characters)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="パスワードを入力"
+                placeholder="Enter a password"
                 placeholderTextColor={Colors.gray[400]}
                 value={password}
                 onChangeText={setPassword}
@@ -204,10 +204,10 @@ const AccountLinkingScreen: React.FC = () => {
                 editable={!isLinking}
               />
 
-              <Text style={styles.inputLabel}>パスワード（確認）</Text>
+              <Text style={styles.inputLabel}>Confirm Password</Text>
               <TextInput
                 style={styles.input}
-                placeholder="パスワードを再入力"
+                placeholder="Re-enter your password"
                 placeholderTextColor={Colors.gray[400]}
                 value={passwordConfirm}
                 onChangeText={setPasswordConfirm}
@@ -219,12 +219,12 @@ const AccountLinkingScreen: React.FC = () => {
 
               {password.length > 0 && password.length < 8 && (
                 <Text style={styles.validationError}>
-                  パスワードは8文字以上で入力してください
+                  Password must be at least 8 characters.
                 </Text>
               )}
               {passwordConfirm.length > 0 && password !== passwordConfirm && (
                 <Text style={styles.validationError}>
-                  パスワードが一致しません
+                  Passwords do not match.
                 </Text>
               )}
 
@@ -242,7 +242,7 @@ const AccountLinkingScreen: React.FC = () => {
                       style={styles.linkButtonText}
                       onPress={isFormValid ? handleLinkEmail : undefined}
                     >
-                      連携する
+                      Link Account
                     </Text>
                   )}
                 </View>
@@ -250,7 +250,7 @@ const AccountLinkingScreen: React.FC = () => {
             </View>
           )}
 
-          {/* 連携済みメッセージ */}
+          {/* Linked confirmation */}
           {isEmailLinked && !loading && (
             <View style={styles.section}>
               <View style={styles.completedContainer}>
@@ -260,10 +260,10 @@ const AccountLinkingScreen: React.FC = () => {
                   color={Colors.primary}
                 />
                 <Text style={styles.completedText}>
-                  メールアドレスは連携済みです
+                  Your email is linked
                 </Text>
                 <Text style={styles.completedSubtext}>
-                  メールアドレスとパスワードでログインできます
+                  You can sign in with your email and password.
                 </Text>
               </View>
             </View>

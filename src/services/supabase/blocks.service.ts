@@ -21,7 +21,7 @@ export class BlocksService {
       if (blockerId === blockedUserId) {
         return {
           success: false,
-          error: "自分自身をブロックすることはできません",
+          error: "You cannot block yourself",
         };
       }
 
@@ -39,7 +39,7 @@ export class BlocksService {
         if (error.code === "23505") {
           return {
             success: false,
-            error: "このユーザーは既にブロックされています",
+            error: "This user is already blocked",
           };
         }
         throw error;
@@ -53,7 +53,7 @@ export class BlocksService {
       console.error("[BlocksService] Failed to block user:", error);
       return {
         success: false,
-        error: error.message || "ブロックに失敗しました",
+        error: error.message || "Failed to block user",
       };
     }
   }
@@ -81,7 +81,7 @@ export class BlocksService {
       console.error("[BlocksService] Failed to unblock user:", error);
       return {
         success: false,
-        error: error.message || "ブロック解除に失敗しました",
+        error: error.message || "Failed to unblock user",
       };
     }
   }
@@ -109,7 +109,7 @@ export class BlocksService {
       console.error("[BlocksService] Failed to check block status:", error);
       return {
         success: false,
-        error: error.message || "ブロック状態の確認に失敗しました",
+        error: error.message || "Failed to check block status",
         data: false,
       };
     }
@@ -134,7 +134,7 @@ export class BlocksService {
       console.error("[BlocksService] Failed to get blocked users:", error);
       return {
         success: false,
-        error: error.message || "ブロックリストの取得に失敗しました",
+        error: error.message || "Failed to fetch block list",
         data: [],
       };
     }
@@ -198,7 +198,7 @@ export class BlocksService {
       );
       return {
         success: false,
-        error: error.message || "ブロックリストの取得に失敗しました",
+        error: error.message || "Failed to fetch block list",
         data: [],
       };
     }

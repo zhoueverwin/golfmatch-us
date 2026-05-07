@@ -49,13 +49,13 @@ export const getValidProfilePictures = (
 
 // Default user data for empty profiles
 export const DEFAULT_PROFILE_TEXT = {
-  NO_BIO: "自己紹介が登録されていません",
-  NO_NAME: "名前未設定",
-  NO_PREFECTURE: "未設定",
-  NO_AGE: "年齢未設定",
-  NO_SCORE: "スコア未設定",
-  NO_EXPERIENCE: "ゴルフ歴未設定",
-  NO_SKILL_LEVEL: "レベル未設定",
+  NO_BIO: "No bio yet",
+  NO_NAME: "No name set",
+  NO_PREFECTURE: "Not set",
+  NO_AGE: "Age not set",
+  NO_SCORE: "Score not set",
+  NO_EXPERIENCE: "Experience not set",
+  NO_SKILL_LEVEL: "Skill level not set",
 };
 
 export default {

@@ -40,20 +40,34 @@ export class PostsService {
     average_score
   `;
 
-  // Japanese region mapping for location-based scoring
+  // Region mapping for location-based recommendation scoring (US Census regions).
+  // Mirrors REGION_MAP in src/constants/filterOptions.ts; kept as a private field
+  // here to avoid a cross-layer constants import from a service.
   private readonly REGIONS: Record<string, string[]> = {
-    kanto: ['東京都', '神奈川県', '埼玉県', '千葉県', '茨城県', '栃木県', '群馬県'],
-    kansai: ['大阪府', '京都府', '兵庫県', '奈良県', '和歌山県', '滋賀県'],
-    chubu: ['愛知県', '岐阜県', '三重県', '静岡県', '長野県', '山梨県', '新潟県', '富山県', '石川県', '福井県'],
-    kyushu: ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'],
-    tohoku: ['青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県'],
-    chugoku: ['鳥取県', '島根県', '岡山県', '広島県', '山口県'],
-    shikoku: ['徳島県', '香川県', '愛媛県', '高知県'],
-    hokkaido: ['北海道'],
+    northeast: [
+      'Connecticut', 'Maine', 'Massachusetts', 'New Hampshire', 'New Jersey',
+      'New York', 'Pennsylvania', 'Rhode Island', 'Vermont',
+    ],
+    midwest: [
+      'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Michigan', 'Minnesota',
+      'Missouri', 'Nebraska', 'North Dakota', 'Ohio', 'South Dakota', 'Wisconsin',
+    ],
+    south: [
+      'Alabama', 'Arkansas', 'Delaware', 'District of Columbia', 'Florida',
+      'Georgia', 'Kentucky', 'Louisiana', 'Maryland', 'Mississippi',
+      'North Carolina', 'Oklahoma', 'South Carolina', 'Tennessee', 'Texas',
+      'Virginia', 'West Virginia',
+    ],
+    west: [
+      'Alaska', 'Arizona', 'California', 'Colorado', 'Hawaii', 'Idaho',
+      'Montana', 'Nevada', 'New Mexico', 'Oregon', 'Utah', 'Washington',
+      'Wyoming',
+    ],
   };
 
-  // Skill level hierarchy for similarity scoring
-  private readonly SKILL_LEVELS = ['ビギナー', '中級者', '上級者', 'プロ'];
+  // Skill level hierarchy for similarity scoring; values match the
+  // profiles.golf_skill_level enum.
+  private readonly SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Pro'];
 
   /**
    * Transform minimal database response to full Post type with defaults
@@ -73,7 +87,7 @@ export class PostsService {
         gender: 'male',
         location: '',
         prefecture: user?.prefecture || '',
-        golf_skill_level: user?.golf_skill_level || 'ビギナー',
+        golf_skill_level: user?.golf_skill_level || 'Beginner',
         average_score: user?.average_score,
         profile_pictures: user?.profile_pictures || [],
         is_verified: user?.is_verified || false,
@@ -107,11 +121,11 @@ export class PostsService {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'たった今';
-    if (diffMins < 60) return `${diffMins}分前`;
-    if (diffHours < 24) return `${diffHours}時間前`;
-    if (diffDays < 7) return `${diffDays}日前`;
-    return date.toLocaleDateString('ja-JP');
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    return date.toLocaleDateString('en-US');
   }
 
   /**
@@ -201,7 +215,7 @@ export class PostsService {
    * - Social proximity: 0-25 points
    * - Recency: 0-20 points
    */
-  // Operator account ID — always boosted to the top of おすすめ
+  // Operator account ID — always boosted to the top of Recommended
   private readonly OPERATOR_USER_ID = "73d88e5a-83a4-4ec0-8247-a5394db1be94";
 
   private calculatePostScore(
@@ -258,7 +272,7 @@ export class PostsService {
     }
 
     // 3. SOCIAL PROXIMITY SCORE (0-25 points)
-    // Note: Posts from liked/matched users are excluded from おすすめ (they appear in フォロー中)
+    // Note: Posts from liked/matched users are excluded from Recommended (they appear in Following)
     // So we only boost posts from users who have shown interest in the current user
     if (userId) {
       if (socialData.likerIds.has(userId)) {
@@ -475,7 +489,7 @@ export class PostsService {
       if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
         return {
           success: false,
-          error: "この投稿は既に作成されています", // "This post has already been created"
+          error: "This post has already been created",
         };
       }
       return {
@@ -717,14 +731,14 @@ export class PostsService {
       const fetchLimit = Math.min(limit * 3, 100); // Cap at 100 for performance
 
       // 4. Build list of user IDs to exclude (current user + followed users)
-      // Never exclude the operator account — their posts always appear in おすすめ
+      // Never exclude the operator account — their posts always appear in Recommended
       const excludeUserIds = [
         currentUserId,
         ...Array.from(socialData.likedUserIds).filter((id) => id !== this.OPERATOR_USER_ID),
       ];
 
       // 5. Fetch posts with extended profile fields for scoring
-      // Exclude posts from current user and users they already follow (no overlap with フォロー中)
+      // Exclude posts from current user and users they already follow (no overlap with Following)
       // Note: No time window restriction - show all posts for better discovery
       let query = supabase
         .from("posts")

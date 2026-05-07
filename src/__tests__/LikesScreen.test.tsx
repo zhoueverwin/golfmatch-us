@@ -13,6 +13,6 @@ const wrap = (ui: React.ReactElement) => (
 describe("LikesScreen", () => {
   it("renders and shows empty state when no likes", async () => {
     const { findByText } = render(wrap(<LikesScreen />));
-    expect(await findByText("いいね")).toBeTruthy();
+    expect(await findByText("Likes")).toBeTruthy();
   });
 });

@@ -93,15 +93,15 @@ const BirthDatePicker: React.FC<BirthDatePickerProps> = ({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={Colors.gray[600]} />
           </TouchableOpacity>
-          <Text style={styles.title}>生年月日</Text>
+          <Text style={styles.title}>Date of Birth</Text>
           <View style={{ width: 24 }} />
         </View>
 
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.agePreview}>
-            <Text style={styles.agePreviewLabel}>選択中の年齢</Text>
-            <Text style={styles.agePreviewValue}>{calculatedAge}歳</Text>
+            <Text style={styles.agePreviewLabel}>Selected age</Text>
+            <Text style={styles.agePreviewValue}>{calculatedAge}</Text>
           </View>
 
           <View style={styles.pickerContainer}>
@@ -112,20 +112,20 @@ const BirthDatePicker: React.FC<BirthDatePickerProps> = ({
               onChange={handleDateChange}
               maximumDate={maxDate}
               minimumDate={minDate}
-              locale="ja-JP"
+              locale="en-US"
               style={styles.picker}
             />
           </View>
 
           <Text style={styles.hint}>
-            {minAge}歳以上{maxAge}歳以下の方がご利用いただけます
+            Available to users between {minAge} and {maxAge} years old
           </Text>
         </View>
 
         {/* Action Button */}
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>適用</Text>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

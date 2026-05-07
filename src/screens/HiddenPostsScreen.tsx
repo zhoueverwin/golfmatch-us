@@ -95,7 +95,7 @@ const HiddenPostsScreen: React.FC = () => {
           id: post.id,
           content: post.content || "",
           user_id: post.user_id,
-          user_name: user?.name || "不明なユーザー",
+          user_name: user?.name || "Unknown user",
           user_profile_picture: getProfilePicture(user?.profile_pictures || [], 0),
           created_at: post.created_at,
         };
@@ -134,7 +134,7 @@ const HiddenPostsScreen: React.FC = () => {
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -148,12 +148,12 @@ const HiddenPostsScreen: React.FC = () => {
 
   const handleUnhide = (post: HiddenPostInfo) => {
     Alert.alert(
-      "非表示を解除",
-      "この投稿を再び表示しますか？",
+      "Unhide Post",
+      "Show this post again?",
       [
-        { text: "キャンセル", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "表示する",
+          text: "Show",
           onPress: async () => {
             if (!profileId) return;
 
@@ -164,10 +164,10 @@ const HiddenPostsScreen: React.FC = () => {
 
               // Remove from local state
               setHiddenPosts((prev) => prev.filter((p) => p.id !== post.id));
-              Alert.alert("完了", "投稿の非表示を解除しました。");
+              Alert.alert("Done", "The post will appear in your feed again.");
             } catch (error) {
               console.error("Error unhiding post:", error);
-              Alert.alert("エラー", "非表示の解除に失敗しました。");
+              Alert.alert("Error", "Failed to unhide the post.");
             } finally {
               setUnhidingId(null);
             }
@@ -201,7 +201,7 @@ const HiddenPostsScreen: React.FC = () => {
           <View style={styles.postDetails}>
             <Text style={styles.userName}>{item.user_name}</Text>
             <Text style={styles.postContent} numberOfLines={2}>
-              {item.content || "(画像/動画のみの投稿)"}
+              {item.content || "(Photo/video only)"}
             </Text>
             <Text style={styles.postDate}>{formatDate(item.created_at)}</Text>
           </View>
@@ -215,7 +215,7 @@ const HiddenPostsScreen: React.FC = () => {
           {isUnhiding ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Text style={styles.unhideButtonText}>表示</Text>
+            <Text style={styles.unhideButtonText}>Show</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -226,13 +226,13 @@ const HiddenPostsScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="非表示リスト"
+          title="Hidden Posts"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -241,7 +241,7 @@ const HiddenPostsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="非表示リスト"
+        title="Hidden Posts"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -249,8 +249,8 @@ const HiddenPostsScreen: React.FC = () => {
       {hiddenPosts.length === 0 ? (
         <View style={styles.emptyContainer}>
           <EmptyState
-            title="非表示の投稿はありません"
-            subtitle="非表示にした投稿はここに表示されます。"
+            title="No hidden posts"
+            subtitle="Posts you hide will appear here."
             icon="eye-off-outline"
           />
         </View>
@@ -277,7 +277,7 @@ const HiddenPostsScreen: React.FC = () => {
                 color={Colors.text.secondary}
               />
               <Text style={styles.listHeaderText}>
-                非表示を解除すると、投稿が再びフィードに表示されます。
+                Unhiding a post will make it visible in your feed again.
               </Text>
             </View>
           }

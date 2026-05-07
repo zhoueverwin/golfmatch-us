@@ -169,7 +169,7 @@ const TrimVideoPlayer: React.FC<TrimVideoPlayerProps> = ({
         <View style={trimPlayerStyles.errorOverlay}>
           <Ionicons name="alert-circle" size={48} color={Colors.error} />
           <Text style={trimPlayerStyles.errorText}>
-            動画を読み込めませんでした
+            Couldn't load the video
           </Text>
         </View>
       </View>
@@ -187,7 +187,7 @@ const TrimVideoPlayer: React.FC<TrimVideoPlayerProps> = ({
       {!isReady && (
         <View style={trimPlayerStyles.loadingOverlay}>
           <ActivityIndicator size="large" color={Colors.white} />
-          <Text style={trimPlayerStyles.loadingText}>読み込み中...</Text>
+          <Text style={trimPlayerStyles.loadingText}>Loading...</Text>
         </View>
       )}
     </View>
@@ -433,7 +433,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }
     } catch (error) {
       console.error("Error loading gallery:", error);
-      Alert.alert("エラー", mediaType === "video" ? "動画の読み込みに失敗しました。" : "写真の読み込みに失敗しました。");
+      Alert.alert("Error", mediaType === "video" ? "Failed to load video." : "Failed to load photos.");
     } finally {
       setIsLoadingGallery(false);
     }
@@ -487,14 +487,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const handleOpenGallery = () => {
     if (videos.length > 0) {
       Alert.alert(
-        "メディア制限",
-        "動画が選択されています。画像と動画は同時に投稿できません。",
+        "Media limit",
+        "A video is already selected. You can't post photos and videos together.",
       );
       return;
     }
 
     if (croppedImages.length >= 5) {
-      Alert.alert("画像制限", "一度に投稿できる画像は5枚までです。");
+      Alert.alert("Photo limit", "You can post up to 5 photos at a time.");
       return;
     }
 
@@ -506,14 +506,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const handleOpenVideoGallery = () => {
     if (croppedImages.length > 0) {
       Alert.alert(
-        "メディア制限",
-        "画像が選択されています。画像と動画は同時に投稿できません。",
+        "Media limit",
+        "A photo is already selected. You can't post photos and videos together.",
       );
       return;
     }
 
     if (videos.length >= 1) {
-      Alert.alert("動画制限", "一度に投稿できる動画は1つまでです。");
+      Alert.alert("Video limit", "You can post one video at a time.");
       return;
     }
 
@@ -533,11 +533,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         if (asset.duration && asset.duration > VIDEO_MAX_DURATION_SECONDS) {
           const videoDuration = Math.round(asset.duration);
           Alert.alert(
-            "動画が長すぎます",
-            `動画は${VIDEO_MAX_DURATION_SECONDS}秒以内にしてください。\n選択した動画: ${videoDuration}秒\n\n動画をトリミングしますか？`,
+            "Video is too long",
+            `Videos must be ${VIDEO_MAX_DURATION_SECONDS} seconds or less.\nSelected video: ${videoDuration}s\n\nWould you like to trim it?`,
             [
               {
-                text: "最初の15秒を使用",
+                text: `Use first ${VIDEO_MAX_DURATION_SECONDS}s`,
                 onPress: () => {
                   setVideoToTrim(asset);
                   setVideoTrimStart(0);
@@ -545,7 +545,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                 },
               },
               {
-                text: "開始位置を選択",
+                text: "Choose start point",
                 onPress: async () => {
                   setVideoToTrim(asset);
                   setVideoTrimStart(0);
@@ -594,7 +594,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                 },
               },
               {
-                text: "キャンセル",
+                text: "Cancel",
                 style: "cancel",
               },
             ]
@@ -614,7 +614,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         if (selectedAssets.length < maxSelectable) {
           setSelectedAssets(prev => [...prev, asset]);
         } else {
-          Alert.alert("画像制限", `一度に選択できる画像は${maxSelectable}枚までです。`);
+          Alert.alert("Photo limit", `You can select up to ${maxSelectable} photo${maxSelectable === 1 ? "" : "s"} at a time.`);
         }
       }
     }
@@ -916,7 +916,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       setPanOffsetsPerImage([]);
     } catch (error) {
       console.error("Error cropping images:", error);
-      Alert.alert("エラー", "画像の処理に失敗しました。");
+      Alert.alert("Error", "Failed to process photos.");
     } finally {
       setIsProcessingCrop(false);
     }
@@ -928,7 +928,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     if (!selectedVideo) return;
 
     setIsProcessingCrop(true);
-    setUploadProgress("動画を処理中...");
+    setUploadProgress("Processing video...");
 
     try {
       // Get asset info to check file size
@@ -970,7 +970,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       });
 
       // Compress video to reduce file size (720p max, optimized quality)
-      setUploadProgress("動画を圧縮中...");
+      setUploadProgress("Compressing video...");
       let finalVideoUri = cleanVideoUri;
 
       try {
@@ -978,7 +978,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           cleanVideoUri,
           (progress) => {
             const percent = Math.round(progress * 100);
-            setUploadProgress(`動画を圧縮中... ${percent}%`);
+            setUploadProgress(`Compressing video... ${percent}%`);
           },
           { maxSize: 720 }
         );
@@ -996,8 +996,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         if (compressionResult.compressedSize > VIDEO_MAX_FILE_SIZE_BYTES) {
           const compressedSizeMB = (compressionResult.compressedSize / (1024 * 1024)).toFixed(1);
           Alert.alert(
-            "ファイルサイズが大きすぎます",
-            `圧縮後も動画は${VIDEO_MAX_FILE_SIZE_MB}MB以内にする必要があります。\n圧縮後: ${compressedSizeMB}MB\n\n短い動画を選択してください。`,
+            "File size too large",
+            `Even after compression, the video must be ${VIDEO_MAX_FILE_SIZE_MB}MB or less.\nCompressed: ${compressedSizeMB}MB\n\nPlease choose a shorter video.`,
             [{ text: "OK" }]
           );
           setIsProcessingCrop(false);
@@ -1011,8 +1011,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         if (fileSize && fileSize > VIDEO_MAX_FILE_SIZE_BYTES) {
           const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(1);
           Alert.alert(
-            "ファイルサイズが大きすぎます",
-            `動画は${VIDEO_MAX_FILE_SIZE_MB}MB以内にしてください。\n選択した動画: ${fileSizeMB}MB`,
+            "File size too large",
+            `Videos must be ${VIDEO_MAX_FILE_SIZE_MB}MB or less.\nSelected video: ${fileSizeMB}MB`,
             [{ text: "OK" }]
           );
           setIsProcessingCrop(false);
@@ -1037,7 +1037,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       setIsTrimPlaying(false);
     } catch (error) {
       console.error("Error processing video:", error);
-      Alert.alert("エラー", "動画の処理に失敗しました。");
+      Alert.alert("Error", "Failed to process video.");
     } finally {
       setIsProcessingCrop(false);
       setUploadProgress("");
@@ -1101,7 +1101,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       const layout = getVideoCropLayout(videoToTrim);
       maxPanBounds.current = { x: layout.maxPanX, y: layout.maxPanY };
 
-      // Go to video preview/crop page (動画プレビュー)
+      // Go to video preview/crop page
       setViewMode("videoCrop");
     }
   };
@@ -1134,13 +1134,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
   const handlePublish = async () => {
     if (!text.trim() && images.length === 0 && videos.length === 0) {
-      Alert.alert("投稿内容が必要", "テキスト、画像、または動画のいずれかを入力してください。");
+      Alert.alert("Post is empty", "Please add text, a photo, or a video.");
       return;
     }
 
     const currentUserId = profileId || process.env.EXPO_PUBLIC_TEST_USER_ID;
     if (!currentUserId) {
-      Alert.alert("エラー", "ログインしてください。");
+      Alert.alert("Error", "Please sign in.");
       return;
     }
 
@@ -1154,18 +1154,18 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           .single();
 
         if (error || !profile) {
-          Alert.alert("エラー", "ユーザー情報の取得に失敗しました。");
+          Alert.alert("Error", "Failed to load your account info.");
           return;
         }
 
         if (!profile.is_verified) {
           Alert.alert(
-            "本人確認が必要です",
-            "投稿するには本人確認（KYC認証）が必要です。マイページから本人確認を完了してください。",
+            "Identity verification required",
+            "You need to verify your identity (KYC) before posting. Complete verification from My Page.",
             [
-              { text: "キャンセル", style: "cancel" },
+              { text: "Cancel", style: "cancel" },
               {
-                text: "本人確認へ",
+                text: "Verify now",
                 onPress: () => {
                   onClose();
                   navigation.navigate("KycVerification");
@@ -1177,14 +1177,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         }
       } catch (error) {
         console.error("Error checking verification:", error);
-        Alert.alert("エラー", "認証状態の確認に失敗しました。");
+        Alert.alert("Error", "Failed to check verification status.");
         return;
       }
     }
 
     const invalidVideos = videos.filter((video) => !isValidVideoUri(video));
     if (invalidVideos.length > 0) {
-      Alert.alert("動画エラー", "無効な動画ファイルが含まれています。別の動画を選択してください。");
+      Alert.alert("Video error", "An invalid video file was included. Please select a different video.");
       return;
     }
 
@@ -1200,7 +1200,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         const remoteImages = images.filter((img) => !img.startsWith("file://"));
 
         if (localImages.length > 0) {
-          setUploadProgress(`画像をアップロード中... (0/${localImages.length})`);
+          setUploadProgress(`Uploading photos... (0/${localImages.length})`);
 
           for (let i = 0; i < localImages.length; i++) {
             const { url, error } = await storageService.uploadFile(
@@ -1210,14 +1210,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             );
 
             if (error) {
-              Alert.alert("アップロードエラー", `画像${i + 1}のアップロードに失敗しました。`);
+              Alert.alert("Upload error", `Failed to upload photo ${i + 1}.`);
               setIsPublishing(false);
               setUploadProgress("");
               return;
             }
 
             if (url) uploadedImageUrls.push(url);
-            setUploadProgress(`画像をアップロード中... (${i + 1}/${localImages.length})`);
+            setUploadProgress(`Uploading photos... (${i + 1}/${localImages.length})`);
           }
         }
 
@@ -1228,12 +1228,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         const videoUri = videos[0];
 
         if (videoUri.startsWith("file://")) {
-          setUploadProgress("動画をアップロード中...");
+          setUploadProgress("Uploading video...");
 
           const { url, error } = await storageService.uploadVideo(videoUri, currentUserId);
 
           if (error) {
-            Alert.alert("アップロードエラー", "動画のアップロードに失敗しました。");
+            Alert.alert("Upload error", "Failed to upload video.");
             setIsPublishing(false);
             setUploadProgress("");
             return;
@@ -1245,7 +1245,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         }
       }
 
-      setUploadProgress("投稿を作成中...");
+      setUploadProgress("Creating post...");
 
       // Determine aspect ratio: use video aspect ratio if video exists, otherwise image aspect ratio
       const mediaAspectRatio = uploadedVideoUrls.length > 0
@@ -1271,7 +1271,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       onClose();
     } catch (error) {
       console.error("Error publishing post:", error);
-      Alert.alert("エラー", "投稿の公開中にエラーが発生しました。");
+      Alert.alert("Error", "Something went wrong while publishing your post.");
     } finally {
       setIsPublishing(false);
       setUploadProgress("");
@@ -1287,14 +1287,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
     if (hasChanges) {
       Alert.alert(
-        editingPost ? "編集を破棄" : "下書きを破棄",
+        editingPost ? "Discard edits" : "Discard draft",
         editingPost
-          ? "変更内容が破棄されます。よろしいですか？"
-          : "投稿内容が破棄されます。よろしいですか？",
+          ? "Your changes will be discarded. Continue?"
+          : "Your post will be discarded. Continue?",
         [
-          { text: "キャンセル", style: "cancel" },
+          { text: "Cancel", style: "cancel" },
           {
-            text: "破棄",
+            text: "Discard",
             style: "destructive",
             onPress: () => {
               if (!editingPost) {
@@ -1357,7 +1357,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         )}
         {isAlreadyAdded && (
           <View style={styles.addedOverlay}>
-            <Text style={styles.addedText}>追加済み</Text>
+            <Text style={styles.addedText}>Added</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -1397,11 +1397,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.headerButton}>
-            <Text style={styles.cancelText}>キャンセル</Text>
+            <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>
-            {editingPost ? "投稿を編集" : "新しい投稿"}
+            {editingPost ? "Edit post" : "New post"}
           </Text>
 
           <TouchableOpacity
@@ -1416,7 +1416,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
               styles.publishText,
               !text.trim() && images.length === 0 && videos.length === 0 && styles.publishTextDisabled,
             ]}>
-              {isPublishing ? "公開中..." : editingPost ? "更新" : "公開"}
+              {isPublishing ? "Publishing..." : editingPost ? "Update" : "Publish"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -1433,7 +1433,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
               style={styles.textInput}
               value={text}
               onChangeText={setText}
-              placeholder="何をシェアしますか？"
+              placeholder="What's on your mind?"
               placeholderTextColor={Colors.gray[400]}
               multiline
               maxLength={1000}
@@ -1460,7 +1460,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                 <View key={`video-${index}`} style={styles.mediaItem}>
                   <View style={styles.videoPlaceholder}>
                     <Ionicons name="play-circle" size={40} color={Colors.primary} />
-                    <Text style={styles.videoText}>動画</Text>
+                    <Text style={styles.videoText}>Video</Text>
                   </View>
                   <TouchableOpacity style={styles.removeButton} onPress={() => removeVideo(index)}>
                     <Ionicons name="close-circle" size={24} color={Colors.error} />
@@ -1478,7 +1478,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             >
               <Ionicons name="image-outline" size={24} color={videos.length > 0 ? Colors.gray[400] : Colors.primary} />
               <Text style={[styles.mediaButtonText, videos.length > 0 && styles.mediaButtonTextDisabled]}>
-                写真 {croppedImages.length > 0 && `(${croppedImages.length}/5)`}
+                Photo {croppedImages.length > 0 && `(${croppedImages.length}/5)`}
               </Text>
             </TouchableOpacity>
 
@@ -1496,59 +1496,59 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                 styles.mediaButtonText,
                 (croppedImages.length > 0 || videos.length >= 1) && styles.mediaButtonTextDisabled,
               ]}>
-                動画 {videos.length >= 1 && "(1/1)"}
+                Video {videos.length >= 1 && "(1/1)"}
               </Text>
             </TouchableOpacity>
           </View>
 
           {croppedImages.length === 0 && videos.length === 0 && (
             <View style={styles.aspectRatioGuide}>
-              <Text style={styles.guideTitle}>画像サイズのガイド</Text>
+              <Text style={styles.guideTitle}>Photo size guide</Text>
               <View style={styles.guideItems}>
                 <View style={styles.guideItem}>
                   <View style={[styles.guidePreviewBox, { aspectRatio: 1 }]} />
-                  <Text style={styles.guideLabel}>1:1 正方形</Text>
+                  <Text style={styles.guideLabel}>1:1 Square</Text>
                   <Text style={styles.guideSize}>1080×1080</Text>
                 </View>
                 <View style={styles.guideItem}>
                   <View style={[styles.guidePreviewBox, { aspectRatio: 4/5 }]} />
-                  <Text style={styles.guideLabel}>4:5 縦長</Text>
+                  <Text style={styles.guideLabel}>4:5 Portrait</Text>
                   <Text style={styles.guideSize}>1080×1350</Text>
                 </View>
                 <View style={styles.guideItem}>
                   <View style={[styles.guidePreviewBox, { aspectRatio: 1.91 }]} />
-                  <Text style={styles.guideLabel}>1.91:1 横長</Text>
+                  <Text style={styles.guideLabel}>1.91:1 Landscape</Text>
                   <Text style={styles.guideSize}>1080×566</Text>
                 </View>
               </View>
-              <Text style={[styles.guideTitle, { marginTop: Spacing.md }]}>動画サイズのガイド</Text>
+              <Text style={[styles.guideTitle, { marginTop: Spacing.md }]}>Video size guide</Text>
               <View style={styles.guideItems}>
                 <View style={styles.guideItem}>
                   <View style={{ height: 44, justifyContent: "flex-end" }}>
                     <View style={[styles.guidePreviewBox, { aspectRatio: 9/16, width: 24, height: undefined }]} />
                   </View>
-                  <Text style={styles.guideLabel}>9:16 縦長</Text>
+                  <Text style={styles.guideLabel}>9:16 Portrait</Text>
                   <Text style={styles.guideSize}>540×960</Text>
                 </View>
                 <View style={styles.guideItem}>
                   <View style={{ height: 44, justifyContent: "flex-end" }}>
                     <View style={[styles.guidePreviewBox, { aspectRatio: 4/5 }]} />
                   </View>
-                  <Text style={styles.guideLabel}>4:5 縦長</Text>
+                  <Text style={styles.guideLabel}>4:5 Portrait</Text>
                   <Text style={styles.guideSize}>540×675</Text>
                 </View>
                 <View style={styles.guideItem}>
                   <View style={{ height: 44, justifyContent: "flex-end" }}>
                     <View style={[styles.guidePreviewBox, { aspectRatio: 16/9, height: 24, width: undefined }]} />
                   </View>
-                  <Text style={styles.guideLabel}>16:9 横長</Text>
+                  <Text style={styles.guideLabel}>16:9 Landscape</Text>
                   <Text style={styles.guideSize}>540×304</Text>
                 </View>
                 <View style={styles.guideItem}>
                   <View style={{ height: 44, justifyContent: "flex-end" }}>
                     <View style={[styles.guidePreviewBox, { aspectRatio: 1 }]} />
                   </View>
-                  <Text style={styles.guideLabel}>1:1 正方形</Text>
+                  <Text style={styles.guideLabel}>1:1 Square</Text>
                   <Text style={styles.guideSize}>540×540</Text>
                 </View>
               </View>
@@ -1584,8 +1584,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
           <Text style={styles.galleryHeaderTitle}>
             {isVideoMode
-              ? "動画を選択"
-              : `写真を選択 ${selectedAssets.length > 0 ? `(${selectedAssets.length}/${maxSelectable})` : ""}`
+              ? "Select a video"
+              : `Select photos ${selectedAssets.length > 0 ? `(${selectedAssets.length}/${maxSelectable})` : ""}`
             }
           </Text>
 
@@ -1595,7 +1595,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             disabled={!hasSelection}
           >
             <Text style={[styles.nextButtonText, !hasSelection && styles.nextButtonTextDisabled]}>
-              次へ
+              Next
             </Text>
           </TouchableOpacity>
         </View>
@@ -1603,8 +1603,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         {hasPermission === false ? (
           <View style={styles.permissionDenied}>
             <Ionicons name="images-outline" size={64} color={Colors.gray[400]} />
-            <Text style={styles.permissionText}>メディアライブラリへのアクセス権限が必要です</Text>
-            <Text style={styles.permissionSubtext}>設定アプリから権限を許可してください</Text>
+            <Text style={styles.permissionText}>Access to your media library is required</Text>
+            <Text style={styles.permissionSubtext}>Please grant access in Settings</Text>
           </View>
         ) : (
           <>
@@ -1649,12 +1649,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                 <View style={styles.noPreview}>
                   <Ionicons name={isVideoMode ? "videocam-outline" : "images-outline"} size={48} color={Colors.gray[600]} />
                   <Text style={styles.noPreviewText}>
-                    {isVideoMode ? "動画を選択してください" : "写真を選択してください"}
+                    {isVideoMode ? "Select a video" : "Select photos"}
                   </Text>
                   <Text style={styles.noPreviewSubtext}>
                     {isVideoMode
-                      ? `${selectedVideoAspectRatio.label}サイズ（${selectedVideoAspectRatio.outputWidth}×${selectedVideoAspectRatio.outputHeight}）に変換`
-                      : `最大${maxSelectable}枚まで選択できます`}
+                      ? `Will be converted to ${selectedVideoAspectRatio.label} (${selectedVideoAspectRatio.outputWidth}×${selectedVideoAspectRatio.outputHeight})`
+                      : `Up to ${maxSelectable} photos`}
                   </Text>
                 </View>
               )}
@@ -1662,7 +1662,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
             {/* Aspect ratio selector - for both images and videos */}
             <View style={styles.aspectRatioSelectorContainer}>
-              <Text style={styles.aspectRatioSelectorTitle}>アスペクト比</Text>
+              <Text style={styles.aspectRatioSelectorTitle}>Aspect ratio</Text>
               <View style={styles.aspectRatioSelectorOptions}>
                 {isVideoMode
                   ? VIDEO_ASPECT_RATIOS.map((option) => (
@@ -1747,7 +1747,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                       )}
                       {isAlreadyAdded && (
                         <View style={styles.addedOverlay}>
-                          <Text style={styles.addedText}>追加済み</Text>
+                          <Text style={styles.addedText}>Added</Text>
                         </View>
                       )}
                     </TouchableOpacity>
@@ -1773,7 +1773,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                 ListEmptyComponent={
                   !isLoadingGallery ? (
                     <View style={styles.emptyGallery}>
-                      <Text style={styles.emptyText}>{isVideoMode ? "動画がありません" : "写真がありません"}</Text>
+                      <Text style={styles.emptyText}>{isVideoMode ? "No videos" : "No photos"}</Text>
                     </View>
                   ) : null
                 }
@@ -1845,7 +1845,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <Ionicons name="arrow-back" size={28} color={Colors.white} />
           </TouchableOpacity>
 
-          <Text style={styles.galleryHeaderTitle}>切り抜き</Text>
+          <Text style={styles.galleryHeaderTitle}>Crop</Text>
 
           <TouchableOpacity
             onPress={handleCropAndAdd}
@@ -1855,7 +1855,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             {isProcessingCrop ? (
               <ActivityIndicator size="small" color={Colors.white} />
             ) : (
-              <Text style={styles.nextButtonText}>完了</Text>
+              <Text style={styles.nextButtonText}>Done</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -1946,7 +1946,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <Text style={styles.cropAspectRatioText}>{selectedAspectRatio.label}</Text>
           </View>
           <Text style={styles.cropOutputInfo}>
-            出力: {selectedAspectRatio.outputWidth} × {selectedAspectRatio.outputHeight} px
+            Output: {selectedAspectRatio.outputWidth} × {selectedAspectRatio.outputHeight} px
           </Text>
         </View>
 
@@ -1955,11 +1955,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           {layout.maxPanX > 0 || layout.maxPanY > 0 ? (
             <>
               <Text style={styles.cropInstructionsText}>
-                画像をドラッグして切り抜き位置を調整できます
+                Drag the photo to adjust the crop
               </Text>
               {selectedAssets.length > 1 && (
                 <Text style={styles.cropInstructionsSubtext}>
-                  左右の矢印で他の画像に移動できます
+                  Use the arrows to move between photos
                 </Text>
               )}
             </>
@@ -1967,14 +1967,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <>
               <View style={styles.perfectFitBadge}>
                 <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-                <Text style={styles.perfectFitText}>サイズぴったり</Text>
+                <Text style={styles.perfectFitText}>Perfect fit</Text>
               </View>
               <Text style={styles.cropInstructionsSubtext}>
-                画像は選択したサイズに最適化されています
+                The photo is already optimized for the selected size
               </Text>
               {selectedAssets.length > 1 && (
                 <Text style={styles.cropInstructionsSubtext}>
-                  左右の矢印で他の画像に移動できます
+                  Use the arrows to move between photos
                 </Text>
               )}
             </>
@@ -1996,7 +1996,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <Ionicons name="arrow-back" size={28} color={Colors.white} />
           </TouchableOpacity>
 
-          <Text style={styles.galleryHeaderTitle}>動画プレビュー</Text>
+          <Text style={styles.galleryHeaderTitle}>Video preview</Text>
 
           <TouchableOpacity
             onPress={handleVideoCropAndAdd}
@@ -2006,7 +2006,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             {isProcessingCrop ? (
               <ActivityIndicator size="small" color={Colors.white} />
             ) : (
-              <Text style={styles.nextButtonText}>完了</Text>
+              <Text style={styles.nextButtonText}>Done</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -2070,17 +2070,17 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <Text style={styles.cropAspectRatioText}>{selectedVideoAspectRatio.label}</Text>
           </View>
           <Text style={styles.cropOutputInfo}>
-            出力: {selectedVideoAspectRatio.outputWidth} × {selectedVideoAspectRatio.outputHeight} px
+            Output: {selectedVideoAspectRatio.outputWidth} × {selectedVideoAspectRatio.outputHeight} px
           </Text>
         </View>
 
         {/* Instructions */}
         <View style={styles.cropInstructions}>
           <Text style={styles.cropInstructionsText}>
-            動画をドラッグして切り抜き位置を調整
+            Drag the video to adjust the crop
           </Text>
           <Text style={styles.cropInstructionsSubtext}>
-            完了をタップして動画を追加
+            Tap Done to add the video
           </Text>
         </View>
       </View>
@@ -2191,13 +2191,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <Ionicons name="arrow-back" size={28} color={Colors.white} />
           </TouchableOpacity>
 
-          <Text style={styles.galleryHeaderTitle}>動画をトリミング</Text>
+          <Text style={styles.galleryHeaderTitle}>Trim video</Text>
 
           <TouchableOpacity
             onPress={handleConfirmTrim}
             style={styles.nextButton}
           >
-            <Text style={styles.nextButtonText}>決定</Text>
+            <Text style={styles.nextButtonText}>Confirm</Text>
           </TouchableOpacity>
         </View>
 
@@ -2246,7 +2246,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
               color={Colors.white}
             />
             <Text style={styles.trimPlayPauseText}>
-              {isTrimPlaying ? "一時停止" : "プレビュー再生"}
+              {isTrimPlaying ? "Pause" : "Play preview"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -2255,18 +2255,18 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         <View style={styles.trimInfoContainer}>
           <View style={styles.trimInfoRow}>
             <View style={styles.trimInfoItem}>
-              <Text style={styles.trimInfoLabel}>開始</Text>
+              <Text style={styles.trimInfoLabel}>Start</Text>
               <Text style={styles.trimInfoValue}>{formatDuration(videoTrimStart)}</Text>
             </View>
             <View style={styles.trimInfoDivider}>
               <Ionicons name="arrow-forward" size={20} color={Colors.gray[500]} />
             </View>
             <View style={styles.trimInfoItem}>
-              <Text style={styles.trimInfoLabel}>終了</Text>
+              <Text style={styles.trimInfoLabel}>End</Text>
               <Text style={styles.trimInfoValue}>{formatDuration(trimEndTime)}</Text>
             </View>
             <View style={styles.trimInfoBadge}>
-              <Text style={styles.trimInfoBadgeText}>{VIDEO_MAX_DURATION_SECONDS}秒</Text>
+              <Text style={styles.trimInfoBadgeText}>{VIDEO_MAX_DURATION_SECONDS}s</Text>
             </View>
           </View>
         </View>
@@ -2274,7 +2274,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         {/* Interactive Timeline Slider with Thumbnails */}
         <View style={styles.trimTimelineContainer}>
           <Text style={styles.trimTimelineLabel}>
-            黄色い枠をドラッグして開始位置を選択
+            Drag the yellow frame to choose the start point
           </Text>
 
           {/* Timeline Track with PanResponder for smooth dragging */}
@@ -2379,7 +2379,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         <View style={styles.trimInstructions}>
           <Ionicons name="information-circle-outline" size={20} color={Colors.gray[400]} />
           <Text style={styles.trimInstructionsText}>
-            黄色い枠をドラッグして使用する{VIDEO_MAX_DURATION_SECONDS}秒間を選択
+            Drag the yellow frame to choose the {VIDEO_MAX_DURATION_SECONDS}-second clip
           </Text>
         </View>
       </View>

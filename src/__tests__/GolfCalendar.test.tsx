@@ -22,7 +22,7 @@ describe("GolfCalendar Component", () => {
         date: "2025-11-01",
         is_available: true,
         time_slots: ["09:00", "14:00"],
-        notes: "午前と午後可能",
+        notes: "Available morning and afternoon",
       },
       {
         id: "2",
@@ -30,7 +30,7 @@ describe("GolfCalendar Component", () => {
         date: "2025-11-05",
         is_available: false,
         time_slots: [],
-        notes: "予定あり",
+        notes: "Has plans",
       },
       {
         id: "3",
@@ -38,7 +38,7 @@ describe("GolfCalendar Component", () => {
         date: "2025-11-15",
         is_available: true,
         time_slots: ["09:00"],
-        notes: "午前のみ",
+        notes: "Morning only",
       },
     ],
   };
@@ -57,7 +57,7 @@ describe("GolfCalendar Component", () => {
       );
 
       // Check month header is displayed
-      expect(getByText("11月")).toBeTruthy();
+      expect(getByText(/November/)).toBeTruthy();
     });
 
     it("displays day names correctly", () => {
@@ -69,7 +69,7 @@ describe("GolfCalendar Component", () => {
       );
 
       // Check all day names are present
-      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       dayNames.forEach((day) => {
         expect(getByText(day)).toBeTruthy();
       });
@@ -156,7 +156,7 @@ describe("GolfCalendar Component", () => {
         />
       );
 
-      expect(queryByText("11月")).toBeNull();
+      expect(queryByText(/November/)).toBeNull();
     });
 
     it("renders when visible is true", () => {
@@ -168,7 +168,7 @@ describe("GolfCalendar Component", () => {
         />
       );
 
-      expect(getByText("11月")).toBeTruthy();
+      expect(getByText(/November/)).toBeTruthy();
     });
 
     it("calls onClose when close button is pressed", () => {
@@ -205,7 +205,7 @@ describe("GolfCalendar Component", () => {
       );
 
       // Should still render month header
-      expect(getByText("11月")).toBeTruthy();
+      expect(getByText(/November/)).toBeTruthy();
     });
   });
 
@@ -221,7 +221,7 @@ describe("GolfCalendar Component", () => {
             date: "2025-12-31",
             is_available: true,
             time_slots: ["09:00"],
-            notes: "年末可能",
+            notes: "Available year-end",
           },
         ],
       };
@@ -233,7 +233,7 @@ describe("GolfCalendar Component", () => {
         />
       );
 
-      expect(getByText("12月")).toBeTruthy();
+      expect(getByText(/December/)).toBeTruthy();
       expect(getByText("31")).toBeTruthy();
     });
   });

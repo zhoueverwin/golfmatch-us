@@ -112,7 +112,7 @@ describe('User Likes Integration Tests', () => {
       // Wait for profiles to load
       await waitFor(
         () => {
-          expect(getByText(/読み込み中/i)).toBeTruthy();
+          expect(getByText(/Loading/i)).toBeTruthy();
         },
         { timeout: 5000 }
       );
@@ -175,7 +175,7 @@ describe('User Likes Integration Tests', () => {
   });
 
   describe('ConnectionsScreen - Display Likes', () => {
-    it('should show Hiroshi in Sakura\'s received likes (いいね tab)', async () => {
+    it('should show Hiroshi in Sakura\'s received likes (Likes tab)', async () => {
       console.log('\n🧪 Test: Sakura sees Hiroshi in received likes');
       
       // First, Hiroshi likes Sakura
@@ -200,7 +200,7 @@ describe('User Likes Integration Tests', () => {
       console.log('✅ Like is active');
     });
 
-    it('should display Hiroshi\'s profile in ConnectionsScreen いいね tab when Sakura opens it', async () => {
+    it('should display Hiroshi\'s profile in ConnectionsScreen Likes tab when Sakura opens it', async () => {
       console.log('\n🧪 Test: ConnectionsScreen shows received likes');
       
       // First, Hiroshi likes Sakura
@@ -226,7 +226,7 @@ describe('User Likes Integration Tests', () => {
         // Wait for data to load
         await waitFor(
           () => {
-            expect(getByText(/つながり/i)).toBeTruthy();
+            expect(getByText(/Connections/i)).toBeTruthy();
           },
           { timeout: 5000 }
         );
@@ -262,7 +262,7 @@ describe('User Likes Integration Tests', () => {
   });
 
   describe('LikesScreen - Display Likes', () => {
-    it('should show Hiroshi in Sakura\'s LikesScreen いいね tab', async () => {
+    it('should show Hiroshi in Sakura\'s LikesScreen Likes tab', async () => {
       console.log('\n🧪 Test: LikesScreen shows received likes');
       
       // First, Hiroshi likes Sakura
@@ -372,7 +372,7 @@ describe('User Likes Integration Tests', () => {
         const response = await DataProvider.likeUser(currentUserId, userId, 'like');
         
         if (response.error) {
-          Alert.alert('エラー', response.error);
+          Alert.alert('Error', response.error);
           return false;
         }
         

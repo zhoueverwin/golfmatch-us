@@ -97,7 +97,7 @@ const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
           {/* Version info */}
           <View style={styles.versionContainer}>
             <Text style={styles.versionText}>
-              現在: v{currentVersion} → 最新: v{latestVersion}
+              Current: v{currentVersion} → Latest: v{latestVersion}
             </Text>
           </View>
 

@@ -149,12 +149,12 @@ const MessageMenuModal: React.FC<MessageMenuModalProps> = ({
     handleClose();
     setTimeout(() => {
       Alert.alert(
-        "ブロック",
-        `${messageUserName}さんをブロックしますか？ブロックすると、この相手の投稿やメッセージが表示されなくなります。`,
+        "Block",
+        `Block ${messageUserName}? You will no longer see their posts or messages.`,
         [
-          { text: "キャンセル", style: "cancel" },
+          { text: "Cancel", style: "cancel" },
           {
-            text: "ブロック",
+            text: "Block",
             style: "destructive",
             onPress: () => {
               onBlock();
@@ -206,7 +206,7 @@ const MessageMenuModal: React.FC<MessageMenuModalProps> = ({
             activeOpacity={0.7}
           >
             <Ionicons name="ban-outline" size={20} color={Colors.text.primary} />
-            <Text style={styles.menuText}>ブロック</Text>
+            <Text style={styles.menuText}>Block</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -215,7 +215,7 @@ const MessageMenuModal: React.FC<MessageMenuModalProps> = ({
             activeOpacity={0.7}
           >
             <Ionicons name="flag-outline" size={20} color={Colors.error} />
-            <Text style={[styles.menuText, styles.menuTextDanger]}>通報</Text>
+            <Text style={[styles.menuText, styles.menuTextDanger]}>Report</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -223,7 +223,7 @@ const MessageMenuModal: React.FC<MessageMenuModalProps> = ({
             onPress={handleClose}
             activeOpacity={0.7}
           >
-            <Text style={styles.cancelText}>キャンセル</Text>
+            <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>

@@ -1,14 +1,14 @@
 /**
- * Translates authentication errors from Supabase to user-friendly Japanese messages
+ * Translates authentication errors from Supabase to user-friendly English messages
  * This ensures users see helpful messages instead of technical error details
  */
 
 /**
- * Maps Supabase authentication error messages to user-friendly Japanese messages
+ * Maps Supabase authentication error messages to user-friendly English messages
  */
 export function translateAuthError(error: string | undefined | null): string {
   if (!error) {
-    return "認証に失敗しました。もう一度お試しください。";
+    return "Authentication failed. Please try again.";
   }
 
   const lowerError = error.toLowerCase();
@@ -20,7 +20,7 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("wrong password") ||
     lowerError.includes("incorrect password")
   ) {
-    return "メールアドレスまたはパスワードが正しくありません。";
+    return "Incorrect email or password.";
   }
 
   // Email not confirmed - MUST CHECK FIRST (before "user not found" which had wrong mapping)
@@ -39,7 +39,7 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("user not found") ||
     lowerError.includes("no user found")
   ) {
-    return "このメールアドレスは登録されていません。";
+    return "This email address is not registered.";
   }
 
   // Email already exists
@@ -48,7 +48,7 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("already registered") ||
     lowerError.includes("email already exists")
   ) {
-    return "このメールアドレスは既に登録されています。ログインしてください。";
+    return "This email address is already registered. Please sign in instead.";
   }
 
   // Password too weak
@@ -58,7 +58,7 @@ export function translateAuthError(error: string | undefined | null): string {
       lowerError.includes("too short") ||
       lowerError.includes("minimum"))
   ) {
-    return "パスワードが短すぎます。6文字以上で入力してください。";
+    return "Password is too short. Please use at least 6 characters.";
   }
 
   // Invalid email format
@@ -67,7 +67,7 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("email format") ||
     lowerError.includes("malformed email")
   ) {
-    return "有効なメールアドレスを入力してください。";
+    return "Please enter a valid email address.";
   }
 
   // Network errors
@@ -78,15 +78,15 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("timeout") ||
     lowerError.includes("failed to fetch")
   ) {
-    return "ネットワークエラーが発生しました。接続を確認して再度お試しください。";
+    return "Network error. Please check your connection and try again.";
   }
 
   // OAuth errors
   if (lowerError.includes("oauth") || lowerError.includes("cancelled")) {
     if (lowerError.includes("cancel")) {
-      return "ログインがキャンセルされました。";
+      return "Sign-in was cancelled.";
     }
-    return "ソーシャルログインに失敗しました。もう一度お試しください。";
+    return "Social sign-in failed. Please try again.";
   }
 
   // Rate limiting (includes Supabase security throttling)
@@ -98,7 +98,7 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("for security purposes") ||
     lowerError.includes("you can only request this after")
   ) {
-    return "しばらく時間をおいて再度お試しください。";
+    return "Too many attempts. Please wait a moment and try again.";
   }
 
   // Token errors
@@ -107,11 +107,11 @@ export function translateAuthError(error: string | undefined | null): string {
     lowerError.includes("session") ||
     lowerError.includes("expired")
   ) {
-    return "セッションの有効期限が切れました。再度ログインしてください。";
+    return "Your session has expired. Please sign in again.";
   }
 
   // Generic error fallback
-  return "認証に失敗しました。もう一度お試しください。";
+  return "Authentication failed. Please try again.";
 }
 
 /**
@@ -129,7 +129,6 @@ export function logAuthError(
     });
   }
 }
-
 
 
 

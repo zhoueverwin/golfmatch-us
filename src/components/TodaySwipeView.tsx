@@ -121,10 +121,10 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
           colors={[Colors.primary, Colors.primaryDark]}
           style={styles.headerBar}
         >
-          <Text style={styles.headerTitle}>本日のおすすめ</Text>
+          <Text style={styles.headerTitle}>Today's picks</Text>
           <View style={styles.likeCountBadge}>
             <Ionicons name="heart" size={14} color={Colors.primary} />
-            <Text style={styles.likeCountText}>残り {Math.max(users.length - currentIndex, 0)}人</Text>
+            <Text style={styles.likeCountText}>{Math.max(users.length - currentIndex, 0)} left</Text>
           </View>
         </LinearGradient>
 
@@ -132,7 +132,7 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>おすすめを読み込み中...</Text>
+            <Text style={styles.loadingText}>Loading recommendations...</Text>
           </View>
         ) : isExhausted ? (
           <View style={styles.emptyContainer}>
@@ -143,10 +143,10 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
               <View style={styles.emptyIconShadow} />
             </View>
             <Text style={styles.emptyTitle}>
-              本日ご提案したお相手はすべて確認されました
+              You've reviewed all of today's picks
             </Text>
             <Text style={styles.emptySubtitle}>
-              明日、また新しいお相手をご提案します！
+              We'll have new picks for you tomorrow!
             </Text>
             {!isProMember && !isFemale && (
               <TouchableOpacity
@@ -156,7 +156,7 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
               >
                 <Ionicons name="diamond" size={16} color={Colors.primary} />
                 <Text style={styles.premiumCtaText}>
-                  有料会員になると毎日5人までご提案！
+                  Premium members get up to 5 picks daily!
                 </Text>
               </TouchableOpacity>
             )}

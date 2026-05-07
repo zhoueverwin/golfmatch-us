@@ -36,7 +36,7 @@ const ScoreSelector: React.FC<ScoreSelectorProps> = ({
   }, [selectedScore, visible]);
 
   const handleApply = () => {
-    // If 999 is selected (指定しない), pass undefined
+    // If 999 is selected (no preference), pass undefined
     const scoreToApply = tempSelected === 999 ? undefined : tempSelected;
     onApply(scoreToApply);
     onClose();
@@ -59,9 +59,9 @@ const ScoreSelector: React.FC<ScoreSelectorProps> = ({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={Colors.gray[600]} />
           </TouchableOpacity>
-          <Text style={styles.title}>平均スコア (以下)</Text>
+          <Text style={styles.title}>Average Score (or below)</Text>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={styles.clearButton}>クリア</Text>
+            <Text style={styles.clearButton}>Clear</Text>
           </TouchableOpacity>
         </View>
 
@@ -94,7 +94,7 @@ const ScoreSelector: React.FC<ScoreSelectorProps> = ({
         {/* Action Button */}
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>適用</Text>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

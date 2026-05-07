@@ -39,14 +39,14 @@ type SearchScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 type TabKey = "today" | "recommended" | "search";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "today", label: "本日限定" },
-  { key: "recommended", label: "おすすめ" },
-  { key: "search", label: "検索" },
+  { key: "today", label: "Today Only" },
+  { key: "recommended", label: "For You" },
+  { key: "search", label: "Search" },
 ];
 
 const { width: screenWidth } = Dimensions.get("window");
 
-// Fixed grid constants (for 検索 tab)
+// Fixed grid constants (for Search tab)
 const HORIZONTAL_PADDING = Spacing.md * 2;
 const INTER_ITEM_SPACING = 10;
 const COLUMNS = 2;
@@ -74,7 +74,7 @@ const SearchScreen: React.FC = () => {
   // Tab bar height for floating elements
   const tabBarHeight = TAB_BAR_BASE_HEIGHT + Math.max(insets.bottom * 0.5, 4);
 
-  // 検索 tab state
+  // Search tab state
   const [searchProfiles, setSearchProfiles] = useState<User[]>([]);
   const [searchLoading, setSearchLoading] = useState(true);
   const [searchRefreshing, setSearchRefreshing] = useState(false);
@@ -89,7 +89,7 @@ const SearchScreen: React.FC = () => {
     loadSavedFilters();
   }, []);
 
-  // Load 検索 data when that tab is active
+  // Load Search data when that tab is active
   useEffect(() => {
     if (profileId && activeTab === "search") {
       searchPageRef.current = 1;
@@ -146,7 +146,7 @@ const SearchScreen: React.FC = () => {
     }
   };
 
-  // 検索 data loading
+  // Search data loading
   const loadSearchUsers = async (pageNumber = 1) => {
     const isFirstPage = pageNumber === 1;
     if (isFirstPage) {
@@ -172,8 +172,8 @@ const SearchScreen: React.FC = () => {
 
       if (response.error) {
         Alert.alert(
-          "エラー",
-          `ユーザーの読み込みに失敗しました: ${response.error}`,
+          "Error",
+          `Failed to load users: ${response.error}`,
         );
       } else {
         let users = (response.data || []).filter((u) => u.id !== profileId);
@@ -199,7 +199,7 @@ const SearchScreen: React.FC = () => {
       }
     } catch (error) {
       console.error("Error loading users:", error);
-      Alert.alert("エラー", "ユーザーの読み込み中にエラーが発生しました");
+      Alert.alert("Error", "Something went wrong while loading users.");
       if (isFirstPage) setSearchProfiles([]);
     } finally {
       if (isFirstPage) setSearchLoading(false);
@@ -223,12 +223,12 @@ const SearchScreen: React.FC = () => {
 
   const handlePremiumPress = useCallback(() => {
     Alert.alert(
-      "有料会員限定機能",
-      "この機能は有料会員限定です。\n\n有料会員に登録すると、詳細な検索条件や並び替えなど、すべての機能をご利用いただけます。",
+      "Premium Feature",
+      "This feature is available to Premium members only.\n\nUpgrade to Premium to unlock advanced filters, sorting, and more.",
       [
-        { text: "閉じる", style: "cancel" },
+        { text: "Close", style: "cancel" },
         {
-          text: "詳しく見る",
+          text: "Learn More",
           onPress: () => navigation.navigate("Store"),
         },
       ],
@@ -279,9 +279,9 @@ const SearchScreen: React.FC = () => {
     () => (
       <EmptyState
         icon="search-outline"
-        title="プロフィールが見つかりません"
-        subtitle="フィルターを調整して、もう一度お試しください"
-        buttonTitle="フィルターをリセット"
+        title="No profiles found"
+        subtitle="Try adjusting your filters and search again."
+        buttonTitle="Reset Filters"
         onButtonPress={handleResetFilters}
       />
     ),
@@ -309,7 +309,7 @@ const SearchScreen: React.FC = () => {
               style={styles.tab}
               onPress={() => setActiveTab(tab.key)}
               accessibilityRole="tab"
-              accessibilityLabel={`${tab.label}のプロフィールを表示`}
+              accessibilityLabel={`Show ${tab.label} profiles`}
               accessibilityState={{ selected: activeTab === tab.key }}
             >
               <Text
@@ -343,7 +343,7 @@ const SearchScreen: React.FC = () => {
       {activeTab === "search" && (
         <View style={styles.searchTabContainer}>
           {searchLoading && searchProfiles.length === 0 ? (
-            <Loading text="プロフィールを読み込み中..." fullScreen />
+            <Loading text="Loading profiles..." fullScreen />
           ) : (
             <FlashList
               data={searchProfiles}

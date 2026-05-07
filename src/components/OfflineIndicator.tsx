@@ -17,7 +17,7 @@ const OfflineIndicator: React.FC = () => {
   return (
     <View style={styles.container}>
       <Ionicons name="cloud-offline" size={16} color={Colors.white} />
-      <Text style={styles.text}>オフラインモード</Text>
+      <Text style={styles.text}>Offline mode</Text>
     </View>
   );
 };

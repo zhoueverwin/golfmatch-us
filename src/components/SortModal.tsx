@@ -23,10 +23,10 @@ interface SortOptionItem {
 }
 
 const SORT_OPTIONS: SortOptionItem[] = [
-  { key: "recommended", label: "おすすめ順", premium: false },
-  { key: "login", label: "ログインが新しい順", premium: true },
-  { key: "likes", label: "いいね！の多い順", premium: true },
-  { key: "registration", label: "登録日が新しい順", premium: true },
+  { key: "recommended", label: "Recommended", premium: false },
+  { key: "login", label: "Recently active", premium: true },
+  { key: "likes", label: "Most liked", premium: true },
+  { key: "registration", label: "Newest members", premium: true },
 ];
 
 interface SortModalProps {
@@ -79,7 +79,7 @@ const SortModal: React.FC<SortModalProps> = ({
           >
             <Ionicons name="close" size={24} color={Colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>並び替え</Text>
+          <Text style={styles.headerTitle}>Sort by</Text>
           <View style={styles.headerSpacer} />
         </View>
 

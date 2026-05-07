@@ -67,12 +67,12 @@ const PastLikesScreen: React.FC = () => {
     );
 
     if (diffInHours < 1) {
-      return "たった今";
+      return "Just now";
     } else if (diffInHours < 24) {
-      return `${diffInHours}時間前`;
+      return `${diffInHours}h ago`;
     } else {
       const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}日前`;
+      return `${diffInDays}d ago`;
     }
   };
 
@@ -86,7 +86,7 @@ const PastLikesScreen: React.FC = () => {
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.name}</Text>
         <View style={styles.userDetails}>
-          {item.age && <Text style={styles.userDetail}>{item.age}歳</Text>}
+          {item.age && <Text style={styles.userDetail}>{item.age}</Text>}
           {item.location && (
             <Text style={styles.userDetail}>・{String(item.location)}</Text>
           )}
@@ -106,9 +106,9 @@ const PastLikesScreen: React.FC = () => {
         size={48}
         color={Colors.gray[400]}
       />
-      <Text style={styles.emptyTitle}>送ったいいねはありません</Text>
+      <Text style={styles.emptyTitle}>No Likes sent yet</Text>
       <Text style={styles.emptySubtitle}>
-        いいねを送った相手がここに表示されます
+        People you've Liked will appear here
       </Text>
     </View>
   );
@@ -119,7 +119,7 @@ const PastLikesScreen: React.FC = () => {
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>送ったいいねを読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading your Likes...</Text>
         </View>
       </SafeAreaView>
     );
@@ -131,7 +131,7 @@ const PastLikesScreen: React.FC = () => {
 
       {/* Header */}
       <StandardHeader
-        title="送ったいいね"
+        title="Likes Sent"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />

@@ -71,7 +71,7 @@ const MessageItem = memo(({ item, onPress, onProfilePress, isLocked }: MessageIt
         style={styles.profileImageContainer}
         onPress={() => onProfilePress(item.userId)}
         accessibilityRole="button"
-        accessibilityLabel={`${item.name}のプロフィールを見る`}
+        accessibilityLabel={`View ${item.name}'s profile`}
       >
         <ExpoImage
           source={{ uri: item.profileImage }}
@@ -79,7 +79,7 @@ const MessageItem = memo(({ item, onPress, onProfilePress, isLocked }: MessageIt
           contentFit="cover"
           cachePolicy="memory-disk"
           transition={0}
-          accessibilityLabel={`${item.name}のプロフィール写真`}
+          accessibilityLabel={`${item.name}'s profile photo`}
         />
       </TouchableOpacity>
       <View style={styles.messageContent}>
@@ -87,7 +87,7 @@ const MessageItem = memo(({ item, onPress, onProfilePress, isLocked }: MessageIt
           <TouchableOpacity
             onPress={() => onProfilePress(item.userId)}
             accessibilityRole="button"
-            accessibilityLabel={`${item.name}のプロフィールを見る`}
+            accessibilityLabel={`View ${item.name}'s profile`}
           >
             <Text style={styles.name}>{item.name}</Text>
           </TouchableOpacity>
@@ -101,7 +101,7 @@ const MessageItem = memo(({ item, onPress, onProfilePress, isLocked }: MessageIt
             <View style={styles.lockedPreviewRow}>
               <Ionicons name="lock-closed" size={12} color={Colors.primary} />
               <Text style={styles.lockedPreviewText} numberOfLines={1}>
-                メッセージが届いています
+                You have a new message
               </Text>
             </View>
           ) : (
@@ -111,7 +111,7 @@ const MessageItem = memo(({ item, onPress, onProfilePress, isLocked }: MessageIt
           )}
           {item.isUnread && (
             <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>未返信</Text>
+              <Text style={styles.unreadText}>Unreplied</Text>
             </View>
           )}
         </View>
@@ -141,7 +141,7 @@ const UnmessagedMatchItem = memo(({ match, onPress }: UnmessagedMatchItemProps) 
     onPress={() => onPress(match)}
     activeOpacity={0.7}
     accessibilityRole="button"
-    accessibilityLabel={`${match.other_user_name}とメッセージを始める`}
+    accessibilityLabel={`Start a message with ${match.other_user_name}`}
   >
     <View style={styles.profileImageWrapper}>
       <ExpoImage
@@ -150,7 +150,7 @@ const UnmessagedMatchItem = memo(({ match, onPress }: UnmessagedMatchItemProps) 
         contentFit="cover"
         cachePolicy="memory-disk"
         transition={0}
-        accessibilityLabel={`${match.other_user_name}のプロフィール写真`}
+        accessibilityLabel={`${match.other_user_name}'s profile photo`}
       />
       <View style={styles.newBadge}>
         <Text style={styles.newBadgeText}>NEW</Text>
@@ -158,7 +158,7 @@ const UnmessagedMatchItem = memo(({ match, onPress }: UnmessagedMatchItemProps) 
     </View>
     <View style={styles.matchInfoContainer}>
       <Text style={styles.matchInfoText} numberOfLines={1}>
-        {match.other_user_age}歳
+        {match.other_user_age}
       </Text>
       <Text style={styles.matchInfoText} numberOfLines={1}>
         {match.other_user_location || match.other_user_prefecture}
@@ -281,13 +281,13 @@ const MessagesScreen: React.FC = () => {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 60) {
-      return `${minutes}分前`;
+      return `${minutes}m ago`;
     } else if (hours < 24) {
-      return `${hours}時間前`;
+      return `${hours}h ago`;
     } else if (days < 7) {
-      return `${days}日前`;
+      return `${days}d ago`;
     } else {
-      return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+      return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
     }
   };
 
@@ -383,7 +383,7 @@ const MessagesScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-        <Loading text="チャットを読み込み中..." fullScreen />
+        <Loading text="Loading chats..." fullScreen />
       </SafeAreaView>
     );
   }
@@ -395,11 +395,11 @@ const MessagesScreen: React.FC = () => {
       {/* Fixed Banner Section - Always visible */}
       <View style={styles.matchingSection}>
         <View style={styles.matchingSectionHeader}>
-          <Text style={styles.matchingSectionTitle}>マッチング</Text>
+          <Text style={styles.matchingSectionTitle}>Matches</Text>
           <Text style={styles.matchingSectionInstruction}>
             {isCurrentUserFemale
-              ? "最初のメッセージを送ると返信率が大幅アップ！"
-              : "24時間以内に送るとお相手からの返信率アップ！"}
+              ? "Send the first message for a much higher reply rate!"
+              : "Message within 24 hours to boost your reply rate!"}
           </Text>
         </View>
 
@@ -435,8 +435,8 @@ const MessagesScreen: React.FC = () => {
         ListEmptyComponent={
           <EmptyState
             icon="chatbubbles-outline"
-            title="メッセージがありません"
-            subtitle="マッチした人とメッセージを始めましょう"
+            title="No messages yet"
+            subtitle="Start a conversation with someone you've matched with."
           />
         }
       />
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   matchingSectionHeader: {
     marginBottom: Spacing.sm,      // 12px gap before matches scroll
   },
-  // "マッチング" title
+  // "Matches" title
   // Font: 16px, Bold, Primary color
   matchingSectionTitle: {
     fontSize: 16,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: 4,               // 4px gap between title and instruction
   },
-  // "24時間以内に送ると..." instruction text
+  // "Message within 24 hours..." instruction text
   // Font: 12px, Regular, Secondary color
   matchingSectionInstruction: {
     fontSize: 12,

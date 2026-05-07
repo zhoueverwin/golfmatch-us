@@ -88,8 +88,8 @@ const ShareablePostCard = forwardRef<View, ShareablePostCardProps>(
         <View style={styles.footer}>
           <Image source={appIcon} style={styles.appIcon} resizeMode="contain" />
           <View style={styles.ctaTextContainer}>
-            <Text style={styles.ctaText}>Golfmatchでもっと見る</Text>
-            <Text style={styles.ctaSubtext}>ゴルフ仲間を見つけよう</Text>
+            <Text style={styles.ctaText}>See more on Golfmatch</Text>
+            <Text style={styles.ctaSubtext}>Find your golf buddies</Text>
           </View>
         </View>
       </View>

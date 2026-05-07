@@ -63,7 +63,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           transition={0}
           placeholderContentFit="cover"
           recyclingKey={profileImage}
-          accessibilityLabel={`${profile.name}のプロフィール写真`}
+          accessibilityLabel={`${profile.name}'s profile photo`}
         />
 
         {/* Online Status Indicator - only show if user is online */}
@@ -100,7 +100,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <View style={styles.overlayRow}>
               <Image source={PinOutlineIcon} style={styles.pinIcon} />
               <Text style={styles.overlayLocationText}>
-                {profile.prefecture || "未設定"}
+                {profile.prefecture || "Not set"}
               </Text>
             </View>
           </View>

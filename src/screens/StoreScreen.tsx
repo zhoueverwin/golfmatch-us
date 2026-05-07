@@ -60,7 +60,7 @@ const StoreScreen: React.FC = () => {
 
   const formatDate = (date: Date | null) => {
     if (!date) return "";
-    return date.toLocaleDateString("ja-JP", {
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -143,12 +143,12 @@ const StoreScreen: React.FC = () => {
   // Present RevenueCat Paywall
   const handlePresentPaywall = async () => {
     if (!isInitialized) {
-      Alert.alert("エラー", "ストアの初期化中です。しばらくお待ちください。");
+      Alert.alert("Error", "The store is still loading. Please wait a moment.");
       return;
     }
 
     if (!profileId) {
-      Alert.alert("エラー", "ログインが必要です。");
+      Alert.alert("Error", "You need to be signed in.");
       return;
     }
 
@@ -173,8 +173,8 @@ const StoreScreen: React.FC = () => {
           // Also try to refresh customer info through RevenueCat
           await refreshCustomerInfo();
           Alert.alert(
-            "購入完了",
-            "メンバーシップが有効になりました。メッセージの送信が可能になりました。",
+            "Purchase Complete",
+            "Your membership is now active. You can now send messages.",
             [{ text: "OK", onPress: () => navigation.goBack() }]
           );
           break;
@@ -182,16 +182,16 @@ const StoreScreen: React.FC = () => {
           // Directly sync premium status to database (fallback for anonymous RevenueCat user)
           await syncPremiumStatusDirectly();
           await refreshCustomerInfo();
-          Alert.alert("復元完了", "購入が復元されました。", [
+          Alert.alert("Restore Complete", "Your purchase has been restored.", [
             { text: "OK", onPress: () => navigation.goBack() },
           ]);
           break;
         case PAYWALL_RESULT.NOT_PRESENTED:
           // User already has the entitlement
-          Alert.alert("情報", "すでにメンバーシップが有効です。");
+          Alert.alert("Info", "Your membership is already active.");
           break;
         case PAYWALL_RESULT.ERROR:
-          Alert.alert("エラー", "購入処理中にエラーが発生しました。");
+          Alert.alert("Error", "Something went wrong during the purchase.");
           break;
         case PAYWALL_RESULT.CANCELLED:
           // User cancelled - no alert needed
@@ -200,7 +200,7 @@ const StoreScreen: React.FC = () => {
       }
     } catch (error: any) {
       console.error("[StoreScreen] Paywall error:", error);
-      Alert.alert("エラー", "購入処理中にエラーが発生しました。");
+      Alert.alert("Error", "Something went wrong during the purchase.");
     } finally {
       setIsPurchasing(false);
     }
@@ -214,12 +214,12 @@ const StoreScreen: React.FC = () => {
 
     if (!isInitialized || !currentOffering) {
       console.log("[StoreScreen] ❌ Not ready:", { isInitialized, hasOffering: !!currentOffering });
-      Alert.alert("エラー", "商品情報を読み込めませんでした。");
+      Alert.alert("Error", "Couldn't load product information.");
       return;
     }
 
     if (!profileId) {
-      Alert.alert("エラー", "ログインが必要です。");
+      Alert.alert("Error", "You need to be signed in.");
       return;
     }
 
@@ -247,8 +247,8 @@ const StoreScreen: React.FC = () => {
 
     if (isProMember || hasEntitlement || dbIsPremium) {
       Alert.alert(
-        "メンバーシップ有効",
-        "すでにメンバーシップが有効です。"
+        "Membership Active",
+        "Your membership is already active."
       );
       return;
     }
@@ -262,9 +262,9 @@ const StoreScreen: React.FC = () => {
         productId: p.product.identifier,
       })));
       Alert.alert(
-        "エラー",
-        "サブスクリプションプランが見つかりません。\n\n" +
-        "RevenueCatの設定で'monthly'パッケージタイプが設定されているか確認してください。"
+        "Error",
+        "We couldn't find a subscription plan.\n\n" +
+        "Please confirm the 'monthly' package type is configured in RevenueCat."
       );
       return;
     }
@@ -293,18 +293,18 @@ const StoreScreen: React.FC = () => {
         console.log("[StoreScreen] After refresh, hasEntitlement:", hasEntitlement);
 
         Alert.alert(
-          "購入完了",
-          "メンバーシップが有効になりました。メッセージの送信が可能になりました。",
+          "Purchase Complete",
+          "Your membership is now active. You can now send messages.",
           [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       } else if (result.error === "cancelled") {
         // User cancelled - no alert
       } else {
-        Alert.alert("エラー", result.error || "購入に失敗しました。");
+        Alert.alert("Error", result.error || "The purchase failed.");
       }
     } catch (error: any) {
       console.error("[StoreScreen] Purchase error:", error);
-      Alert.alert("エラー", "購入処理中にエラーが発生しました。");
+      Alert.alert("Error", "Something went wrong during the purchase.");
     } finally {
       setIsPurchasing(false);
     }
@@ -322,16 +322,16 @@ const StoreScreen: React.FC = () => {
         if (hasEntitlement) {
           // Directly sync premium status to database (fallback for anonymous RevenueCat user)
           await syncPremiumStatusDirectly(result.customerInfo?.originalAppUserId);
-          Alert.alert("復元完了", "購入が復元されました。");
+          Alert.alert("Restore Complete", "Your purchase has been restored.");
         } else {
-          Alert.alert("情報", "復元できる購入がありません。");
+          Alert.alert("Info", "No purchases were found to restore.");
         }
       } else {
-        Alert.alert("エラー", result.error || "復元に失敗しました。");
+        Alert.alert("Error", result.error || "Restore failed.");
       }
     } catch (error: any) {
       console.error("[StoreScreen] Restore error:", error);
-      Alert.alert("エラー", "復元処理中にエラーが発生しました。");
+      Alert.alert("Error", "Something went wrong during the restore.");
     } finally {
       setIsPurchasing(false);
     }
@@ -355,10 +355,10 @@ const StoreScreen: React.FC = () => {
     } catch (error: any) {
       console.error("[StoreScreen] Management URL error:", error);
       Alert.alert(
-        "サブスクリプション管理",
+        "Manage Subscription",
         Platform.OS === "ios"
-          ? "設定アプリ → Apple ID → サブスクリプション からサブスクリプションを管理できます。"
-          : "Google Play ストア → メニュー → 定期購入 からサブスクリプションを管理できます。"
+          ? "You can manage your subscription in Settings → Apple ID → Subscriptions."
+          : "You can manage your subscription in Google Play Store → Menu → Subscriptions."
       );
     }
   };
@@ -379,7 +379,7 @@ const StoreScreen: React.FC = () => {
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </View>
     );
@@ -412,10 +412,10 @@ const StoreScreen: React.FC = () => {
                 style={styles.backIconImage}
                 resizeMode="contain"
               />
-              <Text style={styles.backLabel}>戻る</Text>
+              <Text style={styles.backLabel}>Back</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>ストア</Text>
+          <Text style={styles.headerTitle}>Store</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -442,7 +442,7 @@ const StoreScreen: React.FC = () => {
           </View>
 
           {/* Membership Title */}
-          <Text style={styles.membershipTitle}>メンバーシップ</Text>
+          <Text style={styles.membershipTitle}>Membership</Text>
 
           {/* Illustration */}
           <View style={styles.illustrationContainer}>
@@ -456,7 +456,7 @@ const StoreScreen: React.FC = () => {
           {/* Description */}
           <View style={styles.descriptionContainer}>
             <Text style={styles.description}>
-              メンバーシップでメッセージ機能が解放されます。気になる相手と、今すぐつながりましょう！
+              Membership unlocks messaging. Connect with someone who catches your eye — right now.
             </Text>
           </View>
 
@@ -468,7 +468,7 @@ const StoreScreen: React.FC = () => {
                 maskElement={
                   <View style={styles.priceMaskContainer}>
                     <Text style={styles.priceAmount}>¥3,000</Text>
-                    <Text style={styles.priceUnit}>/ 月</Text>
+                    <Text style={styles.priceUnit}>/ month</Text>
                   </View>
                 }
               >
@@ -480,7 +480,7 @@ const StoreScreen: React.FC = () => {
                 >
                   <View style={styles.priceMaskContainer}>
                     <Text style={[styles.priceAmount, { opacity: 0 }]}>¥3,000</Text>
-                    <Text style={[styles.priceUnit, { opacity: 0 }]}>/ 月</Text>
+                    <Text style={[styles.priceUnit, { opacity: 0 }]}>/ month</Text>
                   </View>
                 </LinearGradient>
               </MaskedView>
@@ -497,7 +497,7 @@ const StoreScreen: React.FC = () => {
                   style={styles.checkIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>気になる相手と、今すぐメッセージし放題</Text>
+                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>Unlimited messaging with anyone you're interested in</Text>
               </View>
               <View style={styles.featureRow}>
                 <Image
@@ -505,7 +505,7 @@ const StoreScreen: React.FC = () => {
                   style={styles.checkIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>マッチした相手との距離が一気に縮まる</Text>
+                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>Get closer to your matches, faster</Text>
               </View>
               <View style={styles.featureRow}>
                 <Image
@@ -513,7 +513,7 @@ const StoreScreen: React.FC = () => {
                   style={styles.checkIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>会員限定の機能で出会いのチャンスUP</Text>
+                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>Member-only features that boost your chances</Text>
               </View>
               <View style={styles.featureRow}>
                 <Image
@@ -521,12 +521,12 @@ const StoreScreen: React.FC = () => {
                   style={styles.checkIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>いつでも解約可能・追加料金なしで安心</Text>
+                <Text style={styles.featureText} adjustsFontSizeToFit minimumFontScale={0.8}>Cancel anytime — no hidden fees</Text>
               </View>
 
               {/* Highlight Text */}
               <Text style={styles.highlightText}>
-                もっと自由に、もっと楽しく出会える
+                Connect more freely, more easily
               </Text>
             </LinearGradient>
           </View>
@@ -534,52 +534,52 @@ const StoreScreen: React.FC = () => {
           {/* Terms and Conditions */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>
-              月額プランは¥3,000で、登録すると自動更新されます。
+              The monthly plan is ¥3,000 and renews automatically once you subscribe.
             </Text>
             <Text style={styles.termsText}>
-              料金は購入時にApple IDアカウントに請求されます。
+              You'll be charged through your Apple ID account at the time of purchase.
             </Text>
             <Text style={styles.termsText}>
-              更新時には、現在の料金が自動的に請求されます。
+              At each renewal, the current price will be charged automatically.
             </Text>
             <Text style={styles.termsText}>
-              解約はいつでも可能で、追加料金は一切かかりません。
+              You can cancel anytime — no additional fees.
             </Text>
             <Text style={styles.termsText}>
-              購入の復元は「購入を復元」から行えます。
+              You can restore previous purchases by tapping "Restore Purchases".
             </Text>
             <TouchableOpacity
               onPress={() => {
                 Alert.alert(
-                  "解約方法",
+                  "How to Cancel",
                   Platform.OS === "ios"
-                    ? "【iOSでの解約手順】\n\n1. 端末の「設定」アプリを開く\n2. 「Apple ID」（一番上の名前）をタップ\n3. 「サブスクリプション」を選択\n4. 「GolfMatch」を選択\n5. 「サブスクリプションをキャンセル」をタップ\n\n※解約後も、現在の請求期間が終了するまでは機能を利用できます。"
-                    : "【Androidでの解約手順】\n\n1. Google Play ストアを開く\n2. メニューから「定期購入」を選択\n3. 「GolfMatch」を選択\n4. 「定期購入を解約」をタップ\n\n※解約後も、現在の請求期間が終了するまでは機能を利用できます。",
+                    ? "Cancel on iOS:\n\n1. Open the Settings app\n2. Tap your name (Apple ID) at the top\n3. Tap Subscriptions\n4. Tap GolfMatch\n5. Tap Cancel Subscription\n\nNote: After canceling, you'll keep access until the end of the current billing period."
+                    : "Cancel on Android:\n\n1. Open the Google Play Store\n2. Tap Menu → Subscriptions\n3. Tap GolfMatch\n4. Tap Cancel subscription\n\nNote: After canceling, you'll keep access until the end of the current billing period.",
                   [
-                    { text: "閉じる", style: "cancel" },
+                    { text: "Close", style: "cancel" },
                     {
-                      text: "設定を開く",
+                      text: "Open Settings",
                       onPress: handleManageSubscription,
                     },
                   ]
                 );
               }}
             >
-              <Text style={styles.termsLink}>解約方法</Text>
+              <Text style={styles.termsLink}>How to Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
                 Linking.openURL("https://www.golfmatch.info/?page=privacypolicy-jp");
               }}
             >
-              <Text style={styles.termsLink}>プライバシーポリシー</Text>
+              <Text style={styles.termsLink}>Privacy Policy</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
                 Linking.openURL("https://www.golfmatch.info/?page=termsofuse-jp");
               }}
             >
-              <Text style={styles.termsLink}>利用規約</Text>
+              <Text style={styles.termsLink}>Terms of Service</Text>
             </TouchableOpacity>
           </View>
 
@@ -607,7 +607,7 @@ const StoreScreen: React.FC = () => {
             {isPurchasing ? (
               <ActivityIndicator size="small" color={Colors.white} />
             ) : (
-              <Text style={styles.fixedPurchaseButtonText}>購入する</Text>
+              <Text style={styles.fixedPurchaseButtonText}>Subscribe</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -616,7 +616,7 @@ const StoreScreen: React.FC = () => {
           onPress={handleRestorePurchases}
           disabled={isPurchasing}
         >
-          <Text style={styles.fixedRestoreButtonText}>購入を復元</Text>
+          <Text style={styles.fixedRestoreButtonText}>Restore Purchases</Text>
         </TouchableOpacity>
       </View>
     </View>

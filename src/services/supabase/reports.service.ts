@@ -71,14 +71,14 @@ export class ReportsService {
       if (params.description.length < 10) {
         return {
           success: false,
-          error: "説明は10文字以上で入力してください",
+          error: "Description must be at least 10 characters",
         };
       }
 
       if (params.description.length > 1000) {
         return {
           success: false,
-          error: "説明は1000文字以内で入力してください",
+          error: "Description must be 1000 characters or fewer",
         };
       }
 
@@ -86,7 +86,7 @@ export class ReportsService {
       if (params.reporterId === params.reportedUserId) {
         return {
           success: false,
-          error: "自分自身を通報することはできません",
+          error: "You cannot report yourself",
         };
       }
 
@@ -96,7 +96,7 @@ export class ReportsService {
         return {
           success: false,
           error:
-            "通報の回数制限を超えました。しばらく時間をおいてから再度お試しください。",
+            "You have reached the report limit. Please wait a while and try again.",
         };
       }
 
@@ -124,7 +124,7 @@ export class ReportsService {
       console.error("[ReportsService] Failed to create report:", error);
       return {
         success: false,
-        error: error.message || "通報の送信に失敗しました",
+        error: error.message || "Failed to submit report",
       };
     }
   }
@@ -150,7 +150,7 @@ export class ReportsService {
       console.error("[ReportsService] Failed to get user reports:", error);
       return {
         success: false,
-        error: error.message || "通報履歴の取得に失敗しました",
+        error: error.message || "Failed to fetch report history",
         data: [],
       };
     }

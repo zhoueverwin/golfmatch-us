@@ -73,7 +73,7 @@ const PostItem = memo(({
             <Image
               source={{ uri: getProfilePicture(item.user.profile_pictures, 0) }}
               style={styles.profileImage}
-              accessibilityLabel={`${item.user.name}のプロフィール写真`}
+              accessibilityLabel={`${item.user.name}'s profile photo`}
             />
             <View style={styles.userDetails}>
               <View style={styles.nameRow}>
@@ -105,7 +105,7 @@ const PostItem = memo(({
                 activeOpacity={0.7}
                 style={styles.expandButton}
               >
-                <Text style={styles.moreLink}>もっと見る</Text>
+                <Text style={styles.moreLink}>See more</Text>
               </TouchableOpacity>
             )}
             {isExpanded && exceedsLines && (
@@ -114,7 +114,7 @@ const PostItem = memo(({
                 activeOpacity={0.7}
                 style={styles.expandButton}
               >
-                <Text style={styles.moreLink}>折りたたむ</Text>
+                <Text style={styles.moreLink}>Show less</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -174,7 +174,7 @@ const PostItem = memo(({
             style={styles.actionButton}
             onPress={() => onReaction(item.id)}
             accessibilityRole="button"
-            accessibilityLabel="リアクション"
+            accessibilityLabel="React"
           >
             <View style={styles.heartIconContainer}>
               <Ionicons
@@ -320,9 +320,9 @@ const UserPostsScreen: React.FC = () => {
             resizeMode="contain"
             fadeDuration={0}
           />
-          <Text style={styles.backLabel}>戻る</Text>
+          <Text style={styles.backLabel}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>投稿</Text>
+        <Text style={styles.headerTitle}>Posts</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -345,7 +345,7 @@ const UserPostsScreen: React.FC = () => {
                 disabled={postsLoading}
               >
                 <Text style={styles.loadMoreText}>
-                  {postsLoading ? "読み込み中..." : "次のページ"}
+                  {postsLoading ? "Loading..." : "Load more"}
                 </Text>
               </TouchableOpacity>
             ) : null
@@ -353,8 +353,8 @@ const UserPostsScreen: React.FC = () => {
         />
       ) : (
         <EmptyState
-          title="投稿がありません"
-          subtitle="このユーザーはまだ投稿していません。"
+          title="No posts yet"
+          subtitle="This user hasn't posted anything yet."
         />
       )}
     </SafeAreaView>

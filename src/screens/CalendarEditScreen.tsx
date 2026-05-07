@@ -60,20 +60,20 @@ const CalendarEditScreen: React.FC = () => {
 
   const calendarDays = generateCalendarData(currentDate);
   const monthNames = [
-    "1月",
-    "2月",
-    "3月",
-    "4月",
-    "5月",
-    "6月",
-    "7月",
-    "8月",
-    "9月",
-    "10月",
-    "11月",
-    "12月",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
-  const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Load availability data
   const loadAvailability = async () => {
@@ -169,9 +169,9 @@ const CalendarEditScreen: React.FC = () => {
 
       if (response.error) {
         console.error("Save failed:", response.error);
-        Alert.alert("エラー", `保存に失敗しました: ${response.error}`);
+        Alert.alert("Error", `Failed to save: ${response.error}`);
       } else {
-        Alert.alert("保存完了", "ゴルフ可能日を更新しました。", [
+        Alert.alert("Saved", "Your golf availability has been updated.", [
           {
             text: "OK",
             onPress: () => navigation.goBack(),
@@ -180,7 +180,7 @@ const CalendarEditScreen: React.FC = () => {
       }
     } catch (error) {
       console.error("Error saving availability:", error);
-      Alert.alert("エラー", "保存中にエラーが発生しました。");
+      Alert.alert("Error", "Something went wrong while saving.");
     } finally {
       setSaving(false);
     }
@@ -242,7 +242,7 @@ const CalendarEditScreen: React.FC = () => {
       disabled={saving}
     >
       <Text style={[styles.saveText, saving && styles.saveTextDisabled]}>
-        {saving ? "保存中..." : "保存"}
+        {saving ? "Saving..." : "Save"}
       </Text>
     </TouchableOpacity>
   );
@@ -251,7 +251,7 @@ const CalendarEditScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <StandardHeader
-        title="カレンダー"
+        title="Calendar"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
         rightComponent={saveButtonComponent}
@@ -268,7 +268,7 @@ const CalendarEditScreen: React.FC = () => {
           </TouchableOpacity>
 
           <Text style={styles.monthTitle}>
-            {currentDate.getFullYear()}年 {monthNames[currentDate.getMonth()]}
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </Text>
 
           <TouchableOpacity
@@ -383,15 +383,15 @@ const CalendarEditScreen: React.FC = () => {
               size={16}
               color={Colors.success}
             />
-            <Text style={styles.legendText}>ゴルフ可能日</Text>
+            <Text style={styles.legendText}>Available</Text>
           </View>
           <View style={styles.legendItem}>
             <Ionicons name="close-circle" size={16} color={Colors.error} />
-            <Text style={styles.legendText}>ゴルフ不可</Text>
+            <Text style={styles.legendText}>Unavailable</Text>
           </View>
           <View style={styles.legendItem}>
             <Ionicons name="remove-circle" size={16} color={Colors.gray[400]} />
-            <Text style={styles.legendText}>未設定</Text>
+            <Text style={styles.legendText}>Not set</Text>
           </View>
         </View>
 
@@ -399,7 +399,7 @@ const CalendarEditScreen: React.FC = () => {
         <View style={styles.instructionsCard}>
           <View style={styles.instructionsHeader}>
             <Ionicons name="help-circle" size={20} color={Colors.primary} />
-            <Text style={styles.instructionsTitle}>使い方</Text>
+            <Text style={styles.instructionsTitle}>How it works</Text>
           </View>
 
           <View style={styles.instructionsList}>
@@ -408,7 +408,7 @@ const CalendarEditScreen: React.FC = () => {
                 <Ionicons name="finger-print-outline" size={18} color={Colors.primary} />
               </View>
               <Text style={styles.instructionText}>
-                日付をタップして状態を切り替え
+                Tap a date to cycle through statuses
               </Text>
             </View>
 
@@ -417,7 +417,7 @@ const CalendarEditScreen: React.FC = () => {
                 <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
               </View>
               <Text style={styles.instructionText}>
-                ゴルフ可能日として設定
+                Mark as available for golf
               </Text>
             </View>
 
@@ -426,7 +426,7 @@ const CalendarEditScreen: React.FC = () => {
                 <Ionicons name="close-circle" size={18} color={Colors.error} />
               </View>
               <Text style={styles.instructionText}>
-                ゴルフ不可として設定
+                Mark as unavailable
               </Text>
             </View>
 
@@ -435,7 +435,7 @@ const CalendarEditScreen: React.FC = () => {
                 <Ionicons name="remove-circle" size={18} color={Colors.gray[500]} />
               </View>
               <Text style={styles.instructionText}>
-                未設定に戻す
+                Reset to not set
               </Text>
             </View>
           </View>
@@ -443,7 +443,7 @@ const CalendarEditScreen: React.FC = () => {
           <View style={styles.instructionTip}>
             <Ionicons name="information-circle" size={16} color={Colors.primary} />
             <Text style={styles.instructionTipText}>
-              保存ボタンを押すとプロフィールに反映されます
+              Tap Save to publish changes to your profile
             </Text>
           </View>
         </View>

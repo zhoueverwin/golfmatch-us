@@ -183,7 +183,7 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
         const matches = response.data as Match[];
 
         // Store unseen matches for reference but DON'T show modal on login
-        // Users can view their matches on the つながり page under マッチ tab
+        // Users can view their matches on the Connections page under the Matches tab
         // Modal only shows for real-time new matches (handled by subscription)
         setUnseenMatches(matches);
 
@@ -193,7 +193,7 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
           shownMatchIds.current.add(match.id);
         });
 
-        console.log(`[MatchContext] Loaded ${matches.length} unseen matches on login (no popup - view on つながり page)`);
+        console.log(`[MatchContext] Loaded ${matches.length} unseen matches on login (no popup - view on Connections page)`);
       } else {
         console.error("[MatchContext] Failed to load unseen matches:", response.error);
       }
@@ -277,7 +277,7 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
         navigation.navigate("Chat", {
           chatId,
           userId: otherUserId,
-          userName: otherUser.name || "ユーザー",
+          userName: otherUser.name || "User",
           userImage:
             otherUser.profile_pictures && otherUser.profile_pictures[0]
               ? otherUser.profile_pictures[0]
@@ -308,7 +308,7 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
 
   // Note: We no longer auto-show queued matches
   // Modal only appears for real-time new matches
-  // Users can view all their matches on the つながり page under マッチ tab
+  // Users can view all their matches on the Connections page under the Matches tab
 
   // Prepare match data for the modal - memoize to prevent unnecessary re-renders
   const matchData = React.useMemo(() => {
@@ -322,8 +322,8 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
             : currentMatch.user1_id,
         name:
           currentMatch.user1_id === profileId
-            ? currentMatch.user2?.name || "ユーザー"
-            : currentMatch.user1?.name || "ユーザー",
+            ? currentMatch.user2?.name || "User"
+            : currentMatch.user1?.name || "User",
         image:
           currentMatch.user1_id === profileId
             ? currentMatch.user2?.profile_pictures?.[0] || ""

@@ -85,7 +85,7 @@ const CarouselProfileCard: React.FC<CarouselProfileCardProps> = ({
           <View style={styles.locationRow}>
             <Image source={PinOutlineIcon} style={styles.pinIcon} />
             <Text style={styles.locationText} numberOfLines={1}>
-              {profile.prefecture || "未設定"}
+              {profile.prefecture || "Not set"}
             </Text>
           </View>
         </View>

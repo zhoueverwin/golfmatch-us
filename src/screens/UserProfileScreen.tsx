@@ -57,10 +57,10 @@ const { width } = Dimensions.get("window");
 // Cache calendar data to persist across component unmounts
 const calendarCache: Record<string, CalendarData | null> = {};
 
-// Gender display labels (Japanese)
+// Gender display labels
 const genderLabels: Record<string, string> = {
-  male: "男性",
-  female: "女性",
+  male: "Male",
+  female: "Female",
 };
 
 type ProfileScreenRouteProp = RouteProp<RootStackParamList, "Profile">;
@@ -172,13 +172,13 @@ const UserProfileScreen: React.FC = () => {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 60) {
-      return `${minutes}分前`;
+      return `${minutes}m ago`;
     } else if (hours < 24) {
-      return `${hours}時間前`;
+      return `${hours}h ago`;
     } else if (days < 7) {
-      return `${days}日前`;
+      return `${days}d ago`;
     } else {
-      return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+      return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
     }
   };
 
@@ -387,7 +387,7 @@ const UserProfileScreen: React.FC = () => {
 
   const handleMessage = async (postUserId?: string, postUserName?: string, postUserImage?: string) => {
     const targetUserId = postUserId || userId;
-    const targetUserName = postUserName || profile?.basic?.name || 'ユーザー';
+    const targetUserName = postUserName || profile?.basic?.name || 'User';
     const targetUserImage = postUserImage || getProfilePicture(profile?.profile_pictures, 0);
     
     if (!targetUserName || !targetUserImage) return;
@@ -401,8 +401,8 @@ const UserProfileScreen: React.FC = () => {
       
       if (!mutualLikesResponse.success || !mutualLikesResponse.data) {
         Alert.alert(
-          "メッセージを送信できません",
-          "お互いにいいねを送る必要があります。まず相手のプロフィールをいいねしてください。",
+          "Can't Send Messages Yet",
+          "You both need to like each other first. Try liking their profile.",
           [{ text: "OK" }]
         );
         return;
@@ -423,11 +423,11 @@ const UserProfileScreen: React.FC = () => {
           userImage: targetUserImage,
         });
       } else {
-        Alert.alert("エラー", "チャットの作成に失敗しました");
+        Alert.alert("Error", "Couldn't start a chat.");
       }
     } catch (error) {
       console.error("Failed to handle message:", error);
-      Alert.alert("エラー", "メッセージ機能でエラーが発生しました");
+      Alert.alert("Error", "Something went wrong with messaging.");
     }
   };
 
@@ -508,10 +508,10 @@ const UserProfileScreen: React.FC = () => {
     try {
       await hiddenPostsService.hidePost(profileId, menuPost.postId);
       setHiddenPostIds((prev) => new Set([...prev, menuPost.postId]));
-      Alert.alert("非表示", "この投稿を非表示にしました。");
+      Alert.alert("Hidden", "This post has been hidden.");
     } catch (error) {
       console.error("Error hiding post:", error);
-      Alert.alert("エラー", "投稿の非表示に失敗しました。");
+      Alert.alert("Error", "Failed to hide post.");
     }
   }, [profileId, menuPost]);
 
@@ -522,13 +522,13 @@ const UserProfileScreen: React.FC = () => {
       const result = await blocksService.blockUser(profileId, menuPost.userId);
       if (result.success) {
         setBlockedUserIds((prev) => new Set([...prev, menuPost.userId]));
-        Alert.alert("ブロック完了", `${menuPost.userName}さんをブロックしました。`);
+        Alert.alert("Blocked", `You've blocked ${menuPost.userName}.`);
       } else {
-        Alert.alert("エラー", result.error || "ブロックに失敗しました。");
+        Alert.alert("Error", result.error || "Failed to block user.");
       }
     } catch (error) {
       console.error("Error blocking user:", error);
-      Alert.alert("エラー", "ブロックに失敗しました。");
+      Alert.alert("Error", "Failed to block user.");
     }
   }, [profileId, menuPost]);
 
@@ -550,16 +550,16 @@ const UserProfileScreen: React.FC = () => {
       const result = await blocksService.blockUser(profileId, userId);
       if (result.success) {
         Alert.alert(
-          "ブロック完了",
-          `${profile.basic?.name || "このユーザー"}さんをブロックしました。`,
+          "Blocked",
+          `You've blocked ${profile.basic?.name || "this user"}.`,
           [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       } else {
-        Alert.alert("エラー", result.error || "ブロックに失敗しました。");
+        Alert.alert("Error", result.error || "Failed to block user.");
       }
     } catch (error) {
       console.error("Error blocking user:", error);
-      Alert.alert("エラー", "ブロックに失敗しました。");
+      Alert.alert("Error", "Failed to block user.");
     }
   }, [profileId, profile, userId, navigation]);
 
@@ -568,27 +568,27 @@ const UserProfileScreen: React.FC = () => {
 
     navigation.navigate("Report", {
       reportedUserId: userId,
-      reportedUserName: profile.basic?.name || "ユーザー",
+      reportedUserName: profile.basic?.name || "User",
     });
   }, [navigation, userId, profile]);
 
   // Handle own post menu (delete)
   const handleOwnPostMenu = useCallback((post: Post) => {
     Alert.alert(
-      "投稿の管理",
-      "操作を選択してください",
+      "Manage Post",
+      "Choose an action",
       [
         {
-          text: "削除",
+          text: "Delete",
           style: "destructive",
           onPress: () => {
             Alert.alert(
-              "投稿を削除",
-              "この投稿を削除してもよろしいですか？この操作は取り消せません。",
+              "Delete Post",
+              "Are you sure you want to delete this post? This can't be undone.",
               [
-                { text: "キャンセル", style: "cancel" },
+                { text: "Cancel", style: "cancel" },
                 {
-                  text: "削除",
+                  text: "Delete",
                   style: "destructive",
                   onPress: async () => {
                     try {
@@ -597,14 +597,14 @@ const UserProfileScreen: React.FC = () => {
 
                       const response = await DataProvider.deletePost(post.id, currentUserId);
                       if (response.success) {
-                        Alert.alert("完了", "投稿を削除しました。");
+                        Alert.alert("Done", "Post deleted.");
                         refetchPostsRef.current();
                       } else {
-                        Alert.alert("エラー", response.error || "削除に失敗しました。");
+                        Alert.alert("Error", response.error || "Failed to delete.");
                       }
                     } catch (error) {
                       console.error("Error deleting post:", error);
-                      Alert.alert("エラー", "削除に失敗しました。");
+                      Alert.alert("Error", "Failed to delete.");
                     }
                   },
                 },
@@ -613,7 +613,7 @@ const UserProfileScreen: React.FC = () => {
           },
         },
         {
-          text: "キャンセル",
+          text: "Cancel",
           style: "cancel",
         },
       ]
@@ -654,7 +654,7 @@ const UserProfileScreen: React.FC = () => {
                 contentFit="cover"
                 cachePolicy="memory-disk"
                 transition={200}
-                accessibilityLabel={`${item.user.name}のプロフィール写真`}
+                accessibilityLabel={`${item.user.name}'s profile photo`}
               />
               <View style={styles.userDetails}>
                 <View style={styles.postUserName}>
@@ -680,8 +680,8 @@ const UserProfileScreen: React.FC = () => {
                 style={styles.moreButton}
                 onPress={() => handleOwnPostMenu(item)}
                 accessibilityRole="button"
-                accessibilityLabel="投稿のメニューを開く"
-                accessibilityHint="編集、削除などの操作ができます"
+                accessibilityLabel="Open post menu"
+                accessibilityHint="Edit, delete, and more actions"
               >
                 <Ionicons
                   name="ellipsis-horizontal"
@@ -694,8 +694,8 @@ const UserProfileScreen: React.FC = () => {
                 style={styles.moreButton}
                 onPress={() => handleOpenPostMenu(item)}
                 accessibilityRole="button"
-                accessibilityLabel="投稿のメニューを開く"
-                accessibilityHint="非表示、ブロック、通報などの操作ができます"
+                accessibilityLabel="Open post menu"
+                accessibilityHint="Hide, block, report, and more"
               >
                 <Ionicons
                   name="ellipsis-horizontal"
@@ -721,7 +721,7 @@ const UserProfileScreen: React.FC = () => {
                   activeOpacity={0.7}
                   style={styles.expandButton}
                 >
-                  <Text style={styles.moreLink}>もっと見る</Text>
+                  <Text style={styles.moreLink}>Show more</Text>
                 </TouchableOpacity>
               )}
               {isExpanded && exceedsLines && (
@@ -730,7 +730,7 @@ const UserProfileScreen: React.FC = () => {
                   activeOpacity={0.7}
                   style={styles.expandButton}
                 >
-                  <Text style={styles.moreLink}>折りたたむ</Text>
+                  <Text style={styles.moreLink}>Show less</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -789,7 +789,7 @@ const UserProfileScreen: React.FC = () => {
               style={styles.actionButton}
               onPress={() => handleReaction(item.id)}
               accessibilityRole="button"
-              accessibilityLabel={item.hasReacted ? "リアクションを取り消し" : "リアクション"}
+              accessibilityLabel={item.hasReacted ? "Remove reaction" : "React"}
             >
               <View style={styles.heartIconContainer}>
                 <Ionicons
@@ -817,17 +817,17 @@ const UserProfileScreen: React.FC = () => {
                     );
                   } else {
                     Alert.alert(
-                      "メッセージを送信できません",
-                      "お互いにいいねを送る必要があります。まず相手のプロフィールをいいねしてください。",
+                      "Can't Send Messages Yet",
+                      "You both need to like each other first. Try liking their profile.",
                       [{ text: "OK" }]
                     );
                   }
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  mutualLikesMap[item.user.id] 
-                    ? "メッセージ" 
-                    : "メッセージ（お互いにいいねが必要）"
+                  mutualLikesMap[item.user.id]
+                    ? "Message"
+                    : "Message (mutual like required)"
                 }
               >
                 <Image
@@ -842,7 +842,7 @@ const UserProfileScreen: React.FC = () => {
                   styles.actionText,
                   !mutualLikesMap[item.user.id] && styles.disabledActionText
                 ]}>
-                  メッセージ
+                  Message
                 </Text>
               </TouchableOpacity>
             )}
@@ -882,8 +882,8 @@ const UserProfileScreen: React.FC = () => {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
         <EmptyState
-          title="プロフィールが見つかりません"
-          subtitle="このユーザーのプロフィールを表示できません。"
+          title="Profile Not Found"
+          subtitle="We couldn't load this user's profile."
         />
       </SafeAreaView>
     );
@@ -896,8 +896,8 @@ const UserProfileScreen: React.FC = () => {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
         <EmptyState
-          title="プロフィールデータが不完全です"
-          subtitle="このプロフィールのデータを読み込めませんでした。"
+          title="Profile Data Incomplete"
+          subtitle="We couldn't load the data for this profile."
         />
       </SafeAreaView>
     );
@@ -918,15 +918,15 @@ const UserProfileScreen: React.FC = () => {
             style={styles.backIconImage}
             resizeMode="contain"
           />
-          <Text style={styles.backLabel}>戻る</Text>
+          <Text style={styles.backLabel}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>プロフィール</Text>
+        <Text style={styles.headerTitle}>Profile</Text>
         {profileId !== userId ? (
           <TouchableOpacity
             style={styles.headerMenuButton}
             onPress={() => setShowUserMenu(true)}
             accessibilityRole="button"
-            accessibilityLabel="ユーザーメニュー"
+            accessibilityLabel="User menu"
           >
             <Ionicons name="ellipsis-horizontal" size={22} color={Colors.gray[600]} />
           </TouchableOpacity>
@@ -1082,7 +1082,7 @@ const UserProfileScreen: React.FC = () => {
         {/* Basic Info Section */}
         <View style={styles.basicInfoSection}>
           <View style={styles.userNameRow}>
-            <Text style={styles.userName}>{profile.basic?.name || 'ユーザー'}</Text>
+            <Text style={styles.userName}>{profile.basic?.name || 'User'}</Text>
             {profile.status?.is_verified && (
               <View style={styles.verificationPill}>
                 <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
@@ -1101,12 +1101,12 @@ const UserProfileScreen: React.FC = () => {
               {isOnline === true && (
                 <View style={styles.onlineStatusContainer}>
                   <View style={styles.onlineStatusDot} />
-                  <Text style={styles.onlineStatusText}>オンライン</Text>
+                  <Text style={styles.onlineStatusText}>Online</Text>
                 </View>
               )}
               {isOnline === false && lastActiveAt && (
                 <Text style={styles.lastActiveText}>
-                  最後にアクセス: <Text style={styles.lastActiveHighlight}>{formatLastActive(lastActiveAt)}</Text>
+                  Last active: <Text style={styles.lastActiveHighlight}>{formatLastActive(lastActiveAt)}</Text>
                 </Text>
               )}
             </View>
@@ -1119,7 +1119,7 @@ const UserProfileScreen: React.FC = () => {
               color={Colors.gray[500]}
             />
             <Text style={styles.locationText}>
-              {profile.location?.prefecture || profile.basic?.prefecture || '未設定'}
+              {profile.location?.prefecture || profile.basic?.prefecture || 'Not set'}
             </Text>
           </View>
           {/* Show prefecture again if different from location */}
@@ -1130,25 +1130,25 @@ const UserProfileScreen: React.FC = () => {
 
         {/* Self Introduction Section */}
         {profile.bio && profile.bio.trim() && renderProfileSection(
-          "自己紹介",
+          "About",
           <Text style={styles.bioText}>{profile.bio}</Text>,
         )}
 
         {/* Basic Profile Section */}
         {profile.basic && renderProfileSection(
-          "基本プロフィール",
+          "Basic Profile",
           <View style={styles.profileGrid}>
-            {profile.basic.age && profile.basic.age !== "0" && profile.basic.age !== "" && renderProfileItem("年齢", profile.basic.age)}
-            {profile.basic.gender && profile.basic.gender !== "" && renderProfileItem("性別", genderLabels[profile.basic.gender] || profile.basic.gender)}
-            {profile.basic.prefecture && profile.basic.prefecture !== "" && renderProfileItem("居住地", profile.basic.prefecture)}
-            {profile.basic.blood_type && profile.basic.blood_type !== "" && renderProfileItem("血液型", profile.basic.blood_type)}
-            {profile.basic.favorite_club && profile.basic.favorite_club !== "" && renderProfileItem("好きなクラブ", profile.basic.favorite_club)}
-            {profile.basic.height && profile.basic.height !== "" && renderProfileItem("身長", profile.basic.height + " cm")}
-            {profile.basic.body_type && profile.basic.body_type !== "" && renderProfileItem("体型", profile.basic.body_type)}
-            {profile.basic.smoking && profile.basic.smoking !== "" && renderProfileItem("タバコ", profile.basic.smoking)}
+            {profile.basic.age && profile.basic.age !== "0" && profile.basic.age !== "" && renderProfileItem("Age", profile.basic.age)}
+            {profile.basic.gender && profile.basic.gender !== "" && renderProfileItem("Gender", genderLabels[profile.basic.gender] || profile.basic.gender)}
+            {profile.basic.prefecture && profile.basic.prefecture !== "" && renderProfileItem("Location", profile.basic.prefecture)}
+            {profile.basic.blood_type && profile.basic.blood_type !== "" && renderProfileItem("Blood Type", profile.basic.blood_type)}
+            {profile.basic.favorite_club && profile.basic.favorite_club !== "" && renderProfileItem("Favorite Club", profile.basic.favorite_club)}
+            {profile.basic.height && profile.basic.height !== "" && renderProfileItem("Height", profile.basic.height + " cm")}
+            {profile.basic.body_type && profile.basic.body_type !== "" && renderProfileItem("Body Type", profile.basic.body_type)}
+            {profile.basic.smoking && profile.basic.smoking !== "" && renderProfileItem("Smoking", profile.basic.smoking)}
             {profile.basic.personality_type && profile.basic.personality_type !== "" &&
               renderProfileItem(
-                "16 パーソナリティ",
+                "16 Personalities",
                 profile.basic.personality_type,
               )}
           </View>,
@@ -1156,22 +1156,22 @@ const UserProfileScreen: React.FC = () => {
 
         {/* Golf Profile Section */}
         {profile.golf && renderProfileSection(
-          "ゴルフプロフィール",
+          "Golf Profile",
           <View style={styles.profileGrid}>
-            {profile.golf.skill_level && profile.golf.skill_level !== "" && renderProfileItem("スキルレベル", profile.golf.skill_level)}
-            {profile.golf.experience && profile.golf.experience !== "" && renderProfileItem("ゴルフ歴", profile.golf.experience)}
-            {profile.golf.average_score && profile.golf.average_score !== "0" && profile.golf.average_score !== "" && renderProfileItem("平均スコア", profile.golf.average_score)}
-            {profile.golf.best_score && profile.golf.best_score !== "" && renderProfileItem("ベストスコア", profile.golf.best_score)}
-            {profile.golf.transportation && profile.golf.transportation !== "" && renderProfileItem("移動手段", profile.golf.transportation)}
-            {profile.golf.available_days && profile.golf.available_days !== "" && renderProfileItem("ラウンド可能日", profile.golf.available_days)}
-            {profile.play_prefecture && profile.play_prefecture.length > 0 && renderProfileItem("プレー地域", Array.isArray(profile.play_prefecture) ? profile.play_prefecture.join("\n") : profile.play_prefecture)}
+            {profile.golf.skill_level && profile.golf.skill_level !== "" && renderProfileItem("Skill Level", profile.golf.skill_level)}
+            {profile.golf.experience && profile.golf.experience !== "" && renderProfileItem("Years Playing", profile.golf.experience)}
+            {profile.golf.average_score && profile.golf.average_score !== "0" && profile.golf.average_score !== "" && renderProfileItem("Average Score", profile.golf.average_score)}
+            {profile.golf.best_score && profile.golf.best_score !== "" && renderProfileItem("Best Score", profile.golf.best_score)}
+            {profile.golf.transportation && profile.golf.transportation !== "" && renderProfileItem("Transportation", profile.golf.transportation)}
+            {profile.golf.available_days && profile.golf.available_days !== "" && renderProfileItem("Available Days", profile.golf.available_days)}
+            {profile.play_prefecture && profile.play_prefecture.length > 0 && renderProfileItem("Where I Play", Array.isArray(profile.play_prefecture) ? profile.play_prefecture.join("\n") : profile.play_prefecture)}
           </View>,
         )}
 
         {/* Golf Availability Calendar */}
         {calendarData &&
           renderProfileSection(
-            "ゴルフ可能日",
+            "Golf Availability",
             <GolfCalendar
               calendarData={calendarData}
               onDatePress={handleCalendarDatePress}
@@ -1183,7 +1183,7 @@ const UserProfileScreen: React.FC = () => {
 
         {/* Posts Section */}
         <View style={styles.postsSection}>
-          <Text style={styles.sectionTitle}>投稿</Text>
+          <Text style={styles.sectionTitle}>Posts</Text>
           {posts.length > 0 ? (
             <View>
               <FlatList
@@ -1199,7 +1199,7 @@ const UserProfileScreen: React.FC = () => {
                   onPress={() => navigation.navigate("UserPosts", { userId })}
                 >
                   <Text style={styles.viewAllPostsText}>
-                    すべての投稿を見る
+                    See all posts
                   </Text>
                   <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
                 </TouchableOpacity>
@@ -1208,8 +1208,8 @@ const UserProfileScreen: React.FC = () => {
           ) : (
             <View style={styles.emptyPostsContainer}>
               <EmptyState
-                title="投稿がありません"
-                subtitle="このユーザーはまだ投稿していません。"
+                title="No Posts Yet"
+                subtitle="This user hasn't posted anything yet."
               />
             </View>
           )}
@@ -1231,10 +1231,10 @@ const UserProfileScreen: React.FC = () => {
             onPress={handleLike}
             disabled={isLoadingLike || isLiked}
             accessibilityRole="button"
-            accessibilityLabel={isLiked ? "いいね済み" : "いいね"}
+            accessibilityLabel={isLiked ? "Liked" : "Like"}
           >
             {isLoadingLike ? (
-              <Text style={styles.likeButtonText}>処理中...</Text>
+              <Text style={styles.likeButtonText}>Loading...</Text>
             ) : (
               <Text
                 style={[
@@ -1242,7 +1242,7 @@ const UserProfileScreen: React.FC = () => {
                   isLiked && styles.likeButtonTextLiked,
                 ]}
               >
-                {isLiked ? "いいね済み" : "いいね"}
+                {isLiked ? "Liked" : "Like"}
               </Text>
             )}
           </TouchableOpacity>
@@ -1271,7 +1271,7 @@ const UserProfileScreen: React.FC = () => {
           onClose={() => setShowUserMenu(false)}
           postId=""
           postUserId={userId}
-          postUserName={profile.basic?.name || "ユーザー"}
+          postUserName={profile.basic?.name || "User"}
           currentUserId={profileId || ""}
           onBlock={handleBlockProfile}
           onReport={handleReportProfile}

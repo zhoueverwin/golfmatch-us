@@ -57,9 +57,9 @@ const LastLoginSelector: React.FC<LastLoginSelectorProps> = ({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={Colors.gray[600]} />
           </TouchableOpacity>
-          <Text style={styles.title}>最終ログイン</Text>
+          <Text style={styles.title}>Last Login</Text>
           <TouchableOpacity onPress={handleClear}>
-            <Text style={styles.clearButton}>クリア</Text>
+            <Text style={styles.clearButton}>Clear</Text>
           </TouchableOpacity>
         </View>
 
@@ -92,7 +92,7 @@ const LastLoginSelector: React.FC<LastLoginSelectorProps> = ({
         {/* Action Button */}
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>適用</Text>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
