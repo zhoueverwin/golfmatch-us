@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KYC Review - GolfMatch</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    line-height: 1.5;
+    padding: 16px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .loading {
+    display: flex; justify-content: center; align-items: center;
+    height: 60vh; font-size: 18px; color: #718096;
+  }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #20B2AA, #178f89);
+    color: white; border-radius: 12px; margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(32,178,170,0.3);
+  }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header .info { font-size: 14px; opacity: 0.9; }
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .tab-btn {
+    padding: 8px 20px; border: 2px solid #cbd5e0; border-radius: 8px;
+    background: white; color: #4a5568; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: #20B2AA; color: #20B2AA; }
+  .tab-btn.active { background: #20B2AA; color: white; border-color: #20B2AA; }
+  .tab-btn .count {
+    display: inline-block; background: rgba(0,0,0,0.15); border-radius: 10px;
+    padding: 0 7px; font-size: 12px; margin-left: 4px;
+  }
+  .tab-btn.active .count { background: rgba(255,255,255,0.3); }
+  .empty {
+    text-align: center; padding: 60px 20px; color: #a0aec0; font-size: 16px;
+  }
+
+  /* Submission card */
+  .submission {
+    background: white; border-radius: 12px; padding: 24px;
+    margin-bottom: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    border-left: 4px solid #20B2AA;
+  }
+  .submission.approved { border-left-color: #38a169; }
+  .submission.rejected { border-left-color: #e53e3e; }
+  .sub-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  }
+  .user-info { display: flex; align-items: center; gap: 12px; }
+  .user-avatar {
+    width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+    background: #edf2f7; flex-shrink: 0;
+  }
+  .user-avatar-placeholder {
+    width: 48px; height: 48px; border-radius: 50%; background: #edf2f7;
+    display: flex; align-items: center; justify-content: center;
+    color: #a0aec0; font-size: 20px; flex-shrink: 0;
+  }
+  .user-details h3 { font-size: 16px; font-weight: 700; }
+  .user-meta { font-size: 13px; color: #718096; }
+  .status-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+  }
+  .status-pending { background: #fefcbf; color: #975a16; }
+  .status-approved { background: #c6f6d5; color: #276749; }
+  .status-rejected { background: #fed7d7; color: #9b2c2c; }
+
+  /* Image grid */
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 900px) {
+    .image-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .image-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .image-cell { text-align: center; }
+  .image-label {
+    font-size: 11px; font-weight: 600; color: #718096;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .image-frame {
+    position: relative; width: 100%; padding-top: 130%;
+    background: #f7fafc; border-radius: 8px; overflow: hidden;
+    border: 2px solid #e2e8f0; cursor: pointer; transition: border-color 0.15s;
+  }
+  .image-frame:hover { border-color: #20B2AA; }
+  .image-frame img {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .image-frame .no-image {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #cbd5e0; font-size: 13px;
+  }
+
+  /* Actions */
+  .actions {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding-top: 16px; border-top: 1px solid #f0f4f8;
+  }
+  .btn {
+    padding: 10px 24px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-approve { background: #38a169; color: white; }
+  .btn-approve:hover:not(:disabled) { background: #2f855a; }
+  .btn-reject { background: #e53e3e; color: white; }
+  .btn-reject:hover:not(:disabled) { background: #c53030; }
+  .btn-ban { background: #1a202c; color: white; }
+  .btn-ban:hover:not(:disabled) { background: #000; }
+  .reject-options {
+    display: none; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+  }
+  .reject-options.visible { display: flex; }
+  .reject-reason-btn {
+    padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 6px;
+    background: white; color: #4a5568; font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .reject-reason-btn:hover { border-color: #e53e3e; color: #e53e3e; }
+  .reject-reason-btn.selected { background: #e53e3e; color: white; border-color: #e53e3e; }
+  .notes-input {
+    flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #e2e8f0;
+    border-radius: 6px; font-size: 13px; outline: none;
+  }
+  .notes-input:focus { border-color: #20B2AA; }
+  .review-info {
+    font-size: 12px; color: #a0aec0; margin-top: 8px;
+  }
+
+  /* Fullscreen overlay */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+    z-index: 1000; cursor: pointer;
+    justify-content: center; align-items: center;
+  }
+  .overlay.visible { display: flex; }
+  .overlay img {
+    max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 4px;
+  }
+  .overlay .close-hint {
+    position: absolute; top: 20px; right: 24px;
+    color: rgba(255,255,255,0.6); font-size: 14px;
+  }
+  .back-link {
+    display: inline-block; margin-bottom: 16px; color: #20B2AA;
+    text-decoration: none; font-size: 14px; font-weight: 500;
+  }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="admin-dashboard.html" onclick="this.href=this.href+'?key='+getKey()">← ダッシュボードに戻る</a>
+
+<header>
+  <h1>🔍 KYC本人確認レビュー</h1>
+  <div class="info" id="headerInfo">読み込み中...</div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+<div id="loading" class="loading">読み込み中...</div>
+<div id="content"></div>
+
+<!-- Fullscreen image overlay -->
+<div class="overlay" id="overlay" onclick="closeOverlay()">
+  <span class="close-hint">クリックして閉じる</span>
+  <img id="overlayImg" src="" alt="">
+</div>
+
+<script>
+var API_BASE = 'https://rriwpoqhbgvprbhomckk.supabase.co/functions/v1/kyc-review';
+var MOD_API = 'https://rriwpoqhbgvprbhomckk.supabase.co/functions/v1/admin-moderation';
+var allSubmissions = [];
+var currentTab = 'pending_review';
+
+var REJECTION_REASONS = [
+  { code: 'blurry_photo', label: '写真が不鮮明' },
+  { code: 'id_mismatch', label: '身分証とセルフィーが一致しない' },
+  { code: 'expired_id', label: '身分証の有効期限切れ' },
+  { code: 'incomplete_docs', label: '書類が不完全' },
+  { code: 'fake_photo', label: '不正な写真の疑い' },
+  { code: 'unreadable', label: '文字が読み取れない' },
+];
+
+var IMAGE_LABELS = {
+  id_image_url: '身分証（表）',
+  id_back_image_url: '身分証（裏）',
+  selfie_image_url: 'セルフィー',
+  id_selfie_image_url: '身分証+セルフィー',
+  golf_photo_url: 'ゴルフ写真',
+};
+
+function getKey() {
+  return new URLSearchParams(window.location.search).get('key') || '';
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function genderLabel(g) {
+  if (g === 'male') return '男性';
+  if (g === 'female') return '女性';
+  return g || '—';
+}
+
+function statusLabel(s) {
+  if (s === 'pending_review') return '審査待ち';
+  if (s === 'approved') return '承認済み';
+  if (s === 'rejected') return '却下';
+  return s;
+}
+
+function statusClass(s) {
+  if (s === 'pending_review') return 'status-pending';
+  if (s === 'approved') return 'status-approved';
+  if (s === 'rejected') return 'status-rejected';
+  return '';
+}
+
+async function loadData() {
+  try {
+    var res = await fetch(API_BASE + '?key=' + encodeURIComponent(getKey()) + '&status=all');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    allSubmissions = data.submissions || [];
+    renderTabs();
+    renderContent();
+    document.getElementById('loading').style.display = 'none';
+    var pending = allSubmissions.filter(function(s) { return s.status === 'pending_review'; }).length;
+    document.getElementById('headerInfo').textContent =
+      '全 ' + allSubmissions.length + ' 件 ・ 審査待ち ' + pending + ' 件';
+  } catch (e) {
+    document.getElementById('loading').textContent = 'エラー: ' + e.message;
+  }
+}
+
+function renderTabs() {
+  var counts = { pending_review: 0, approved: 0, rejected: 0 };
+  allSubmissions.forEach(function(s) { if (counts[s.status] !== undefined) counts[s.status]++; });
+
+  var tabs = [
+    { key: 'pending_review', label: '審査待ち', count: counts.pending_review },
+    { key: 'approved', label: '承認済み', count: counts.approved },
+    { key: 'rejected', label: '却下', count: counts.rejected },
+    { key: 'all', label: 'すべて', count: allSubmissions.length },
+  ];
+
+  document.getElementById('tabs').innerHTML = tabs.map(function(t) {
+    return '<button class="tab-btn' + (currentTab === t.key ? ' active' : '') +
+      '" onclick="switchTab(\'' + t.key + '\')">' + t.label +
+      '<span class="count">' + t.count + '</span></button>';
+  }).join('');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  renderTabs();
+  renderContent();
+}
+
+function renderContent() {
+  var filtered = currentTab === 'all'
+    ? allSubmissions
+    : allSubmissions.filter(function(s) { return s.status === currentTab; });
+
+  if (filtered.length === 0) {
+    document.getElementById('content').innerHTML = '<div class="empty">該当する提出はありません</div>';
+    return;
+  }
+
+  document.getElementById('content').innerHTML = filtered.map(function(s) {
+    var isPending = s.status === 'pending_review';
+
+    // User info
+    var avatar = s.profile_picture
+      ? '<img class="user-avatar" src="' + s.profile_picture + '" alt="">'
+      : '<div class="user-avatar-placeholder">👤</div>';
+
+    var header = '<div class="sub-header">' +
+      '<div class="user-info">' + avatar +
+      '<div class="user-details"><h3>' + esc(s.profile_name) + '</h3>' +
+      '<div class="user-meta">' + genderLabel(s.profile_gender) + ' ・ ' +
+      (s.profile_age || '—') + '歳 ・ ' + esc(s.profile_prefecture || '—') +
+      (s.profile_email ? ' ・ 📧 ' + esc(s.profile_email) : '') +
+      ' ・ 提出: ' + formatDate(s.submission_date) +
+      (s.retry_count > 0 ? ' ・ 再提出 ' + s.retry_count + '回' : '') +
+      '</div></div></div>' +
+      '<span class="status-badge ' + statusClass(s.status) + '">' + statusLabel(s.status) + '</span>' +
+      '</div>';
+
+    // Images
+    var imageFields = ['id_image_url', 'id_back_image_url', 'selfie_image_url', 'id_selfie_image_url', 'golf_photo_url'];
+    var images = imageFields.map(function(field) {
+      var url = s.images[field];
+      var inner = url
+        ? '<img src="' + url + '" alt="' + IMAGE_LABELS[field] + '" loading="lazy">'
+        : '<span class="no-image">なし</span>';
+      var onclick = url ? ' onclick="openOverlay(\'' + url.replace(/'/g, "\\'") + '\')"' : '';
+      return '<div class="image-cell"><div class="image-label">' + IMAGE_LABELS[field] + '</div>' +
+        '<div class="image-frame"' + onclick + '>' + inner + '</div></div>';
+    }).join('');
+
+    var imageGrid = '<div class="image-grid">' + images + '</div>';
+
+    // Actions
+    var actions = '';
+    if (isPending) {
+      actions = '<div class="actions">' +
+        '<button class="btn btn-approve" onclick="doAction(\'' + s.id + '\', \'approve\')">✓ 承認</button>' +
+        '<button class="btn btn-reject" onclick="toggleReject(\'' + s.id + '\')">✕ 却下</button>' +
+        '<button class="btn btn-ban" onclick="doBanUser(\'' + s.user_id + '\', \'' + esc(s.profile_name).replace(/'/g, "\\'") + '\')">⛔ BAN</button>' +
+        '<input class="notes-input" id="notes-' + s.id + '" placeholder="メモ（任意）">' +
+        '</div>' +
+        '<div class="reject-options" id="reject-' + s.id + '">' +
+        REJECTION_REASONS.map(function(r) {
+          return '<button class="reject-reason-btn" onclick="selectReason(\'' + s.id + '\', this, \'' + r.code + '\')" data-reason="' + r.code + '">' + r.label + '</button>';
+        }).join('') +
+        '<button class="btn btn-reject" style="margin-left:auto;padding:6px 16px;font-size:12px;" onclick="confirmReject(\'' + s.id + '\')">却下を確定</button>' +
+        '</div>';
+    } else {
+      var info = [];
+      if (s.review_notes) info.push('メモ: ' + esc(s.review_notes));
+      if (s.rejection_reason) info.push('理由: ' + esc(s.rejection_reason));
+      if (info.length) actions = '<div class="review-info">' + info.join(' ・ ') + '</div>';
+    }
+
+    return '<div class="submission ' + s.status + '">' + header + imageGrid + actions + '</div>';
+  }).join('');
+}
+
+var selectedReasons = {};
+
+function toggleReject(id) {
+  var el = document.getElementById('reject-' + id);
+  el.classList.toggle('visible');
+  selectedReasons[id] = null;
+  el.querySelectorAll('.reject-reason-btn').forEach(function(b) { b.classList.remove('selected'); });
+}
+
+function selectReason(id, btn, reason) {
+  var el = document.getElementById('reject-' + id);
+  el.querySelectorAll('.reject-reason-btn').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  selectedReasons[id] = reason;
+}
+
+async function confirmReject(id) {
+  var reason = selectedReasons[id];
+  if (!reason) { alert('却下理由を選択してください'); return; }
+  var label = REJECTION_REASONS.find(function(r) { return r.code === reason; });
+  await doAction(id, 'reject', label ? label.label : reason);
+}
+
+async function doAction(id, action, rejectionReason) {
+  if (action === 'approve' && !confirm(esc('この提出を承認しますか？'))) return;
+
+  var notes = document.getElementById('notes-' + id);
+  var body = {
+    submission_id: id,
+    action: action,
+    review_notes: notes ? notes.value : '',
+  };
+  if (rejectionReason) body.rejection_reason = rejectionReason;
+
+  // Disable buttons
+  var card = document.querySelector('[onclick*="' + id + '"]');
+  document.querySelectorAll('.btn').forEach(function(b) { b.disabled = true; });
+
+  try {
+    var res = await fetch(API_BASE + '?key=' + encodeURIComponent(getKey()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Update local data and re-render
+    var sub = allSubmissions.find(function(s) { return s.id === id; });
+    if (sub) {
+      sub.status = action === 'approve' ? 'approved' : 'rejected';
+      sub.rejection_reason = rejectionReason || null;
+      sub.review_notes = body.review_notes || null;
+    }
+    renderTabs();
+    renderContent();
+    var pending = allSubmissions.filter(function(s) { return s.status === 'pending_review'; }).length;
+    document.getElementById('headerInfo').textContent =
+      '全 ' + allSubmissions.length + ' 件 ・ 審査待ち ' + pending + ' 件';
+  } catch (e) {
+    alert('エラー: ' + e.message);
+    document.querySelectorAll('.btn').forEach(function(b) { b.disabled = false; });
+  }
+}
+
+function openOverlay(url) {
+  event.stopPropagation();
+  document.getElementById('overlayImg').src = url;
+  document.getElementById('overlay').classList.add('visible');
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('visible');
+  document.getElementById('overlayImg').src = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeOverlay();
+});
+
+function esc(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function doBanUser(userId, userName) {
+  var reason = prompt(userName + ' をBANします（KYCも却下されます）。理由を入力:', '不正なKYC提出・スパムの疑い');
+  if (reason === null) return;
+
+  document.querySelectorAll('.btn').forEach(function(b) { b.disabled = true; });
+
+  try {
+    var res = await fetch(MOD_API + '?key=' + encodeURIComponent(getKey()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ban', user_id: userId, reason: reason }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert(userName + ' をBANしました');
+    loadData();
+  } catch (e) {
+    alert('エラー: ' + e.message);
+    document.querySelectorAll('.btn').forEach(function(b) { b.disabled = false; });
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>

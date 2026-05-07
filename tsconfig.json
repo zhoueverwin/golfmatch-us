@@ -1,0 +1,17 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "types": ["jest", "react", "react-native"],
+    "skipLibCheck": true,
+    "jsx": "react-jsx"
+  },
+  "exclude": [
+    "jest.config.js",
+    "jest.setup.ts",
+    "src/__tests__/**",
+    "mock-data-backup/**",
+    "testServer.js",
+    "node_modules"
+  ]
+}

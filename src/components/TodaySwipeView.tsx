@@ -1,0 +1,354 @@
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+
+import { Colors } from "../constants/colors";
+import { Spacing, BorderRadius } from "../constants/spacing";
+import { Typography } from "../constants/typography";
+import { User } from "../types/dataModels";
+import { SwipeCardWithRef, SwipeCardRef } from "./SwipeCard";
+import { DataProvider } from "../services";
+import { useAuth } from "../contexts/AuthContext";
+import { userInteractionService } from "../services/userInteractionService";
+import { UserActivityService } from "../services/userActivityService";
+import { useRevenueCat } from "../contexts/RevenueCatContext";
+import { useCurrentUserProfile } from "../hooks/queries/useProfile";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const TAB_BAR_BASE_HEIGHT = 65;
+
+interface TodaySwipeViewProps {
+  onViewProfile: (userId: string) => void;
+}
+
+const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
+  const { profileId } = useAuth();
+  const { isProMember } = useRevenueCat();
+  const { profile: currentUser } = useCurrentUserProfile();
+  const isFemale = currentUser?.gender === "female";
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [cardAreaHeight, setCardAreaHeight] = useState(SCREEN_HEIGHT * 0.70);
+  const swipeCardRef = useRef<SwipeCardRef>(null);
+
+  const tabBarHeight = TAB_BAR_BASE_HEIGHT + Math.max(insets.bottom * 0.5, 4);
+
+  const loadUsers = useCallback(async () => {
+    if (!profileId) return;
+    setLoading(true);
+    try {
+      // Server returns only unswiped recommendations — always start at index 0
+      const response = await DataProvider.getDailyRecommendations(profileId);
+      const data = response.data || [];
+      setUsers(data);
+      setCurrentIndex(0);
+
+      // Fire-and-forget: track search impressions for today's recommendations
+      if (profileId && data.length > 0) {
+        UserActivityService.trackSearchImpressions(profileId, data.map((u) => u.id), 'today');
+      }
+    } catch (error) {
+      console.error("TodaySwipeView: Error loading users:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [profileId]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const advanceIndex = useCallback(() => {
+    setCurrentIndex((prev) => prev + 1);
+  }, []);
+
+  const handleSwipeRight = useCallback(
+    (user: User) => {
+      if (!profileId) return;
+      userInteractionService.likeUser(profileId, user.id);
+      // Mark as swiped server-side (fire-and-forget — don't block animation)
+      DataProvider.markRecommendationSwiped(profileId, user.id);
+      advanceIndex();
+    },
+    [profileId, advanceIndex],
+  );
+
+  const handleSwipeLeft = useCallback(
+    (user: User) => {
+      if (!profileId) return;
+      userInteractionService.passUser(profileId, user.id);
+      // Mark as swiped server-side (fire-and-forget — don't block animation)
+      DataProvider.markRecommendationSwiped(profileId, user.id);
+      advanceIndex();
+    },
+    [profileId, advanceIndex],
+  );
+
+  const handleTapProfile = useCallback(
+    (user: User) => {
+      onViewProfile(user.id);
+    },
+    [onViewProfile],
+  );
+
+  const isExhausted = currentIndex >= users.length && !loading;
+
+  return (
+    <GestureHandlerRootView style={styles.root}>
+      {/* Unified container — Pairs-style card */}
+      <View
+        style={[
+          styles.outerContainer,
+          { marginBottom: tabBarHeight + Spacing.xs },
+        ]}
+      >
+        {/* Header gradient — integrated with the card */}
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryDark]}
+          style={styles.headerBar}
+        >
+          <Text style={styles.headerTitle}>本日のおすすめ</Text>
+          <View style={styles.likeCountBadge}>
+            <Ionicons name="heart" size={14} color={Colors.primary} />
+            <Text style={styles.likeCountText}>残り {Math.max(users.length - currentIndex, 0)}人</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Content area */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>おすすめを読み込み中...</Text>
+          </View>
+        ) : isExhausted ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconWrapper}>
+              <View style={styles.emptyIconCard}>
+                <Ionicons name="person" size={48} color={Colors.gray[300]} />
+              </View>
+              <View style={styles.emptyIconShadow} />
+            </View>
+            <Text style={styles.emptyTitle}>
+              本日ご提案したお相手はすべて確認されました
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              明日、また新しいお相手をご提案します！
+            </Text>
+            {!isProMember && !isFemale && (
+              <TouchableOpacity
+                style={styles.premiumCta}
+                onPress={() => navigation.navigate("Store")}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="diamond" size={16} color={Colors.primary} />
+                <Text style={styles.premiumCtaText}>
+                  有料会員になると毎日5人までご提案！
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          /* Card + floating bottom bar */
+          <View
+            style={styles.cardArea}
+            onLayout={(e) => setCardAreaHeight(e.nativeEvent.layout.height)}
+          >
+            <SwipeCardWithRef
+              ref={swipeCardRef}
+              users={users}
+              currentIndex={currentIndex}
+              onSwipeRight={handleSwipeRight}
+              onSwipeLeft={handleSwipeLeft}
+              onTapProfile={handleTapProfile}
+              cardHeight={cardAreaHeight}
+              overlayPaddingBottom={88}
+            />
+
+            {/* Floating action buttons — overlaid on card bottom */}
+            <View style={styles.bottomOverlay} pointerEvents="box-none">
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => swipeCardRef.current?.triggerSwipe("left")}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="arrow-undo" size={22} color={Colors.gray[500]} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.likeButton}
+                onPress={() => swipeCardRef.current?.triggerSwipe("right")}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="thumbs-up" size={26} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+    </GestureHandlerRootView>
+  );
+};
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  outerContainer: {
+    flex: 1,
+    marginHorizontal: 12,
+    marginTop: Spacing.xs,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: Colors.gray[100],
+    borderWidth: 1,
+    borderColor: "rgba(32, 178, 170, 0.12)",
+  },
+  headerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+  },
+  headerTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.bold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    color: Colors.white,
+  },
+  likeCountBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    gap: 4,
+  },
+  likeCountText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.bold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    color: Colors.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.secondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyIconWrapper: {
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  emptyIconCard: {
+    width: 88,
+    height: 88,
+    borderRadius: 16,
+    backgroundColor: Colors.gray[200],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyIconShadow: {
+    width: 60,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.gray[200],
+    marginTop: 6,
+  },
+  emptyTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    color: Colors.text.primary,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  emptySubtitle: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    marginTop: Spacing.xs,
+  },
+  premiumCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: "#E8F8F7",
+    borderRadius: BorderRadius.lg,
+  },
+  premiumCtaText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.primary,
+  },
+  cardArea: {
+    flex: 1,
+  },
+  bottomOverlay: {
+    position: "absolute",
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.lg,
+  },
+  skipButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  likeButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+});
+
+export default TodaySwipeView;

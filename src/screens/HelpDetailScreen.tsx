@@ -1,0 +1,842 @@
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RouteProp } from "@react-navigation/native";
+import { RootStackParamList } from "../types";
+import StandardHeader from "../components/StandardHeader";
+import { Colors } from "../constants/colors";
+import { Spacing, BorderRadius } from "../constants/spacing";
+import { Typography } from "../constants/typography";
+
+type HelpDetailScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "HelpDetail"
+>;
+type HelpDetailScreenRouteProp = RouteProp<RootStackParamList, "HelpDetail">;
+
+interface HelpDetail {
+  id: string;
+  title: string;
+  description: string;
+  steps?: string[];
+  additionalInfo?: string;
+  link?: string;
+}
+
+const helpDetails: Record<string, HelpDetail> = {
+  // プロフィール
+  "profile-setup": {
+    id: "profile-setup",
+    title: "プロフィール項目を設定・変更したい",
+    description:
+      "ゴルマチに登録されたプロフィール情報は、ゴルマチ利用者全体に公開されます。プロフィールを充実させてマッチング率アップを目指しましょう！",
+    steps: [
+      "画面下部メニューから「マイページ」を選択",
+      "画面右上の編集アイコンをタップ",
+      "基本情報（名前、年齢、性別、都道府県など）を入力",
+      "ゴルフ情報（スキルレベル、平均スコア、経験年数など）を入力",
+      "自己紹介文を入力して保存",
+    ],
+    additionalInfo: "プロフィール充実度は画面に表示されます。各項目を入力すると充実度が上がります。",
+  },
+  "main-photo": {
+    id: "main-photo",
+    title: "メイン写真の設定・変更をしたい",
+    description:
+      "メイン写真は他のユーザーが最初に見る写真です。明るく、はっきりと写った写真を選びましょう。",
+    steps: [
+      "マイページの編集アイコンをタップ",
+      "プロフィール編集画面を開く",
+      "メイン写真エリアをタップ",
+      "「写真を選択」または「カメラで撮影」を選択",
+      "写真を確認して保存",
+    ],
+    additionalInfo:
+      "顔がはっきり見える写真を推奨します。",
+  },
+  "sub-photo": {
+    id: "sub-photo",
+    title: "サブ写真の設定・変更をしたい",
+    description:
+      "サブ写真を追加して、あなたの魅力をもっと伝えましょう。ゴルフのシーンや趣味の写真がおすすめです。",
+    steps: [
+      "プロフィール編集画面を開く",
+      "サブ写真セクションの「+」をタップ",
+      "写真を選択または撮影",
+      "写真を追加",
+    ],
+  },
+  "photo-permission": {
+    id: "photo-permission",
+    title: "写真設定時のアクセス権限について",
+    description:
+      "写真を設定するには、端末の写真へのアクセス権限が必要です。",
+    steps: [
+      "端末の設定アプリを開く",
+      "「プライバシー」>「写真」を選択",
+      "ゴルマチアプリを選択",
+      "「すべての写真」へのアクセスを許可",
+    ],
+    additionalInfo:
+      "権限が拒否されている場合は、端末の設定から変更してください。",
+  },
+
+  // いいね・マッチング
+  "like-send": {
+    id: "like-send",
+    title: "いいねの送り方",
+    description:
+      "気になる相手に「いいね」を送ることで、マッチングの可能性が広がります。",
+    steps: [
+      "「さがす」タブまたは「ホーム」画面でプロフィールを見つける",
+      "気になる相手のプロフィールをタップ",
+      "ハートアイコンをタップして「いいね」を送る",
+    ],
+    additionalInfo: "相手も「いいね」を返すとマッチングが成立します。",
+  },
+  "like-receive": {
+    id: "like-receive",
+    title: "いいねの確認方法",
+    description:
+      "あなたに届いた「いいね」は「つながり」タブで確認できます。",
+    steps: [
+      "画面下部の「つながり」タブを選択",
+      "「いいね」タブを選択",
+      "あなたに「いいね」を送ったユーザー一覧を確認",
+      "気になる相手に「いいね」を返してマッチング",
+    ],
+  },
+  "like-match": {
+    id: "like-match",
+    title: "マッチングとは?",
+    description:
+      "お互いに「いいね」を送り合うとマッチングが成立します。マッチング後はメッセージのやり取りが可能になります。",
+    steps: [
+      "あなたが相手に「いいね」を送る",
+      "相手があなたに「いいね」を返す",
+      "マッチング成立！",
+      "メッセージ画面から会話を始める",
+    ],
+    additionalInfo:
+      "マッチングが成立すると通知が届きます。メッセージを送るにはメンバーシップへの加入が必要です。",
+  },
+  "like-history": {
+    id: "like-history",
+    title: "過去のいいねを確認したい",
+    description:
+      "あなたが過去に送った「いいね」の履歴を確認できます。",
+    steps: [
+      "画面下部の「マイページ」を選択",
+      "「過去のいいね」をタップ",
+      "送信済みの「いいね」一覧を確認",
+    ],
+  },
+
+  // 投稿
+  "post-create": {
+    id: "post-create",
+    title: "投稿の作り方",
+    description:
+      "ホーム画面から投稿を作成できます。投稿するには本人確認（KYC認証）が必要です。",
+    steps: [
+      "ホーム画面右下の「+」ボタンをタップ",
+      "投稿内容（テキスト）を入力",
+      "必要に応じて写真や動画を追加",
+      "「投稿」ボタンをタップ",
+    ],
+    additionalInfo: "投稿するには事前に本人確認を完了する必要があります。",
+  },
+  "post-media": {
+    id: "post-media",
+    title: "写真・動画の追加方法",
+    description:
+      "投稿に写真や動画を追加して、あなたのゴルフライフをシェアしましょう。",
+    steps: [
+      "投稿作成画面で写真/動画アイコンをタップ",
+      "ギャラリーから写真または動画を選択",
+      "写真の場合：アスペクト比を選択してトリミング",
+      "動画の場合：必要に応じてトリミング（最大60秒）",
+      "追加完了後、投稿を公開",
+    ],
+    additionalInfo: "複数の写真を追加できます。動画は1本まで追加可能です。",
+  },
+  "post-react": {
+    id: "post-react",
+    title: "投稿にリアクションしたい",
+    description:
+      "他のユーザーの投稿にリアクション（いいね）を送ることができます。",
+    steps: [
+      "ホーム画面で投稿を確認",
+      "投稿のリアクションボタン（👍）をタップ",
+      "リアクションが送信されます",
+    ],
+    additionalInfo: "リアクションを送ると相手に通知が届きます。",
+  },
+  "post-delete": {
+    id: "post-delete",
+    title: "投稿を削除したい",
+    description:
+      "自分の投稿を削除できます。削除した投稿は元に戻せません。",
+    steps: [
+      "削除したい自分の投稿を表示",
+      "投稿右上のメニュー（...）をタップ",
+      "「投稿を削除」を選択",
+      "確認して削除",
+    ],
+  },
+
+  // メッセージ
+  "message-send": {
+    id: "message-send",
+    title: "メッセージの送り方",
+    description:
+      "マッチングした相手とメッセージでやり取りできます。メッセージ機能を使うにはメンバーシップへの加入が必要です。",
+    steps: [
+      "画面下部の「メッセージ」タブを選択",
+      "会話したい相手を選択",
+      "メッセージ入力欄にテキストを入力",
+      "送信ボタンをタップ",
+    ],
+    additionalInfo: "画像や動画も送信できます。",
+  },
+  "message-read": {
+    id: "message-read",
+    title: "メッセージの確認方法",
+    description:
+      "新しいメッセージはプッシュ通知とアプリ内で確認できます。",
+    steps: [
+      "画面下部の「メッセージ」タブを選択",
+      "未読のメッセージにはバッジが表示されます",
+      "会話をタップして内容を確認",
+    ],
+  },
+  "message-notification": {
+    id: "message-notification",
+    title: "メッセージ通知の設定",
+    description:
+      "メッセージ通知のオン/オフは設定画面から変更できます。",
+    steps: [
+      "マイページから「設定」を選択",
+      "「通知設定」をタップ",
+      "「メッセージ」の通知をオン/オフ",
+    ],
+  },
+  "message-block": {
+    id: "message-block",
+    title: "ユーザーをブロックしたい",
+    description:
+      "不快なユーザーをブロックすることで、そのユーザーとのやり取りを防ぐことができます。",
+    steps: [
+      "該当ユーザーのプロフィール画面を開く",
+      "右上のメニュー（...）をタップ",
+      "「ブロック」を選択",
+      "確認してブロック実行",
+    ],
+    additionalInfo:
+      "ブロックしたユーザーの管理は「設定」>「ブロックリスト」から行えます。",
+  },
+
+  // 機能
+  "search-feature": {
+    id: "search-feature",
+    title: "検索機能の使い方",
+    description:
+      "「さがす」画面で理想のゴルフパートナーを探すことができます。GolfMatchでは、インテリジェント・マッチングアルゴリズムを使用して、あなたに最適な相手を表示します。",
+    steps: [
+      "画面下部の「さがす」タブを選択",
+      "「おすすめ」タブ：相性の良いユーザーを表示（推奨）",
+      "「登録順」タブ：新規登録ユーザーを表示",
+      "プロフィールをタップして詳細を確認",
+      "気になる相手に「いいね」を送る",
+    ],
+    additionalInfo:
+      "【おすすめタブの仕組み】\n「おすすめ」タブでは、6つの要素を考慮してあなたと相性の良いユーザーを表示します：\n\n1. カレンダーの重複（30点）\n今後30日間の空き日程が一致するユーザーを優先。実際にゴルフに行ける可能性が高い相手を表示します。\n\n2. ゴルフスキルの近さ（25点）\n同じスキルレベル（ビギナー、中級者、上級者、プロ）のユーザーを優先。近いレベルの相手なら、一緒にラウンドしても楽しめます。\n\n3. スコアの近さ（20点）\n平均スコアが近いユーザーを優先。5打以内が最も高く評価されます。\n\n4. 場所の近さ（15点）\n同じ都道府県、または近隣の地域のユーザーを優先。\n\n5. アクティブ度（10点）\n最近ログインしたユーザーを優先。24時間以内が最も高く評価されます。\n\n6. プロフィール完成度（10点）\n写真が3枚以上、自己紹介文が充実、本人確認済みのユーザーを優先。\n\n合計スコアが高い順に表示されます。\n\n【マッチング精度を上げるには】\nカレンダー機能で空き日程を設定することで、より相性の良い相手とマッチングできます。プロフィール画面のカレンダーから「空き日程を設定」をお試しください。\n\n【フィルター機能】\nフィルターを適用すると、条件に合うユーザーのみに絞り込めます：\n・年齢（年代別）\n・都道府県\n・ゴルフスキルレベル\n・平均スコア\n・最終ログイン日",
+  },
+  "filter-feature": {
+    id: "filter-feature",
+    title: "フィルター機能について",
+    description:
+      "詳細な検索条件を設定することで、より希望に合う相手を見つけることができます。",
+    steps: [
+      "「さがす」画面でフィルターアイコンをタップ",
+      "年齢、地域、スキルレベルなどの条件を設定",
+      "「適用」ボタンをタップ",
+    ],
+    additionalInfo: "フィルター条件はアプリを閉じても保存されます。",
+  },
+  "calendar-feature": {
+    id: "calendar-feature",
+    title: "カレンダー機能の使い方",
+    description:
+      "カレンダー機能を使って、ゴルフをプレイできる日程を設定しましょう。設定した予定は他のユーザーに表示され、マッチング率アップにつながります。",
+    steps: [
+      "マイページから「カレンダー」を選択",
+      "日付をタップして状態を切り替え",
+      "緑（○）：ゴルフ可能日として設定",
+      "赤（×）：ゴルフ不可として設定",
+      "グレー（−）：未設定に戻す",
+      "右上の「保存」ボタンをタップ",
+    ],
+    additionalInfo: "日付をタップするたびに「可能→不可→未設定」の順で状態が切り替わります。月を左右にスワイプして他の月も設定できます。",
+  },
+  "connections-feature": {
+    id: "connections-feature",
+    title: "つながり機能について",
+    description:
+      "「つながり」画面では、あなたに「いいね」を送ってくれたユーザーとマッチングしたユーザーを確認できます。",
+    steps: [
+      "画面下部の「つながり」タブを選択",
+      "「いいね」タブ：あなたに届いた「いいね」を確認",
+      "「マッチ」タブ：マッチング済みのユーザーを確認",
+    ],
+  },
+  "footprints-feature": {
+    id: "footprints-feature",
+    title: "足あと機能について",
+    description:
+      "あなたのプロフィールを見たユーザーを確認できます。",
+    steps: [
+      "マイページから「足あと」を選択",
+      "あなたのプロフィールを閲覧したユーザー一覧を確認",
+      "気になる相手をタップしてプロフィールを見る",
+    ],
+  },
+
+  // メンバーシップ
+  "membership-benefits": {
+    id: "membership-benefits",
+    title: "メンバーシップの特典",
+    description:
+      "メンバーシップに加入すると、メッセージ機能が解放されます。",
+    steps: [
+      "マッチした相手とメッセージし放題",
+      "気になる相手との距離が一気に縮まる",
+      "いつでも解約可能・追加料金なし",
+    ],
+    additionalInfo: "メンバーシップは月額¥3,000です。",
+  },
+  "membership-purchase": {
+    id: "membership-purchase",
+    title: "メンバーシップの購入方法",
+    description:
+      "ストア画面からメンバーシップを購入できます。",
+    steps: [
+      "マイページから「ストア」を選択",
+      "メンバーシップの内容を確認",
+      "「購入する」ボタンをタップ",
+      "App Store / Google Play での支払いを完了",
+    ],
+  },
+  "membership-cancel": {
+    id: "membership-cancel",
+    title: "メンバーシップの解約方法",
+    description:
+      "メンバーシップの解約は端末の設定から行います。",
+    steps: [
+      "iOSの場合：設定 > Apple ID > サブスクリプション",
+      "Androidの場合：Google Play > メニュー > 定期購入",
+      "ゴルマチを選択",
+      "「解約」を選択",
+    ],
+    additionalInfo: "解約しても、現在の請求期間が終了するまでは機能を利用できます。",
+  },
+  "membership-restore": {
+    id: "membership-restore",
+    title: "購入を復元したい",
+    description:
+      "機種変更などで購入情報が反映されていない場合は、購入の復元を行ってください。",
+    steps: [
+      "マイページから「ストア」を選択",
+      "画面下部の「購入を復元」をタップ",
+      "Apple ID / Googleアカウントで認証",
+      "購入情報が復元されます",
+    ],
+  },
+
+  // 本人確認
+  "kyc-process": {
+    id: "kyc-process",
+    title: "本人確認の手順",
+    description:
+      "本人確認を完了すると、プロフィールに認証バッジが表示されます。",
+    steps: [
+      "マイページから「設定」を選択",
+      "「本人確認認証」をタップ",
+      "本人確認書類の種類を選択",
+      "書類の表面・裏面を撮影",
+      "顔写真（セルフィー）を撮影",
+      "書類と一緒に写った写真を撮影",
+      "ゴルフをしている写真を撮影",
+      "送信して審査を待つ",
+    ],
+  },
+  "kyc-documents": {
+    id: "kyc-documents",
+    title: "使用できる本人確認書類",
+    description:
+      "以下の書類を使用して本人確認ができます。",
+    steps: [
+      "マイナンバーカード",
+      "運転免許証",
+      "パスポート",
+      "健康保険証",
+    ],
+    additionalInfo: "書類は有効期限内のものをご使用ください。",
+  },
+  "kyc-required": {
+    id: "kyc-required",
+    title: "本人確認が必要な理由",
+    description:
+      "本人確認は、安全なコミュニティを維持するために実施しています。認証済みユーザーは信頼性が高まり、マッチング率も向上します。",
+  },
+  "kyc-failed": {
+    id: "kyc-failed",
+    title: "本人確認ができない場合",
+    description:
+      "本人確認ができない場合は、以下の点を確認してください。",
+    steps: [
+      "書類が鮮明に写っているか確認",
+      "書類の四隅がすべて写っているか確認",
+      "書類の有効期限を確認",
+      "顔写真が明るく、はっきり写っているか確認",
+      "それでも解決しない場合はお問い合わせください",
+    ],
+  },
+
+  // 通報・ブロック
+  "report-user": {
+    id: "report-user",
+    title: "ユーザーを通報したい",
+    description:
+      "不適切な行動をしているユーザーを通報できます。",
+    steps: [
+      "該当ユーザーのプロフィール画面を開く",
+      "右上のメニュー（...）をタップ",
+      "「通報」を選択",
+      "通報理由を選択",
+      "詳細を入力して送信（10文字以上）",
+    ],
+  },
+  "report-reason": {
+    id: "report-reason",
+    title: "通報理由の選択方法",
+    description:
+      "通報する際は、適切な理由を選択してください。",
+    steps: [
+      "不適切なコンテンツ：暴力的、性的な内容",
+      "スパム：迷惑な広告や繰り返しの投稿",
+      "嫌がらせ：いじめ、脅迫行為",
+      "詐欺：詐欺行為やなりすまし",
+      "不適切な画像/動画：不適切なメディア",
+      "誤った情報：虚偽の情報の拡散",
+      "その他：上記以外の問題",
+    ],
+  },
+  "block-user": {
+    id: "block-user",
+    title: "ユーザーをブロックしたい",
+    description:
+      "不快なユーザーをブロックすると、お互いのプロフィールやメッセージが非表示になります。",
+    steps: [
+      "該当ユーザーのプロフィール画面を開く",
+      "右上のメニュー（...）をタップ",
+      "「ブロック」を選択",
+      "確認してブロック実行",
+    ],
+    additionalInfo:
+      "ブロックしたユーザーは「設定」>「ブロックリスト」から解除できます。",
+  },
+  "hidden-posts": {
+    id: "hidden-posts",
+    title: "投稿を非表示にしたい",
+    description:
+      "見たくない投稿を非表示にすることができます。",
+    steps: [
+      "非表示にしたい投稿のメニュー（...）をタップ",
+      "「投稿を非表示」を選択",
+      "非表示が完了",
+    ],
+    additionalInfo:
+      "非表示にした投稿は「設定」>「非表示リスト」から確認・解除できます。",
+  },
+  "report-safety": {
+    id: "report-safety",
+    title: "安全に利用するために",
+    description:
+      "安全にゴルマチを利用するために、以下の点にご注意ください。",
+    steps: [
+      "メッセージで個人情報（住所、電話番号など）を共有しない",
+      "金銭の要求には応じない",
+      "初めて会う場合は公共の場所を選ぶ",
+      "不審な行動があればすぐに通報",
+    ],
+  },
+
+  // 安全・モデレーション
+  "moderation-overview": {
+    id: "moderation-overview",
+    title: "投稿の監視体制について",
+    description:
+      "GolfMatchでは、すべてのユーザーが安心して利用できるコミュニティを維持するため、投稿の監視体制を整えています。",
+    steps: [
+      "【人的審査】専門スタッフが投稿内容を確認し、不適切なコンテンツ（暴力、性的表現、スパムなど）を監視します",
+      "【24時間体制】監視体制は24時間365日稼働しています",
+      "【迅速な対応】違反コンテンツは発見次第、速やかに削除・対応します",
+    ],
+    additionalInfo:
+      "ユーザーの皆様からの通報も重要な監視手段です。不適切なコンテンツを見つけた場合は、投稿のメニューから「通報」をお願いします。すべての通報は真摯に受け止め、適切に対応いたします。",
+  },
+  "moderation-guidelines": {
+    id: "moderation-guidelines",
+    title: "コミュニティガイドライン",
+    description:
+      "GolfMatchは、ゴルフを通じた健全な出会いの場を提供します。以下のガイドラインを守って、楽しいコミュニティを一緒に作りましょう。",
+    steps: [
+      "【禁止されるコンテンツ】暴力的・性的な表現、差別的発言、個人情報の無断公開",
+      "【禁止される行為】スパム行為、詐欺・勧誘、なりすまし、嫌がらせ",
+      "【推奨される行動】礼儀正しいコミュニケーション、ゴルフに関連した投稿、本人確認の完了",
+      "【写真のガイドライン】本人の写真を使用、不適切な画像の禁止、著作権の尊重",
+    ],
+    additionalInfo:
+      "ガイドラインに違反した場合、警告・投稿削除・アカウント停止などの措置を取る場合があります。詳細は利用規約をご確認ください。",
+  },
+  "moderation-action": {
+    id: "moderation-action",
+    title: "違反コンテンツへの対応",
+    description:
+      "コミュニティガイドラインに違反するコンテンツが確認された場合、以下の対応を行います。",
+    steps: [
+      "【軽微な違反】該当コンテンツの削除、ユーザーへの注意喚起",
+      "【重大な違反】コンテンツの即時削除、アカウントの一時停止",
+      "【繰り返しの違反】アカウントの永久停止",
+      "【法的措置が必要な場合】関係当局への報告・協力",
+    ],
+    additionalInfo:
+      "対応についてご不明な点がある場合は、お問い合わせからご連絡ください。なお、個別の対応内容についてはお答えできない場合があります。",
+  },
+
+  // 退会
+  "withdrawal-process": {
+    id: "withdrawal-process",
+    title: "退会手続きの方法",
+    description:
+      "退会するとすべてのデータが削除されます。退会は慎重にご検討ください。",
+    steps: [
+      "マイページから「設定」を選択",
+      "「退会」をタップ",
+      "注意事項を確認",
+      "確認欄に「退会する」と入力",
+      "「アカウントを削除」をタップ",
+    ],
+    additionalInfo: "退会後、データは復元できません。",
+  },
+  "withdrawal-data": {
+    id: "withdrawal-data",
+    title: "退会時のデータ取り扱い",
+    description:
+      "退会後、以下のデータがすべて削除されます。",
+    steps: [
+      "プロフィール情報",
+      "投稿した写真・動画",
+      "メッセージ履歴",
+      "マッチング・いいね履歴",
+      "カレンダー設定",
+    ],
+    additionalInfo:
+      "退会後のデータ復元はできません。必要な情報は事前にバックアップしてください。",
+  },
+
+  // 不具合
+  "bug-report": {
+    id: "bug-report",
+    title: "不具合を報告したい",
+    description:
+      "不具合を発見した場合は、お問い合わせから報告してください。",
+    steps: [
+      "マイページから「お問い合わせ」を選択",
+      "問い合わせ内容に不具合の詳細を入力",
+      "発生した状況をできるだけ詳しく記載",
+      "送信",
+    ],
+  },
+  "bug-common": {
+    id: "bug-common",
+    title: "よくある不具合と対処法",
+    description:
+      "よくある不具合とその対処法をご紹介します。",
+    steps: [
+      "アプリが起動しない → アプリを完全に終了して再起動",
+      "写真が表示されない → インターネット接続を確認",
+      "通知が来ない → 端末の通知設定とアプリの通知設定を確認",
+      "ログインできない → メールアドレスを確認、再度ログインを試す",
+    ],
+  },
+  "bug-app-update": {
+    id: "bug-app-update",
+    title: "アプリの更新方法",
+    description:
+      "最新版のアプリを使用することで、不具合が解消される場合があります。",
+    steps: [
+      "App Store または Google Play ストアを開く",
+      "「ゴルマチ」を検索",
+      "「アップデート」ボタンが表示されていればタップ",
+      "更新完了を待つ",
+    ],
+  },
+
+  // その他
+  "privacy-policy": {
+    id: "privacy-policy",
+    title: "プライバシーポリシー",
+    description:
+      "プライバシーポリシーはウェブサイトで確認できます。下のリンクをタップしてご確認ください。",
+    link: "https://www.golfmatch.info/?page=privacypolicy-jp",
+  },
+  "terms-of-service": {
+    id: "terms-of-service",
+    title: "利用規約",
+    description:
+      "利用規約はウェブサイトで確認できます。下のリンクをタップしてご確認ください。",
+    link: "https://www.golfmatch.info/?page=termsofuse-jp",
+  },
+  "contact-support": {
+    id: "contact-support",
+    title: "サポートへのお問い合わせ",
+    description:
+      "ヘルプで解決しない場合は、お問い合わせからご連絡ください。",
+    steps: [
+      "マイページから「お問い合わせ」を選択",
+      "問い合わせ内容を入力",
+      "送信",
+    ],
+    additionalInfo: "返信は「お問い合わせ」画面の「返信」タブで確認できます。",
+  },
+};
+
+const HelpDetailScreen: React.FC = () => {
+  const navigation = useNavigation<HelpDetailScreenNavigationProp>();
+  const route = useRoute<HelpDetailScreenRouteProp>();
+  const { itemId } = route.params;
+
+  const detail = helpDetails[itemId];
+
+  if (!detail) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StandardHeader
+          title="ヘルプ"
+          showBackButton
+          onBackPress={() => navigation.goBack()}
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>ヘルプ情報が見つかりませんでした</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const handleContactPress = () => {
+    navigation.navigate("ContactReply");
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StandardHeader
+        title="ヘルプ・お問い合わせ"
+        showBackButton
+        onBackPress={() => navigation.goBack()}
+      />
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          <Text style={styles.title}>{detail.title}</Text>
+
+          <Text style={styles.description}>{detail.description}</Text>
+
+          {detail.steps && detail.steps.length > 0 && (
+            <View style={styles.stepsContainer}>
+              <Text style={styles.stepsTitle}>■手順</Text>
+              {detail.steps.map((step, index) => (
+                <View key={index} style={styles.stepItem}>
+                  <Text style={styles.stepNumber}>{index + 1}:</Text>
+                  <Text style={styles.stepText}>{step}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {detail.additionalInfo && (
+            <Text style={styles.additionalInfo}>{detail.additionalInfo}</Text>
+          )}
+
+          {detail.link && (
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => Linking.openURL(detail.link!)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.linkButtonText}>
+                {detail.id === "privacy-policy" ? "プライバシーポリシーを開く" :
+                 detail.id === "terms-of-service" ? "利用規約を開く" : "リンクを開く"}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.contactSection}>
+          <Text style={styles.contactText}>ヘルプで解決しない場合</Text>
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={handleContactPress}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.contactButtonText}>お問い合わせ</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: Spacing.xl,
+  },
+  content: {
+    padding: Spacing.lg,
+  },
+  title: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    color: Colors.text.primary,
+    marginBottom: Spacing.md,
+  },
+  description: {
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    lineHeight: 24,
+    marginBottom: Spacing.lg,
+  },
+  stepsContainer: {
+    marginBottom: Spacing.lg,
+  },
+  stepsTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    color: Colors.text.primary,
+    marginBottom: Spacing.md,
+  },
+  stepItem: {
+    flexDirection: "row",
+    marginBottom: Spacing.sm,
+    paddingLeft: Spacing.sm,
+  },
+  stepNumber: {
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.primary,
+    marginRight: Spacing.xs,
+    minWidth: 24,
+  },
+  stepText: {
+    flex: 1,
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    lineHeight: 24,
+  },
+  additionalInfo: {
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    lineHeight: 24,
+    marginTop: Spacing.md,
+  },
+  linkButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Spacing.lg,
+  },
+  linkButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.white,
+  },
+  contactSection: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.md,
+    alignItems: "center",
+  },
+  contactText: {
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    marginBottom: Spacing.md,
+    textAlign: "center",
+  },
+  contactButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contactButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.white,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
+  },
+  errorText: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.text.secondary,
+    textAlign: "center",
+  },
+});
+
+export default HelpDetailScreen;
+
+
+
+
+
+
+
+

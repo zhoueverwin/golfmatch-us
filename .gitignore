@@ -1,0 +1,74 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# Documentation files (Markdown) - Allow setup documentation
+# *.md
+
+# Test and backup directories
+e2e/
+openspec/
+mock-data-backup/
+
+# Cursor IDE files
+.cursor/
+
+# Script files (only at root level, not in src/)
+/scripts/
+/*.sh
+/test*.js
+/createTestAccounts.js
+/quickTestSetup.js
+/verify-*.js
+/setup-*.js
+/debug-*.js
+/setup-dev-client.sh
+
+# Apple Sign In sensitive files
+apple-client-secret.txt
+*secret*.txt
+AuthKey_*.p8
+# Note: generate-apple-secret.js is kept in repo (no credentials hardcoded)
+# Local signing credentials
+certs/
+credentials.json
+
+# Environment variables (contains sensitive tokens)
+.env
+.env.local

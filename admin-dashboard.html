@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GolfMatch Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    line-height: 1.5;
+    padding: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    font-size: 18px;
+    color: #718096;
+  }
+  .error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    font-size: 18px;
+    color: #e53e3e;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #20B2AA, #178f89);
+    color: white;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(32,178,170,0.3);
+  }
+  header h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+  header .time { font-size: 14px; opacity: 0.9; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .hero-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+  .hero-card .label { font-size: 12px; color: #718096; margin-bottom: 4px; }
+  .hero-card .value { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; color: #1a202c; }
+  .hero-card .sub { font-size: 11px; color: #a0aec0; margin-top: 2px; }
+  .delta { font-size: 12px; font-weight: 600; }
+  .delta.up { color: #38a169; }
+  .delta.down { color: #e53e3e; }
+  .delta.neutral { color: #a0aec0; }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .card h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #20B2AA;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2f5f4;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #f7fafc;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: #4a5568; font-size: 13px; }
+  .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .section-sep {
+    margin-top: 8px;
+    border-top: 2px solid #f0f4f8;
+    padding-top: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    background: #f7fafc;
+    color: #4a5568;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 10px;
+    text-align: right;
+    border-bottom: 2px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 8px 10px;
+    text-align: right;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f4f8;
+  }
+  td:first-child { text-align: left; font-weight: 500; }
+  tr:hover { background: #f7fafc; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bar-label { font-size: 12px; color: #4a5568; width: 80px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 20px; background: #edf2f7; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, #20B2AA, #38d9cf); border-radius: 4px; display: flex; align-items: center; padding-left: 6px; min-width: 28px; }
+  .bar-num { font-size: 11px; font-weight: 600; color: white; white-space: nowrap; }
+  .reason-bar .bar-fill { background: linear-gradient(90deg, #e53e3e, #fc8181); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-green { background: #e6fffa; color: #234e52; }
+  .badge-red { background: #fff5f5; color: #742a2a; }
+  .badge-yellow { background: #fffff0; color: #744210; }
+  .refresh-note {
+    text-align: center;
+    color: #a0aec0;
+    font-size: 11px;
+    margin-top: 16px;
+    padding: 8px;
+  }
+  .refresh-note a { color: #20B2AA; }
+  /* Moderation styles */
+  .mod-section { margin-bottom: 20px; }
+  .mod-section h2 {
+    font-size: 14px; font-weight: 700; color: #e53e3e;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 2px solid #fed7d7;
+  }
+  .mod-user {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    background: white; border-radius: 8px; margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 4px solid #e53e3e;
+  }
+  .mod-user.banned { border-left-color: #a0aec0; opacity: 0.7; }
+  .mod-user-info { flex: 1; min-width: 0; }
+  .mod-user-name { font-weight: 700; font-size: 14px; }
+  .mod-user-meta { font-size: 12px; color: #718096; margin-top: 2px; }
+  .mod-user-reasons { font-size: 11px; color: #e53e3e; margin-top: 4px; }
+  .mod-user-reasons span { background: #fff5f5; padding: 1px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
+  .mod-score {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 50%; font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .mod-score.high { background: #fed7d7; color: #9b2c2c; }
+  .mod-score.medium { background: #fefcbf; color: #975a16; }
+  .mod-score.low { background: #e2e8f0; color: #4a5568; }
+  .mod-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .mod-btn {
+    padding: 6px 14px; border: none; border-radius: 6px;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .mod-btn-ban { background: #e53e3e; color: white; }
+  .mod-btn-ban:hover { background: #c53030; }
+  .mod-btn-unban { background: #38a169; color: white; }
+  .mod-btn-unban:hover { background: #2f855a; }
+  .mod-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .mod-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .mod-tab {
+    padding: 4px 12px; border: 1px solid #cbd5e0; border-radius: 6px;
+    background: white; color: #4a5568; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mod-tab:hover { border-color: #e53e3e; color: #e53e3e; }
+  .mod-tab.active { background: #e53e3e; color: white; border-color: #e53e3e; }
+  .mod-log-entry { font-size: 12px; color: #4a5568; padding: 6px 0; border-bottom: 1px solid #f0f4f8; }
+  .mod-log-entry:last-child { border-bottom: none; }
+  .mod-empty { text-align: center; padding: 24px; color: #a0aec0; font-size: 13px; }
+  /* Period selector */
+  .period-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .period-btn {
+    padding: 4px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    background: white;
+    color: #4a5568;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .period-btn:hover { border-color: #20B2AA; color: #20B2AA; }
+  .period-btn.active { background: #20B2AA; color: white; border-color: #20B2AA; }
+  /* Mini charts grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 560px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+  .mini-chart-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .mini-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .mini-chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4a5568;
+  }
+  .mini-chart-value {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .mini-chart-container { position: relative; height: 140px; }
+  .mini-chart-svg { width: 100%; height: 100%; display: block; }
+  .history-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  @media (max-width: 768px) {
+    body { padding: 8px; }
+    .hero-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    header h1 { font-size: 18px; }
+    .hero-card .value { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading">Loading dashboard...</div>
+<div id="error" class="error" style="display:none;"></div>
+<div id="app" style="display:none;"></div>
+
+<script>
+var API_BASE = 'https://rriwpoqhbgvprbhomckk.supabase.co/functions/v1/admin-dashboard';
+var MOD_API = 'https://rriwpoqhbgvprbhomckk.supabase.co/functions/v1/admin-moderation';
+var currentDays = 30;
+var lastData = null;
+var modData = null;
+var modTab = 'flagged';
+
+function getKey() {
+  return new URLSearchParams(window.location.search).get('key') || '';
+}
+
+function num(n) {
+  if (n == null) return '\u2014';
+  return Number(n).toLocaleString();
+}
+
+function pct(n) {
+  if (n == null) return '\u2014';
+  return n + '%';
+}
+
+function delta(today, yesterday) {
+  if (yesterday === 0 && today === 0) return '<span class="delta neutral">\u2192 0</span>';
+  if (yesterday === 0) return '<span class="delta up">\u2191 NEW</span>';
+  var diff = today - yesterday;
+  var p = Math.round((diff / yesterday) * 100);
+  if (diff > 0) return '<span class="delta up">\u2191 ' + diff + ' (+' + p + '%)</span>';
+  if (diff < 0) return '<span class="delta down">\u2193 ' + Math.abs(diff) + ' (' + p + '%)</span>';
+  return '<span class="delta neutral">\u2192 0%</span>';
+}
+
+var REASON_LABELS = {
+  found_partner_here: 'アプリでゴルフ仲間が見つかった',
+  found_partner_other: '他でゴルフ仲間が見つかった',
+  no_matches: 'マッチしない・仲間が見つからない',
+  no_preferred_users: '近くにゴルフ仲間がいない',
+  too_expensive: '料金が高い',
+  hard_to_use: '使いにくい',
+  not_playing_golf: 'ゴルフの機会が減った',
+  privacy_concern: 'プライバシーが心配',
+  taking_break: '休みたい',
+  other: 'その他',
+  unknown: '不明'
+};
+
+function reasonLabel(code) { return REASON_LABELS[code] || code; }
+
+function barChart(entries, maxVal, extraClass, labelWidth) {
+  return entries.map(function(e) {
+    var w = maxVal > 0 ? Math.round((e.value / maxVal) * 100) : 0;
+    var cls = extraClass ? ' ' + extraClass : '';
+    var lw = labelWidth ? 'width:' + labelWidth : '';
+    return '<div class="bar-row' + cls + '"><span class="bar-label" style="' + lw + '">' + e.label + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.max(w, 8) + '%"><span class="bar-num">' + e.value + '</span></div></div></div>';
+  }).join('');
+}
+
+function heroCard(label, today, yesterday) {
+  return '<div class="hero-card"><div class="label">' + label + '</div>' +
+    '<div class="value">' + num(today) + '</div>' +
+    '<div class="sub">\u6628\u65e5 ' + num(yesterday) + '</div>' +
+    delta(today, yesterday) + '</div>';
+}
+
+function statRow(label, value, sep) {
+  var cls = sep ? ' class="section-sep"' : '';
+  return '<div class="stat-row"' + cls + '><span class="stat-label">' + label + '</span><span class="stat-value">' + value + '</span></div>';
+}
+
+function badge(value, type) {
+  return '<span class="badge badge-' + type + '">' + value + '</span>';
+}
+
+// Mini chart definitions
+var MINI_CHARTS = [
+  { key: 'dau',           label: 'DAU',              color: '#e53e3e' },
+  { key: 'wau',           label: 'WAU',              color: '#3182ce' },
+  { key: 'mau',           label: 'MAU',              color: '#805ad5' },
+  { key: 'new_users',     label: '新規ユーザー',     color: '#20B2AA' },
+  { key: 'likes',         label: 'いいね',           color: '#f6ad55' },
+  { key: 'matches',       label: 'マッチ',           color: '#e53e3e' },
+  { key: 'messages',      label: 'メッセージ',       color: '#805ad5' },
+  { key: 'profile_views', label: 'プロフィール閲覧', color: '#3182ce' },
+  { key: 'inquiries',     label: '問い合わせ',       color: '#d69e2e' },
+  { key: 'deletions',     label: '退会',             color: '#718096' },
+];
+
+function buildMiniChart(history, key, color) {
+  if (!history || history.length < 2) return '<div style="color:#a0aec0;text-align:center;padding:30px;font-size:12px;">データ不足</div>';
+
+  var vals = history.map(function(row) { return Number(row[key]) || 0; });
+  var maxVal = Math.max.apply(null, vals) || 1;
+  var lastVal = vals[vals.length - 1];
+
+  var pad = { top: 8, right: 30, bottom: 24, left: 36 };
+  var w = 500, h = 140;
+  var innerW = w - pad.left - pad.right;
+  var innerH = h - pad.top - pad.bottom;
+  var stepX = innerW / Math.max(history.length - 1, 1);
+
+  // Y-axis: 3 grid lines
+  var gridLines = '';
+  var yLabels = '';
+  for (var i = 0; i <= 3; i++) {
+    var yVal = Math.round(maxVal * i / 3);
+    var yPos = pad.top + innerH - (innerH * i / 3);
+    gridLines += '<line x1="' + pad.left + '" y1="' + yPos + '" x2="' + (w - pad.right) + '" y2="' + yPos + '" stroke="#f0f4f8" stroke-width="1"/>';
+    yLabels += '<text x="' + (pad.left - 4) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#a0aec0" font-size="9">' + yVal + '</text>';
+  }
+
+  // X-axis labels: show first, last, and evenly spaced ones in between
+  var xLabels = '';
+  var maxLabels = 6;
+  var shownIndices = [0, history.length - 1];
+  if (history.length > 2) {
+    var step = (history.length - 1) / (Math.min(maxLabels, history.length) - 1);
+    for (var si = 1; si < Math.min(maxLabels, history.length) - 1; si++) {
+      shownIndices.push(Math.round(si * step));
+    }
+  }
+  // Deduplicate
+  var shown = {};
+  shownIndices.forEach(function(idx) { shown[idx] = true; });
+  history.forEach(function(row, idx) {
+    if (shown[idx]) {
+      var x = pad.left + idx * stepX;
+      var parts = row.snapshot_date.split('-');
+      var anchor = idx === 0 ? 'start' : (idx === history.length - 1 ? 'end' : 'middle');
+      xLabels += '<text x="' + x + '" y="' + (h - 4) + '" text-anchor="' + anchor + '" fill="#a0aec0" font-size="9">' + parseInt(parts[1]) + '/' + parseInt(parts[2]) + '</text>';
+    }
+  });
+
+  // Area fill
+  var firstX = pad.left;
+  var lastX = pad.left + (history.length - 1) * stepX;
+  var baseY = pad.top + innerH;
+  var areaPoints = history.map(function(row, idx) {
+    var x = pad.left + idx * stepX;
+    var val = Number(row[key]) || 0;
+    var y = pad.top + innerH - (val / maxVal * innerH);
+    return x + ',' + y;
+  }).join(' ');
+  var area = '<polygon points="' + firstX + ',' + baseY + ' ' + areaPoints + ' ' + lastX + ',' + baseY + '" fill="' + color + '" opacity="0.08"/>';
+
+  // Line
+  var line = '<polyline points="' + areaPoints + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+
+  // Dot on last point
+  var lastY = pad.top + innerH - (lastVal / maxVal * innerH);
+  var dot = '<circle cx="' + lastX + '" cy="' + lastY + '" r="3" fill="' + color + '"/>';
+
+  return '<svg class="mini-chart-svg" viewBox="0 0 ' + w + ' ' + h + '">' +
+    gridLines + yLabels + xLabels + area + line + dot + '</svg>';
+}
+
+function buildChartsGrid(history) {
+  return '<div class="charts-grid">' + MINI_CHARTS.map(function(chart) {
+    var vals = (history || []).map(function(row) { return Number(row[chart.key]) || 0; });
+    var lastVal = vals.length > 0 ? vals[vals.length - 1] : 0;
+    var prevVal = vals.length > 1 ? vals[vals.length - 2] : 0;
+    return '<div class="mini-chart-card">' +
+      '<div class="mini-chart-header">' +
+      '<span class="mini-chart-title" style="color:' + chart.color + '">' + chart.label + '</span>' +
+      '<span class="mini-chart-value">' + num(lastVal) + ' ' + delta(lastVal, prevVal) + '</span>' +
+      '</div>' +
+      '<div class="mini-chart-container">' + buildMiniChart(history, chart.key, chart.color) + '</div>' +
+      '</div>';
+  }).join('') + '</div>';
+}
+
+function setPeriod(days) {
+  currentDays = days;
+  fetchData();
+}
+
+// ── Moderation functions ──
+
+function scoreClass(s) {
+  if (s >= 40) return 'high';
+  if (s >= 20) return 'medium';
+  return 'low';
+}
+
+function formatDateShort(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function renderModSection() {
+  if (!modData) return '<div class="card mod-section"><h2>モデレーション</h2><div class="mod-empty">読み込み中...</div></div>';
+
+  var flaggedCount = (modData.flagged || []).filter(function(f) { return !f.is_banned; }).length;
+  var bannedCount = (modData.banned || []).length;
+
+  var tabs = '<div class="mod-tabs">' +
+    '<button class="mod-tab' + (modTab === 'flagged' ? ' active' : '') + '" onclick="switchModTab(\'flagged\')">要注意ユーザー <span style="opacity:0.7">(' + flaggedCount + ')</span></button>' +
+    '<button class="mod-tab' + (modTab === 'banned' ? ' active' : '') + '" onclick="switchModTab(\'banned\')">BAN済み <span style="opacity:0.7">(' + bannedCount + ')</span></button>' +
+    '<button class="mod-tab' + (modTab === 'log' ? ' active' : '') + '" onclick="switchModTab(\'log\')">操作ログ</button>' +
+    '</div>';
+
+  var content = '';
+  if (modTab === 'flagged') {
+    var items = (modData.flagged || []).filter(function(f) { return !f.is_banned; });
+    if (items.length === 0) {
+      content = '<div class="mod-empty">要注意ユーザーはいません</div>';
+    } else {
+      content = items.map(function(f) {
+        var act = f.activity || {};
+        var meta = f.gender + ' ・ 登録: ' + formatDateShort(f.created_at);
+        if (act.likes_sent != null) meta += ' ・ いいね: ' + act.likes_sent;
+        if (act.messages_sent != null) meta += ' ・ MSG: ' + act.messages_sent;
+        if (act.matches != null) meta += ' ・ マッチ: ' + act.matches;
+        var reasons = (f.reasons || []).map(function(r) { return '<span>' + r + '</span>'; }).join('');
+        return '<div class="mod-user">' +
+          '<div class="mod-score ' + scoreClass(f.score) + '">' + f.score + '</div>' +
+          '<div class="mod-user-info">' +
+          '<div class="mod-user-name">' + f.user_name + (f.is_verified ? ' ✓' : '') + '</div>' +
+          '<div class="mod-user-meta">' + meta + '</div>' +
+          '<div class="mod-user-reasons">' + reasons + '</div>' +
+          '</div>' +
+          '<div class="mod-actions">' +
+          '<button class="mod-btn mod-btn-ban" onclick="doBan(\'' + f.user_id + '\', \'' + (f.user_name || '').replace(/'/g, "\\'") + '\')">BAN</button>' +
+          '</div></div>';
+      }).join('');
+    }
+  } else if (modTab === 'banned') {
+    var items = modData.banned || [];
+    if (items.length === 0) {
+      content = '<div class="mod-empty">BAN済みユーザーはいません</div>';
+    } else {
+      content = items.map(function(b) {
+        return '<div class="mod-user banned">' +
+          '<div class="mod-score low">BAN</div>' +
+          '<div class="mod-user-info">' +
+          '<div class="mod-user-name">' + b.name + '</div>' +
+          '<div class="mod-user-meta">' + (b.gender || '—') + ' ・ BAN: ' + formatDateShort(b.banned_at) + ' ・ 理由: ' + (b.ban_reason || '—') + '</div>' +
+          '</div>' +
+          '<div class="mod-actions">' +
+          '<button class="mod-btn mod-btn-unban" onclick="doUnban(\'' + b.id + '\', \'' + (b.name || '').replace(/'/g, "\\'") + '\')">解除</button>' +
+          '</div></div>';
+      }).join('');
+    }
+  } else {
+    var items = modData.log || [];
+    if (items.length === 0) {
+      content = '<div class="mod-empty">操作ログはありません</div>';
+    } else {
+      content = items.map(function(l) {
+        var actionLabel = l.action === 'ban' ? '<span style="color:#e53e3e;font-weight:600;">BAN</span>' :
+                          l.action === 'unban' ? '<span style="color:#38a169;font-weight:600;">解除</span>' :
+                          '<span style="font-weight:600;">' + l.action + '</span>';
+        return '<div class="mod-log-entry">' + formatDateShort(l.created_at) + ' ' + actionLabel +
+          ' — ' + (l.reason || '—') + ' (by ' + (l.performed_by || '—') + ')</div>';
+      }).join('');
+    }
+  }
+
+  return '<div class="card mod-section"><h2>モデレーション</h2>' + tabs + content + '</div>';
+}
+
+function switchModTab(tab) {
+  modTab = tab;
+  if (lastData) render(lastData);
+}
+
+async function doBan(userId, userName) {
+  var reason = prompt(userName + ' をBANします。理由を入力してください:', 'スパム活動の疑い');
+  if (reason === null) return;
+
+  var btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '処理中...';
+
+  try {
+    var res = await fetch(MOD_API + '?key=' + encodeURIComponent(getKey()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ban', user_id: userId, reason: reason }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert(userName + ' をBANしました');
+    fetchModData();
+  } catch (e) {
+    alert('エラー: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'BAN';
+  }
+}
+
+async function doUnban(userId, userName) {
+  if (!confirm(userName + ' のBANを解除しますか？')) return;
+
+  var btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '処理中...';
+
+  try {
+    var res = await fetch(MOD_API + '?key=' + encodeURIComponent(getKey()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'unban', user_id: userId }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert(userName + ' のBANを解除しました');
+    fetchModData();
+  } catch (e) {
+    alert('エラー: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '解除';
+  }
+}
+
+function fetchModData() {
+  fetch(MOD_API + '?key=' + encodeURIComponent(getKey()))
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.error) { console.error('Mod API error:', data.error); return; }
+      modData = data;
+      if (lastData) render(lastData);
+    })
+    .catch(function(err) { console.error('Mod fetch error:', err); });
+}
+
+function render(data) {
+  lastData = data;
+  var s = data.stats;
+  var history = data.history;
+  var d = s.daily;
+  var t = s.totals;
+  var dem = s.demographics;
+  var p = s.premium;
+  var eng = s.engagement;
+  var ch = s.churn;
+  var sup = s.support;
+
+  var ageEntries = Object.entries(dem.age_distribution).map(function(e) { return {label: e[0], value: Number(e[1])}; });
+  var maxAge = Math.max.apply(null, ageEntries.map(function(e) { return e.value; }));
+
+  var prefEntries = dem.top_prefectures.map(function(p) { return {label: p.prefecture, value: p.count}; });
+  var maxPref = prefEntries.length > 0 ? prefEntries[0].value : 1;
+
+  var skillOrder = ['\u30d3\u30ae\u30ca\u30fc', '\u4e2d\u7d1a\u8005', '\u4e0a\u7d1a\u8005', '\u30d7\u30ed', '\u672a\u8a2d\u5b9a'];
+  var skillEntries = skillOrder.map(function(label) { return {label: label, value: dem.skill_levels[label] || 0}; });
+  var maxSkill = Math.max.apply(null, skillEntries.map(function(e) { return e.value; }));
+
+  var reasonEntries = ch.deletion_reasons.map(function(r) { return {label: reasonLabel(r.reason_code), value: r.count}; });
+  var maxReason = reasonEntries.length > 0 ? reasonEntries[0].count : 1;
+
+  var mfRatio = dem.gender.female > 0 ? (dem.gender.male / dem.gender.female).toFixed(1) : '\u2014';
+
+  // History table rows with DAU column
+  var historyRows = history.slice().reverse().map(function(row) {
+    var parts = row.snapshot_date.split('-');
+    return '<tr><td>' + parts[1] + '/' + parts[2] + '</td><td>' + num(row.new_users) + '</td><td>' + num(row.likes) + '</td><td>' + num(row.matches) + '</td><td>' + num(row.messages) + '</td><td>' + num(row.profile_views) + '</td><td>' + num(row.inquiries) + '</td><td>' + num(row.dau) + '</td><td>' + num(row.wau) + '</td><td>' + num(row.mau) + '</td><td>' + num(row.deletions) + '</td></tr>';
+  }).join('');
+
+  // Period buttons
+  var periods = [7, 14, 30, 90, 120];
+  var periodBtns = periods.map(function(d) {
+    var cls = d === currentDays ? 'period-btn active' : 'period-btn';
+    return '<button class="' + cls + '" onclick="setPeriod(' + d + ')">' + d + '\u65e5</button>';
+  }).join('');
+
+  var html = '' +
+    '<header><h1>GolfMatch Dashboard</h1><div class="time">' + s.generated_at + ' JST</div></header>' +
+
+    '<div class="hero-grid">' +
+    heroCard('\u65b0\u898f\u30e6\u30fc\u30b6\u30fc', d.today.new_users, d.yesterday.new_users) +
+    heroCard('\u30de\u30c3\u30c1', d.today.matches, d.yesterday.matches) +
+    heroCard('\u30e1\u30c3\u30bb\u30fc\u30b8', d.today.messages, d.yesterday.messages) +
+    heroCard('\u3044\u3044\u306d', d.today.likes, d.yesterday.likes) +
+    heroCard('\u30d7\u30ed\u30d5\u95b2\u89a7', d.today.profile_views, d.yesterday.profile_views) +
+    heroCard('\u554f\u3044\u5408\u308f\u305b', d.today.inquiries, d.yesterday.inquiries) +
+    heroCard('\u9000\u4f1a', d.today.deletions, d.yesterday.deletions) +
+    heroCard('\u6295\u7a3f', d.today.posts, d.yesterday.posts) +
+    '</div>' +
+
+    // Moderation section
+    renderModSection() +
+
+    // Trend charts
+    '<div style="margin-bottom:20px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+    '<h2 style="font-size:14px;font-weight:700;color:#20B2AA;text-transform:uppercase;letter-spacing:1px;margin:0;">\u30c8\u30ec\u30f3\u30c9</h2>' +
+    '<div class="period-bar">' + periodBtns + '</div>' +
+    '</div>' +
+    buildChartsGrid(history) +
+    '</div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>\u7d2f\u8a08</h2>' +
+    statRow('\u7dcf\u30e6\u30fc\u30b6\u30fc\u6570', num(t.total_users)) +
+    statRow('\u30d7\u30ed\u30d5\u5b8c\u6210', num(t.complete_profiles)) +
+    statRow('\u30de\u30c3\u30c1 (\u30a2\u30af\u30c6\u30a3\u30d6)', num(t.total_matches) + ' (' + num(t.active_matches) + ')') +
+    statRow('\u30e1\u30c3\u30bb\u30fc\u30b8', num(t.total_messages)) +
+    statRow('\u3044\u3044\u306d / \u30b9\u30fc\u30d1\u30fc', num(t.total_likes) + ' / ' + num(t.total_super_likes)) +
+    statRow('\u30d1\u30b9', num(t.total_passes)) +
+    statRow('\u30d7\u30ed\u30d5\u95b2\u89a7', num(t.total_views)) +
+    statRow('\u6295\u7a3f / \u30ea\u30a2\u30af\u30b7\u30e7\u30f3', num(t.total_posts) + ' / ' + num(t.total_reactions)) +
+    statRow('\u52df\u96c6', num(t.total_recruitments)) +
+    '</div>' +
+
+    '<div class="card"><h2>\u30e6\u30fc\u30b6\u30fc\u5c5e\u6027</h2>' +
+    '<div style="margin-bottom:12px;">' +
+    statRow('\u7537\u6027', num(dem.gender.male)) +
+    statRow('\u5973\u6027', num(dem.gender.female)) +
+    statRow('\u7537\u5973\u6bd4', mfRatio + ':1') +
+    statRow('\u672a\u8a2d\u5b9a', num(dem.gender.unknown)) +
+    '</div>' +
+    '<div style="margin-bottom:12px;">' +
+    '<div class="stat-label" style="font-weight:600;margin-bottom:6px;">\u5e74\u9f62\u5206\u5e03</div>' +
+    barChart(ageEntries, maxAge) +
+    '</div></div>' +
+    '</div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>\u90fd\u9053\u5e9c\u770c TOP10</h2>' + barChart(prefEntries, maxPref) + '</div>' +
+    '<div class="card"><h2>\u30b9\u30ad\u30eb\u30ec\u30d9\u30eb</h2>' + barChart(skillEntries, maxSkill) + '</div>' +
+    '</div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>\u30d7\u30ec\u30df\u30a2\u30e0 / \u53ce\u76ca</h2>' +
+    statRow('\u30d7\u30ec\u30df\u30a2\u30e0\u4f1a\u54e1', num(p.total_premium)) +
+    statRow('\u3000\u7537\u6027', num(p.premium_male)) +
+    statRow('\u3000\u5973\u6027', num(p.premium_female)) +
+    statRow('\u8ab2\u91d1\u7387', pct(p.premium_rate_pct)) +
+    statRow('\u30a2\u30af\u30c6\u30a3\u30d6\u57fa\u672c\u30d7\u30e9\u30f3', num(p.active_basic), true) +
+    statRow('\u30a2\u30af\u30c6\u30a3\u30d6\u6c38\u4e45\u30d7\u30e9\u30f3', num(p.active_permanent)) +
+    statRow('\u7d2f\u8a08\u58f2\u4e0a', '\u00a5' + num(p.total_revenue), true) +
+    statRow('\u4eca\u6708\u58f2\u4e0a', '\u00a5' + num(p.revenue_this_month)) +
+    statRow('RevenueCat', num(p.premium_by_source.revenuecat), true) +
+    statRow('\u624b\u52d5\u4ed8\u4e0e', num(p.premium_by_source.manual)) +
+    statRow('\u6c38\u4e45\u4ed8\u4e0e', num(p.premium_by_source.permanent)) +
+    '</div>' +
+
+    '<div class="card"><h2>\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8</h2>' +
+    statRow('DAU (\u4eca\u65e5)', num(eng.dau)) +
+    statRow('WAU (7\u65e5)', num(eng.wau)) +
+    statRow('MAU (30\u65e5)', num(eng.mau)) +
+    statRow('\u30a2\u30af\u30c6\u30a3\u30d6 (24h)', badge(num(eng.active_24h), 'green'), true) +
+    statRow('\u30a2\u30af\u30c6\u30a3\u30d6 (7\u65e5)', badge(num(eng.active_7d), 'green')) +
+    statRow('\u975e\u30a2\u30af\u30c6\u30a3\u30d6 (30\u65e5+)', badge(num(eng.inactive_30d), 'red')) +
+    statRow('\u30de\u30c3\u30c1\u7387', pct(eng.match_rate_pct), true) +
+    statRow('\u5e73\u5747\u30e1\u30c3\u30bb\u30fc\u30b8/\u30de\u30c3\u30c1', eng.avg_messages_per_match != null ? eng.avg_messages_per_match : '\u2014') +
+    '</div></div>' +
+
+    // History table
+    '<div class="card" style="margin-bottom:20px;">' +
+    '<h2>\u65e5\u5225\u30c7\u30fc\u30bf (' + currentDays + '\u65e5\u9593)</h2>' +
+    '<div class="history-scroll" style="overflow-x:auto;"><table><thead><tr>' +
+    '<th style="text-align:left">\u65e5\u4ed8</th><th>\u65b0\u898f</th><th>\u3044\u3044\u306d</th><th>\u30de\u30c3\u30c1</th><th>MSG</th><th>\u95b2\u89a7</th><th>\u554f\u5408\u305b</th><th>DAU</th><th>WAU</th><th>MAU</th><th>\u9000\u4f1a</th>' +
+    '</tr></thead><tbody>' + historyRows + '</tbody></table></div></div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>\u9000\u4f1a\u5206\u6790</h2>' +
+    statRow('\u7dcf\u9000\u4f1a\u6570', num(ch.total_deletions)) +
+    statRow('\u4eca\u9031\u306e\u9000\u4f1a', num(ch.deletions_this_week)) +
+    statRow('\u5e73\u5747\u5229\u7528\u65e5\u6570', (ch.avg_days_active != null ? ch.avg_days_active : '\u2014') + '\u65e5') +
+    statRow('\u30d7\u30ec\u30df\u30a2\u30e0\u9000\u4f1a', badge(num(ch.churned_premium), 'red')) +
+    '<div style="margin-top:12px;"><div class="stat-label" style="font-weight:600;margin-bottom:6px;">\u9000\u4f1a\u7406\u7531</div>' +
+    barChart(reasonEntries, maxReason, 'reason-bar', '130px') +
+    '</div></div>' +
+
+    '<div class="card"><h2>\u30b5\u30dd\u30fc\u30c8</h2>' +
+    statRow('\u672a\u5bfe\u5fdc\u554f\u3044\u5408\u308f\u305b', sup.open_inquiries > 0 ? badge(sup.open_inquiries, 'red') : badge('0', 'green')) +
+    statRow('\u7dcf\u554f\u3044\u5408\u308f\u305b', num(sup.total_inquiries)) +
+    statRow('KYC\u5be9\u67fb\u5f85\u3061', sup.pending_kyc > 0 ? badge(sup.pending_kyc, 'yellow') : badge('0', 'green'), true) +
+    statRow('KYC\u627f\u8a8d\u6e08\u307f', num(sup.approved_kyc)) +
+    statRow('\u672a\u5bfe\u5fdc\u901a\u5831', sup.pending_reports > 0 ? badge(sup.pending_reports, 'red') : badge('0', 'green'), true) +
+    statRow('\u30d6\u30ed\u30c3\u30af\u4ef6\u6570', num(sup.total_blocks)) +
+    '</div></div>' +
+
+    '<div class="refresh-note">Auto-refresh in 5 minutes &middot; <a href="javascript:void(0)" onclick="fetchData()">Refresh now</a></div>';
+
+  document.getElementById('app').innerHTML = html;
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
+}
+
+function fetchData() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('error').style.display = 'none';
+
+  fetch(API_BASE + '?key=' + encodeURIComponent(getKey()) + '&days=' + currentDays)
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      render(data);
+    })
+    .catch(function(err) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'flex';
+      document.getElementById('error').textContent = 'Error: ' + err.message;
+    });
+}
+
+fetchData();
+fetchModData();
+setInterval(function() { fetchData(); fetchModData(); }, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
