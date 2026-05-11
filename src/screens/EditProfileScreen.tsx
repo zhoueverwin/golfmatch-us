@@ -558,15 +558,14 @@ const EditProfileScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-    if (isNewUser) {
-      Alert.alert(
-        "Finish Your Profile",
-        "Please fill in the basic info before using the app.",
-        [{ text: "OK" }]
-      );
-      return;
+    // Onboarding now gates required fields, so EditProfile is always
+    // exitable — just pop the stack, or fall back to Main if there's
+    // nothing to pop (e.g. we landed here from OnboardingDone).
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Main");
     }
-    navigation.goBack();
   };
 
   const renderInputField = (
@@ -855,28 +854,22 @@ const EditProfileScreen: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        {isNewUser ? (
-          <View style={styles.backButton}>
-            {/* Empty placeholder to maintain header layout */}
-          </View>
-        ) : (
-          <TouchableOpacity
-            testID="EDIT_PROFILE_SCREEN.BACK_BTN"
-            style={styles.backButton}
-            onPress={handleBack}
-            accessible
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Image
-              source={require("../../assets/images/Icons/Arrow-LeftGrey.png")}
-              style={styles.backIconImage}
-              resizeMode="contain"
-              fadeDuration={0}
-            />
-            <Text style={styles.backLabel}>Back</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          testID="EDIT_PROFILE_SCREEN.BACK_BTN"
+          style={styles.backButton}
+          onPress={handleBack}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Image
+            source={require("../../assets/images/Icons/Arrow-LeftGrey.png")}
+            style={styles.backIconImage}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+          <Text style={styles.backLabel}>Back</Text>
+        </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
           {isNewUser ? "Set Up Profile" : "Edit Profile"}

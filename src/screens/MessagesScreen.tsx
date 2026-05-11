@@ -186,8 +186,9 @@ const MessagesScreen: React.FC = () => {
   const userIsPremiumDb = currentProfile?.is_premium || false;
 
   const shouldLockPreviews = useMemo(() => {
-    return shouldLockMessaging(userIsVerified);
-  }, [userIsVerified]);
+    const isPremium = isProMember || userIsPremiumDb;
+    return shouldLockMessaging(userIsVerified, userGender, isPremium);
+  }, [userIsVerified, userGender, isProMember, userIsPremiumDb]);
 
   const isCurrentUserFemale = userGender === 'female';
 

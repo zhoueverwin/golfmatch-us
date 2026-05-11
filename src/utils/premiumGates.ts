@@ -1,17 +1,20 @@
 /**
  * Premium feature access rules.
- * Centralizes business logic for premium gates across the app.
  *
- * Rule: Free male users are restricted. Premium users and female users
- * have full access. This is enforced both client-side (UX) and
- * server-side (RLS on messages table, filter stripping in data provider).
+ * Messaging access: KYC-verified females message free; KYC-verified males
+ * require an active premium subscription. Enforced server-side via RLS on
+ * messages.INSERT and mirrored client-side for UX (locked input bar +
+ * promo banner in ChatScreen, locked previews in MessagesScreen).
  */
 
 /** Returns true if messaging should be locked for this user. */
 export function shouldLockMessaging(
   isVerified: boolean,
+  gender: string | null,
+  isPremium: boolean,
 ): boolean {
-  return !isVerified;
+  if (!isVerified) return true;
+  return gender !== "female" && !isPremium;
 }
 
 /** Search filter keys that require premium. */

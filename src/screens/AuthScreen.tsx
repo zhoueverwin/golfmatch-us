@@ -156,12 +156,12 @@ const AuthScreen: React.FC = () => {
               disabled={oauthLoading}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Sign in with Apple"
+              accessibilityLabel="Continue with Apple"
             >
               <View style={styles.buttonIconContainer}>
                 <Ionicons name="logo-apple" size={22} color="#000000" />
               </View>
-              <Text style={styles.socialButtonText}>Sign in with Apple</Text>
+              <Text style={styles.socialButtonText}>Continue with Apple</Text>
             </TouchableOpacity>
 
             {/* Google Button */}
@@ -171,12 +171,12 @@ const AuthScreen: React.FC = () => {
               disabled={oauthLoading}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Sign in with Google"
+              accessibilityLabel="Continue with Google"
             >
               <View style={styles.buttonIconContainer}>
                 <Ionicons name="logo-google" size={22} color="#DB4437" />
               </View>
-              <Text style={styles.socialButtonText}>Sign in with Google</Text>
+              <Text style={styles.socialButtonText}>Continue with Google</Text>
             </TouchableOpacity>
           </View>
 

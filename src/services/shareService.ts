@@ -11,8 +11,10 @@ import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
 
 // App Store URLs (matching app_config in database)
-const APP_STORE_URL = 'https://apps.apple.com/jp/app/golfmatch/id6754797576';
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.zhoueverwin.golfmatchapp';
+// TODO: replace with the US App Store / Play Store listings once published.
+// Until then, these URLs 404 — but they're only used by the Share feature.
+const APP_STORE_URL = 'https://apps.apple.com/us/app/golfmatch/id0000000000';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=golfmatchdating.us.com';
 
 export interface SharePostData {
   userName: string;

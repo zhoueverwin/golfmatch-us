@@ -63,6 +63,13 @@ export interface PostComment {
 export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
+  // First-time-user onboarding (single-question-per-screen flow)
+  OnboardingName: undefined;
+  OnboardingGender: undefined;
+  OnboardingBirthdate: undefined;
+  OnboardingState: undefined;
+  OnboardingPhoto: undefined;
+  OnboardingDone: undefined;
   Main: undefined;
   Chat: { chatId: string; userId: string; userName: string; userImage: string };
   Profile: { userId: string; refresh?: boolean };

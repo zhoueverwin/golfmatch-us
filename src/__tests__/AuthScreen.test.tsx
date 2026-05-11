@@ -52,12 +52,12 @@ describe("AuthScreen", () => {
   describe("Sign-in buttons", () => {
     it("renders the Apple sign-in button", () => {
       const { getByLabelText } = render(wrap(<AuthScreen />));
-      expect(getByLabelText("Sign in with Apple")).toBeTruthy();
+      expect(getByLabelText("Continue with Apple")).toBeTruthy();
     });
 
     it("renders the Google sign-in button", () => {
       const { getByLabelText } = render(wrap(<AuthScreen />));
-      expect(getByLabelText("Sign in with Google")).toBeTruthy();
+      expect(getByLabelText("Continue with Google")).toBeTruthy();
     });
 
     it("does not render LINE or email sign-in buttons", () => {
@@ -75,7 +75,7 @@ describe("AuthScreen", () => {
       });
 
       const { getByLabelText } = render(wrap(<AuthScreen />));
-      fireEvent.press(getByLabelText("Sign in with Apple"));
+      fireEvent.press(getByLabelText("Continue with Apple"));
 
       await waitFor(() => {
         expect(authService.signInWithApple).toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe("AuthScreen", () => {
       });
 
       const { getByLabelText, findByText } = render(wrap(<AuthScreen />));
-      fireEvent.press(getByLabelText("Sign in with Apple"));
+      fireEvent.press(getByLabelText("Continue with Apple"));
 
       await waitFor(() => {
         expect(authService.signInWithApple).toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe("AuthScreen", () => {
       });
 
       const { getByLabelText } = render(wrap(<AuthScreen />));
-      fireEvent.press(getByLabelText("Sign in with Google"));
+      fireEvent.press(getByLabelText("Continue with Google"));
 
       await waitFor(() => {
         expect(authService.signInWithGoogle).toHaveBeenCalled();
@@ -120,7 +120,7 @@ describe("AuthScreen", () => {
       });
 
       const { getByLabelText, findByText } = render(wrap(<AuthScreen />));
-      fireEvent.press(getByLabelText("Sign in with Google"));
+      fireEvent.press(getByLabelText("Continue with Google"));
 
       await waitFor(() => {
         expect(authService.signInWithGoogle).toHaveBeenCalled();

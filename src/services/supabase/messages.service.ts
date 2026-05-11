@@ -91,7 +91,7 @@ export class MessagesService {
     receiverId: string,
     text: string,
     type: "text" | "image" | "emoji" | "video" = "text",
-    imageUri?: string,
+    mediaUri?: string,
   ): Promise<ServiceResponse<Message>> {
     try {
       const { data, error } = await supabase
@@ -102,7 +102,8 @@ export class MessagesService {
           receiver_id: receiverId,
           text,
           type,
-          image_uri: imageUri,
+          image_uri: type === "image" ? mediaUri : null,
+          video_uri: type === "video" ? mediaUri : null,
           is_read: false,
         })
         .select(

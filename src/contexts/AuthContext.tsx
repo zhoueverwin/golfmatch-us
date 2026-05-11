@@ -62,6 +62,8 @@ interface AuthContextType extends AuthState {
     error?: string;
     message?: string;
   }>;
+  /** Re-fetches the current user's profile and updates `userProfile`. */
+  refreshProfile: () => Promise<void>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   deleteAccount: (reasonCode?: string, reasonDetail?: string) => Promise<{ success: boolean; error?: string }>;
   getUserIdentities: () => Promise<{
@@ -197,6 +199,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Track user presence based on authentication state
   useUserPresence(profileId, !!profileId);
 
+  const refreshProfile = async () => {
+    if (!profileId) return;
+    try {
+      const res = await profilesService.getProfile(profileId);
+      if (res.success && res.data) {
+        setUserProfile(res.data as unknown as CachedProfile);
+      }
+    } catch (err) {
+      console.warn("[AuthContext] refreshProfile failed:", err);
+    }
+  };
+
   const contextValue: AuthContextType = {
     ...authState,
     profileId,
@@ -206,6 +220,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     linkEmail: authService.linkEmail.bind(authService),
     linkGoogle: authService.linkGoogle.bind(authService),
     linkApple: authService.linkApple.bind(authService),
+    refreshProfile,
     signOut: authService.signOut.bind(authService),
     deleteAccount: (r?: string, d?: string) => authService.deleteAccount(r, d),
     getUserIdentities: authService.getUserIdentities.bind(authService),

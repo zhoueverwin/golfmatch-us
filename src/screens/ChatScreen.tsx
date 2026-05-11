@@ -59,6 +59,7 @@ interface Message {
   isRead: boolean;
   type: "text" | "image" | "emoji" | "video";
   imageUri?: string;
+  videoUri?: string;
 }
 
 const { width } = Dimensions.get("window");
@@ -138,7 +139,8 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
     );
   }
 
-  if (item.type === "video" && item.imageUri) {
+  if (item.type === "video" && (item.videoUri || item.imageUri)) {
+    const playableUri = item.videoUri || item.imageUri!;
     return (
       <View
         style={[
@@ -148,7 +150,7 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
       >
         <View style={styles.messageVideoContainer}>
           <VideoPlayer
-            videoUri={item.imageUri}
+            videoUri={playableUri}
             style={styles.messageVideo}
             contentFit="contain"
           />
@@ -311,7 +313,12 @@ const ChatScreen: React.FC = () => {
 
   const shouldLockMessages = useMemo(() => {
     if (!cachedVerificationStatus) return false;
-    return shouldLockMessaging(cachedVerificationStatus.isVerified);
+    const isPremium = isProMember || cachedVerificationStatus.isPremium;
+    return shouldLockMessaging(
+      cachedVerificationStatus.isVerified,
+      cachedVerificationStatus.gender,
+      isPremium,
+    );
   }, [cachedVerificationStatus, isProMember]);
 
   // Ref to track shouldLockMessages for real-time subscription callback
@@ -509,7 +516,8 @@ const ChatScreen: React.FC = () => {
   const transformMessage = (dbMessage: DBMessage): Message => {
     // Handle both snake_case (from DB) and camelCase (from TypeScript)
     const imageUri = (dbMessage as any).image_uri || (dbMessage as any).imageUri || undefined;
-    
+    const videoUri = (dbMessage as any).video_uri || (dbMessage as any).videoUri || undefined;
+
     return {
       id: dbMessage.id,
       text: dbMessage.text || "",
@@ -517,7 +525,8 @@ const ChatScreen: React.FC = () => {
       isFromUser: dbMessage.sender_id === currentUserId,
       isRead: dbMessage.isRead || false,
       type: dbMessage.type as "text" | "image" | "emoji" | "video",
-      imageUri: imageUri,
+      imageUri,
+      videoUri,
     };
   };
 
@@ -1200,16 +1209,21 @@ const ChatScreen: React.FC = () => {
 
       {/* Input Area */}
       {shouldLockMessages ? (
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { bottom: BASE_INPUT_OFFSET }]}>
           <TouchableOpacity
-            style={styles.lockedInputRow}
+            style={styles.lockedInputCard}
             onPress={() => navigation.navigate("Store")}
             activeOpacity={0.7}
           >
-            <Ionicons name="lock-closed" size={16} color={Colors.primary} />
-            <Text style={styles.lockedInputText}>Become a premium member to send messages</Text>
-            <View style={styles.lockedInputButton}>
-              <Text style={styles.lockedInputButtonText}>Learn more</Text>
+            <View style={styles.lockedInputMessageRow}>
+              <Ionicons name="lock-closed" size={16} color={Colors.primary} />
+              <Text style={styles.lockedInputText} numberOfLines={2}>
+                Become a premium member to send messages
+              </Text>
+            </View>
+            <View style={styles.lockedInputCTA}>
+              <Text style={styles.lockedInputCTAText}>Learn more</Text>
+              <Ionicons name="chevron-forward" size={14} color={Colors.white} />
             </View>
           </TouchableOpacity>
         </View>
@@ -1620,11 +1634,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingBottom: 12,
   },
-  lockedInputRow: {
+  lockedInputCard: {
+    flexDirection: "column",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  lockedInputMessageRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-    paddingVertical: 4,
   },
   lockedInputText: {
     flex: 1,
@@ -1632,14 +1650,17 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamily.regular,
     color: Colors.text.secondary,
   },
-  lockedInputButton: {
+  lockedInputCTA: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
+    paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.full,
   },
-  lockedInputButtonText: {
-    fontSize: Typography.fontSize.xs,
+  lockedInputCTAText: {
+    fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.bold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     color: Colors.white,

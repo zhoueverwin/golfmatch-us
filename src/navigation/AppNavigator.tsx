@@ -31,6 +31,12 @@ import MyPageScreen from "../screens/MyPageScreen";
 import ChatScreen from "../screens/ChatScreen";
 import UserProfileScreen from "../screens/UserProfileScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import OnboardingNameScreen from "../screens/onboarding/OnboardingNameScreen";
+import OnboardingGenderScreen from "../screens/onboarding/OnboardingGenderScreen";
+import OnboardingBirthdateScreen from "../screens/onboarding/OnboardingBirthdateScreen";
+import OnboardingStateScreen from "../screens/onboarding/OnboardingStateScreen";
+import OnboardingPhotoScreen from "../screens/onboarding/OnboardingPhotoScreen";
+import OnboardingDoneScreen from "../screens/onboarding/OnboardingDoneScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import NotificationSettingsScreen from "../screens/NotificationSettingsScreen";
 import NotificationHistoryScreen from "../screens/NotificationHistoryScreen";
@@ -599,11 +605,17 @@ const AppNavigatorContent = () => {
             }}>
             {user ? (
             <>
-              {/* Show EditProfile first for new users, Main first for existing users */}
+              {/* New users start in the onboarding wizard; existing users land on Main. */}
               {isNewUser ? (
                 <>
-                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingPhoto" component={OnboardingPhotoScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingDone" component={OnboardingDoneScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
+                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>
               ) : (
                 <>

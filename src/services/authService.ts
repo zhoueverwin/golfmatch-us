@@ -113,8 +113,8 @@ class AuthService {
         // This is the OAuth 2.0 Client ID of type "Web application"
         webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "986630263277-rv4ir98jarhmi43pcjptq7m7e7sf37od.apps.googleusercontent.com",
         
-        // iOS Client ID (optional - will be read from GoogleService-Info.plist if not provided)
-        iosClientId: "986630263277-4n44sucemnougkvqotdksvbjcis3vivt.apps.googleusercontent.com",
+        // iOS Client ID (US bundle: golfmatchdating.us.com)
+        iosClientId: "986630263277-req5hpcfnmn5fshasesflknrcjkjmusl.apps.googleusercontent.com",
         
         // Request offline access to get refresh tokens
         offlineAccess: true,

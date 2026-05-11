@@ -11,7 +11,7 @@ export default {
     scheme: "Golfmatch",
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.zhoueverwin.golfmatchapp",
+      bundleIdentifier: "golfmatchdating.us.com",
       googleServicesFile: "./GoogleService-Info.plist",
       appStoreIcon: "./assets/icon.png",
       infoPlist: {
@@ -43,7 +43,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      package: "com.zhoueverwin.golfmatchapp",
+      package: "golfmatchdating.us.com",
       googleServicesFile: "./google-services.json",
     },
     web: {
@@ -73,8 +73,9 @@ export default {
         "@react-native-google-signin/google-signin",
         {
           // REVERSED_CLIENT_ID derived from iOS Client ID:
-          // 986630263277-4n44sucemnougkvqotdksvbjcis3vivt.apps.googleusercontent.com
-          iosUrlScheme: "com.googleusercontent.apps.986630263277-4n44sucemnougkvqotdksvbjcis3vivt"
+          // 986630263277-req5hpcfnmn5fshasesflknrcjkjmusl.apps.googleusercontent.com
+          // (US bundle: golfmatchdating.us.com)
+          iosUrlScheme: "com.googleusercontent.apps.986630263277-req5hpcfnmn5fshasesflknrcjkjmusl"
         }
       ],
       // Facebook SDK for Meta Ads tracking
