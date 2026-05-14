@@ -15,13 +15,11 @@ import { Spacing, BorderRadius } from "../constants/spacing";
 import { Typography } from "../constants/typography";
 import { SearchFilters } from "../types";
 import AgeDecadeSelector from "./AgeDecadeSelector";
-import GenderSelector from "./GenderSelector";
 import PrefectureSelector from "./PrefectureSelector";
 import SkillLevelSelector from "./SkillLevelSelector";
 import ScoreSelector from "./ScoreSelector";
 import LastLoginSelector from "./LastLoginSelector";
 import {
-  getGenderLabel,
   getPrefectureLabel,
   getSkillLevelLabel,
   getAgeDecadesLabel,
@@ -46,10 +44,17 @@ const FilterModal: React.FC<FilterModalProps> = ({
   isPremium = false,
   onPremiumPress,
 }) => {
-  const [filters, setFilters] = useState<SearchFilters>(initialFilters);
-  
+  // Strip any persisted `gender` field — the user-facing gender filter has
+  // been removed (opposite-gender matching is enforced automatically in
+  // supabaseDataProvider.searchUsers). Drop stale values from AsyncStorage
+  // so they can't keep silently filtering results.
+  const sanitize = (f: SearchFilters): SearchFilters => {
+    const { gender: _gender, ...rest } = f;
+    return rest;
+  };
+  const [filters, setFilters] = useState<SearchFilters>(sanitize(initialFilters));
+
   // Modal visibility states
-  const [showGenderSelector, setShowGenderSelector] = useState(false);
   const [showAgeSelector, setShowAgeSelector] = useState(false);
   const [showPrefectureSelector, setShowPrefectureSelector] = useState(false);
   const [showSkillLevelSelector, setShowSkillLevelSelector] = useState(false);
@@ -58,7 +63,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   // Update filters when initialFilters changes
   React.useEffect(() => {
-    setFilters(initialFilters);
+    setFilters(sanitize(initialFilters));
   }, [initialFilters]);
 
   const handleClear = () => {
@@ -70,10 +75,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
   };
 
   // Handler functions for each filter
-  const handleGenderChange = (gender: string | undefined) => {
-    setFilters({ ...filters, gender: gender as "male" | "female" | undefined });
-  };
-
   const handleAgeDecadeChange = (decades: number[]) => {
     setFilters({ ...filters, age_decades: decades });
   };
@@ -158,15 +159,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Gender Filter (premium only) */}
-          <FilterItem
-            icon="person-outline"
-            title="Gender"
-            value={getGenderLabel(filters.gender)}
-            onPress={() => setShowGenderSelector(true)}
-            locked={!isPremium}
-          />
-
           {/* Age Decade Filter */}
           <FilterItem
             icon="calendar-outline"
@@ -236,12 +228,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
       </SafeAreaView>
 
       {/* Filter Selector Modals */}
-      <GenderSelector
-        visible={showGenderSelector}
-        selectedGender={filters.gender}
-        onClose={() => setShowGenderSelector(false)}
-        onApply={handleGenderChange}
-      />
       <AgeDecadeSelector
         visible={showAgeSelector}
         selectedDecades={filters.age_decades || []}

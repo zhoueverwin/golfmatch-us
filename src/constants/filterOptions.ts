@@ -142,14 +142,6 @@ export function getRegionPrefectures(prefecture: string): string[] {
 }
 
 // ============================================================================
-// GENDER OPTIONS
-// ============================================================================
-export const GENDER_OPTIONS = [
-  { value: "female", label: "Female" },
-  { value: "male", label: "Male" },
-] as const;
-
-// ============================================================================
 // GOLF SKILL LEVEL OPTIONS
 // `value` is what is stored in profiles.golf_skill_level. Requires the matching
 // DB enum migration: ビギナー→Beginner, 中級者→Intermediate, 上級者→Advanced, プロ→Pro.
@@ -201,7 +193,6 @@ export const LAST_LOGIN_OPTIONS = [
 // FILTER LABELS (for display)
 // ============================================================================
 export const FILTER_LABELS = {
-  gender: "Gender",
   prefecture: "Location",
   ageDecade: "Age",
   skillLevel: "Golf level",
@@ -236,15 +227,6 @@ export function decadesToAgeRange(decades: number[]): {
     age_min: minDecade.ageMin,
     age_max: maxDecade.ageMax,
   };
-}
-
-/**
- * Get label for selected gender
- */
-export function getGenderLabel(gender: string | undefined): string {
-  if (!gender) return "Any";
-  const option = GENDER_OPTIONS.find((g) => g.value === gender);
-  return option ? option.label : "Any";
 }
 
 /**
