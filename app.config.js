@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: "Golfmatch",
+    name: "Golfmatch Dating",
     slug: "golfmatch",
     version: "1.0",
     orientation: "portrait",
@@ -84,7 +84,7 @@ export default {
         {
           appID: "2701896453510217",
           clientToken: "8a26b940143e8a48123a3320cfc02c26",
-          displayName: "Golfmatch",
+          displayName: "Golfmatch Dating",
           scheme: "fb2701896453510217",
           advertiserIDCollectionEnabled: true,
           autoLogAppEventsEnabled: true,
