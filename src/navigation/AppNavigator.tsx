@@ -12,7 +12,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { NotificationProvider, useNotifications } from "../contexts/NotificationContext";
 import { MatchProvider } from "../contexts/MatchContext";
-import { RevenueCatProvider } from "../contexts/RevenueCatContext";
+import { RevenueCatProvider, useRevenueCat } from "../contexts/RevenueCatContext";
 import { DataProvider } from "../services";
 import { UserProfile } from "../types/dataModels";
 import { logScreenView } from "../services/firebaseAnalytics";
@@ -36,7 +36,8 @@ import OnboardingGenderScreen from "../screens/onboarding/OnboardingGenderScreen
 import OnboardingBirthdateScreen from "../screens/onboarding/OnboardingBirthdateScreen";
 import OnboardingStateScreen from "../screens/onboarding/OnboardingStateScreen";
 import OnboardingPhotoScreen from "../screens/onboarding/OnboardingPhotoScreen";
-import OnboardingDoneScreen from "../screens/onboarding/OnboardingDoneScreen";
+import OnboardingKycScreen from "../screens/onboarding/OnboardingKycScreen";
+import OnboardingPaywallScreen from "../screens/onboarding/OnboardingPaywallScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import NotificationSettingsScreen from "../screens/NotificationSettingsScreen";
 import NotificationHistoryScreen from "../screens/NotificationHistoryScreen";
@@ -314,6 +315,21 @@ const linking: LinkingOptions<RootStackParamList> = {
 
 const AppNavigatorContent = () => {
   const { user, loading, profileId, userProfile: cachedProfile } = useAuth();
+  const { isProMember } = useRevenueCat();
+
+  // Universal KYC gate: returning users who never completed Didit verification
+  // are pushed through it before reaching Main. Without this, accounts created
+  // before KYC was wired in (or any account where the verdict never landed) can
+  // bypass the anti-bypass mechanism entirely.
+  const needsKycGate = !!(cachedProfile && !cachedProfile.is_verified);
+
+  // Gendered hard paywall (fail-secure): only an explicit "female" plus
+  // verified KYC skips the paywall. Anything else — "male", "U" (Didit's
+  // value for IDs without a sex field), null, "other" — gets gated until
+  // a subscription is active. Females and premium males reach Main directly.
+  const needsPaywallGate = !!(
+    cachedProfile && cachedProfile.gender !== "female" && !isProMember
+  );
 
   // Check for app updates when user is authenticated
   const {
@@ -608,12 +624,42 @@ const AppNavigatorContent = () => {
               {/* New users start in the onboarding wizard; existing users land on Main. */}
               {isNewUser ? (
                 <>
+                  {/*
+                    Onboarding flow with Didit KYC (gender + birth_date come
+                    from the verified government ID, so the Gender + Birthdate
+                    self-entry screens are skipped). Order:
+                      Name → State → Photo → KYC → (males) Paywall → Done
+                                                  (females) → Done
+                  */}
                   <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPhoto" component={OnboardingPhotoScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="OnboardingDone" component={OnboardingDoneScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  {/* Gender + Birthdate screens still registered for backwards-compat /
+                      deep links; not on the linear onboarding path. */}
+                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="Main" component={MainTabNavigator} />
+                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+                </>
+              ) : needsKycGate ? (
+                <>
+                  {/* Returning user who never completed KYC — push them
+                      through it before they can reach Main / Paywall.
+                      OnboardingKycScreen routes onward based on the verified
+                      gender, so paywall gating still applies for males. */}
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="Main" component={MainTabNavigator} />
+                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+                </>
+              ) : needsPaywallGate ? (
+                <>
+                  {/* Returning male user without an active subscription —
+                      gated by RevenueCat's prebuilt Paywall (configured in
+                      RC dashboard) before reaching Main. */}
+                  <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>

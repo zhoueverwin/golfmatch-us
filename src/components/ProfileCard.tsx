@@ -86,11 +86,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               ) : profile.gender === "male" ? (
                 <Ionicons name="male" size={14} color="#64B5F6" />
               ) : null}
-              {profile.is_verified && (
-                <View style={styles.verificationPill}>
-                  <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
-                </View>
-              )}
               {profile.is_premium && (
                 <View style={styles.premiumPill}>
                   <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />

@@ -20,6 +20,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing, BorderRadius } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
+import CacheService from "../../services/cacheService";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingPhoto">;
@@ -28,47 +29,65 @@ const BUCKET = "profile-pictures";
 
 const OnboardingPhotoScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  const { profileId, user } = useAuth();
+  const { profileId, user, userProfile } = useAuth();
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Tracks which picker is currently requesting OS permission, so we can
+  // (a) show "Requesting permission..." text and (b) block double-taps while
+  // the iOS system dialog is on screen.
+  const [requestingPerm, setRequestingPerm] = useState<
+    "library" | "camera" | null
+  >(null);
 
   const pickFromLibrary = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Photos permission needed",
-        "Grant photo library access in Settings to choose a photo.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [3, 4],
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setLocalUri(result.assets[0].uri);
+    if (requestingPerm) return;
+    setRequestingPerm("library");
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Photos permission needed",
+          "Grant photo library access in Settings to choose a photo.",
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 4],
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setLocalUri(result.assets[0].uri);
+      }
+    } finally {
+      setRequestingPerm(null);
     }
   };
 
   const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Camera permission needed",
-        "Grant camera access in Settings to take a photo.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [3, 4],
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setLocalUri(result.assets[0].uri);
+    if (requestingPerm) return;
+    setRequestingPerm("camera");
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Camera permission needed",
+          "Grant camera access in Settings to take a photo.",
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [3, 4],
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setLocalUri(result.assets[0].uri);
+      }
+    } finally {
+      setRequestingPerm(null);
     }
   };
 
@@ -106,6 +125,16 @@ const OnboardingPhotoScreen: React.FC = () => {
         .eq("id", profileId);
       if (dbError) throw dbError;
 
+      // Invalidate every cache layer that holds profile data so MyPage,
+      // EditProfile, Discover all pick up the new photo on next render.
+      // Two distinct cache keys exist: `user_${id}` (User shape, read by
+      // DataProvider.getUser) and `user_profile_${id}` (UserProfile shape,
+      // read by MyPage via DataProvider.getUserProfile). Clear both.
+      await Promise.all([
+        CacheService.remove(`user_${profileId}`),
+        CacheService.remove(`user_profile_${profileId}`),
+      ]);
+
       return true;
     } catch (err: any) {
       Alert.alert("Couldn't upload photo", err?.message ?? "Please try again.");
@@ -116,14 +145,16 @@ const OnboardingPhotoScreen: React.FC = () => {
     }
   };
 
+  // KYC is next — Didit's webhook will set `gender` from the verified ID,
+  // and OnboardingKyc routes onward (males → Paywall, females → Main).
+  // Photo is REQUIRED — skipping leaves the profile with empty
+  // profile_pictures, which makes the user undiscoverable in search and
+  // also makes the navigator misclassify them as a "new user" on re-login.
   const handleContinue = async () => {
     if (!localUri || uploading || saving) return;
     const ok = await uploadAndSave(localUri);
-    if (ok) navigation.navigate("OnboardingDone");
-  };
-
-  const handleSkip = () => {
-    navigation.navigate("OnboardingDone");
+    if (!ok) return;
+    navigation.navigate("OnboardingKyc");
   };
 
   const busy = uploading || saving;
@@ -132,12 +163,10 @@ const OnboardingPhotoScreen: React.FC = () => {
     <OnboardingShell
       step={5}
       title="Add a profile photo"
-      subtitle="Pick a clear photo of yourself. You can change it anytime."
+      subtitle="A clear photo of you is required. You can change it anytime."
       continueDisabled={!localUri || busy}
       onContinue={handleContinue}
       continueLabel={busy ? "Uploading..." : "Continue"}
-      secondaryLabel="Skip for now"
-      onSecondary={handleSkip}
     >
       <View style={styles.previewWrap}>
         {localUri ? (
@@ -158,22 +187,50 @@ const OnboardingPhotoScreen: React.FC = () => {
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.action}
+          style={[styles.action, requestingPerm && styles.actionDisabled]}
           onPress={pickFromLibrary}
           activeOpacity={0.8}
+          disabled={!!requestingPerm}
         >
-          <Ionicons name="images-outline" size={22} color={Colors.primary} />
-          <Text style={styles.actionLabel}>Choose from library</Text>
+          {requestingPerm === "library" ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : (
+            <Ionicons name="images-outline" size={22} color={Colors.primary} />
+          )}
+          <Text style={styles.actionLabel}>
+            {requestingPerm === "library"
+              ? "Requesting permission…"
+              : "Choose from library"}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.action}
+          style={[styles.action, requestingPerm && styles.actionDisabled]}
           onPress={takePhoto}
           activeOpacity={0.8}
+          disabled={!!requestingPerm}
         >
-          <Ionicons name="camera-outline" size={22} color={Colors.primary} />
-          <Text style={styles.actionLabel}>Take photo</Text>
+          {requestingPerm === "camera" ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : (
+            <Ionicons name="camera-outline" size={22} color={Colors.primary} />
+          )}
+          <Text style={styles.actionLabel}>
+            {requestingPerm === "camera"
+              ? "Requesting permission…"
+              : "Take photo"}
+          </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Privacy explainer — surfaces the reason camera / photo access is
+          requested. App Store reviewers expect this kind of in-app rationale
+          alongside the Info.plist usage strings (NSCameraUsageDescription,
+          NSPhotoLibraryUsageDescription). */}
+      <Text style={styles.privacyText}>
+        We use your photo to display on your profile so other members can
+        recognize you. It is stored securely and never shared outside the app.
+        You can replace or remove it anytime from your profile page.
+      </Text>
     </OnboardingShell>
   );
 };
@@ -220,6 +277,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  actionDisabled: {
+    opacity: 0.5,
+  },
+  privacyText: {
+    fontSize: Typography.fontSize.sm,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    lineHeight: 20,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.xs,
   },
   actionLabel: {
     fontSize: Typography.fontSize.base,

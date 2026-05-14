@@ -378,19 +378,6 @@ const MyPageScreen: React.FC = () => {
                     <Text style={styles.quickStatNumber}>{formatStat(dashboardStats.profileViews)}</Text>
                     <Text style={styles.quickStatLabel}>Views</Text>
                   </View>
-                  <View style={styles.quickStatDivider} />
-                  <TouchableOpacity
-                    style={styles.quickStatItem}
-                    onPress={() => navigation.navigate("Store")}
-                    activeOpacity={0.7}
-                    testID="MYPAGE_SCREEN.STORE_CARD"
-                  >
-                    <Image
-                      source={require("../../assets/images/Icons/Plan01.png")}
-                      style={styles.quickStatStoreIcon}
-                    />
-                    <Text style={styles.quickStatLabel}>Store</Text>
-                  </TouchableOpacity>
                 </View>
                 {(dailyStats.todayProfileViews > 0 || dailyStats.yesterdayProfileViews > 0) && (
                   <View style={styles.quickStatsDelta}>
@@ -412,40 +399,11 @@ const MyPageScreen: React.FC = () => {
                 )}
               </View>
 
-              {/* Membership status row */}
-              <TouchableOpacity
-                style={styles.membershipRow}
-                onPress={() => navigation.navigate("MembershipStatus")}
-              >
-                <View style={styles.membershipRowLeft}>
-                  <Ionicons name="card-outline" size={20} color={Colors.text.primary} />
-                  <Text style={styles.membershipRowLabel}>Membership</Text>
-                </View>
-                <View style={styles.membershipRowRight}>
-                  <Text style={styles.membershipRowStatus}>
-                    {isProMember ? "Premium" : "Free"}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
-                </View>
-              </TouchableOpacity>
-
-              {/* CTA Banner */}
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Store")}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={["#16E4D8", "#20B1AA"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.membershipCtaBanner}
-                >
-                  <Ionicons name="chatbubble-ellipses" size={18} color={Colors.white} />
-                  <Text style={styles.membershipCtaText}>
-                    Unlimited messaging with Premium
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              {/* Membership tier row removed — with the gendered hard paywall
+                  at entry, every user reaching this screen is on the correct
+                  tier and the badge ("Premium" / "Free") doesn't add user
+                  value. Apple's required "Manage subscription" affordance now
+                  lives in Settings → Manage subscription. */}
 
               {/* Menu Items */}
               <View style={styles.menuContainer}>

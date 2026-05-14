@@ -66,7 +66,10 @@ const KYC_STATUS_CONFIG: Record<
 
 const MembershipStatusScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { isProMember, expirationDate, willRenew } = useRevenueCat();
+  const { isProMember, expirationDate, willRenew, currentOffering } = useRevenueCat();
+  // Localized monthly price; falls back to a USD placeholder while RC is loading.
+  const monthlyPriceLabel =
+    currentOffering?.monthly?.product.priceString ?? "$29.99";
   const { profileId } = useAuth();
   const { profile: currentUser } = useCurrentUserProfile();
   const [kycStatus, setKycStatus] = useState<KycStatus>("not_started");
@@ -367,7 +370,7 @@ const MembershipStatusScreen: React.FC = () => {
                   <Text style={styles.upgradeButtonText}>Become a Premium Member</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <Text style={styles.priceLabel}>¥3,000 / month</Text>
+              <Text style={styles.priceLabel}>{monthlyPriceLabel} / month</Text>
             </>
           )}
         </View>

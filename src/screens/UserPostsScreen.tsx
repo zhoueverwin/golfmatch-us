@@ -78,11 +78,6 @@ const PostItem = memo(({
             <View style={styles.userDetails}>
               <View style={styles.nameRow}>
                 <Text style={styles.username}>{item.user.name}</Text>
-                {item.user.is_verified && (
-                  <View style={styles.verificationPill}>
-                    <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
-                  </View>
-                )}
               </View>
               <Text style={styles.timestamp}>{item.timestamp}</Text>
             </View>

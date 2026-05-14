@@ -69,7 +69,8 @@ export type RootStackParamList = {
   OnboardingBirthdate: undefined;
   OnboardingState: undefined;
   OnboardingPhoto: undefined;
-  OnboardingDone: undefined;
+  OnboardingKyc: undefined;
+  OnboardingPaywall: undefined;
   Main: undefined;
   Chat: { chatId: string; userId: string; userName: string; userImage: string };
   Profile: { userId: string; refresh?: boolean };
@@ -84,7 +85,7 @@ export type RootStackParamList = {
   Footprints: undefined;
   PastLikes: undefined;
   ContactReply: undefined;
-  Store: undefined;
+  Store: { fromOnboarding?: boolean } | undefined;
   MembershipStatus: undefined;
   Help: undefined;
   HelpDetail: { itemId: string };

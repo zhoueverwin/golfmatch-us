@@ -53,6 +53,13 @@ const StoreScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
+  // Where to go after a successful purchase / restore. Store is now only
+  // reached as a "manage subscription" view from My Page; the paywall has
+  // moved to OnboardingPaywallScreen (RevenueCat-rendered).
+  const onSuccessNavigate = () => {
+    navigation.goBack();
+  };
+
   useEffect(() => {
     // Set loading based on RevenueCat initialization
     setIsLoading(!isInitialized);
@@ -67,13 +74,14 @@ const StoreScreen: React.FC = () => {
     });
   };
 
-  // Get price from current offering
+  // Get price from current offering. Falls back to a USD placeholder only
+  // while RevenueCat is still loading the offering — the real price string
+  // is auto-localized by Apple (e.g. "$29.99" in US, "¥4,500" in JP).
   const getSubscriptionPrice = useCallback((): string => {
     if (currentOffering && currentOffering.monthly) {
       return currentOffering.monthly.product.priceString;
     }
-    // Fallback price if offering not loaded
-    return "¥3,000";
+    return "$29.99";
   }, [currentOffering]);
 
   // Helper function to sync premium status directly to database
@@ -175,7 +183,7 @@ const StoreScreen: React.FC = () => {
           Alert.alert(
             "Purchase Complete",
             "Your membership is now active. You can now send messages.",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
+            [{ text: "OK", onPress: onSuccessNavigate }]
           );
           break;
         case PAYWALL_RESULT.RESTORED:
@@ -183,7 +191,7 @@ const StoreScreen: React.FC = () => {
           await syncPremiumStatusDirectly();
           await refreshCustomerInfo();
           Alert.alert("Restore Complete", "Your purchase has been restored.", [
-            { text: "OK", onPress: () => navigation.goBack() },
+            { text: "OK", onPress: onSuccessNavigate },
           ]);
           break;
         case PAYWALL_RESULT.NOT_PRESENTED:
@@ -295,7 +303,7 @@ const StoreScreen: React.FC = () => {
         Alert.alert(
           "Purchase Complete",
           "Your membership is now active. You can now send messages.",
-          [{ text: "OK", onPress: () => navigation.goBack() }]
+          [{ text: "OK", onPress: onSuccessNavigate }]
         );
       } else if (result.error === "cancelled") {
         // User cancelled - no alert
@@ -399,7 +407,8 @@ const StoreScreen: React.FC = () => {
       />
 
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        {/* Header */}
+        {/* Header — Store is now only reached as the post-onboarding
+            "manage subscription" view, so the back button is always shown. */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -467,7 +476,7 @@ const StoreScreen: React.FC = () => {
               <MaskedView
                 maskElement={
                   <View style={styles.priceMaskContainer}>
-                    <Text style={styles.priceAmount}>¥3,000</Text>
+                    <Text style={styles.priceAmount}>{getSubscriptionPrice()}</Text>
                     <Text style={styles.priceUnit}>/ month</Text>
                   </View>
                 }
@@ -479,7 +488,7 @@ const StoreScreen: React.FC = () => {
                   style={styles.priceGradient}
                 >
                   <View style={styles.priceMaskContainer}>
-                    <Text style={[styles.priceAmount, { opacity: 0 }]}>¥3,000</Text>
+                    <Text style={[styles.priceAmount, { opacity: 0 }]}>{getSubscriptionPrice()}</Text>
                     <Text style={[styles.priceUnit, { opacity: 0 }]}>/ month</Text>
                   </View>
                 </LinearGradient>
@@ -534,7 +543,7 @@ const StoreScreen: React.FC = () => {
           {/* Terms and Conditions */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>
-              The monthly plan is ¥3,000 and renews automatically once you subscribe.
+              {`The monthly plan is ${getSubscriptionPrice()} and renews automatically once you subscribe.`}
             </Text>
             <Text style={styles.termsText}>
               You'll be charged through your Apple ID account at the time of purchase.

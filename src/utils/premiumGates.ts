@@ -5,6 +5,10 @@
  * require an active premium subscription. Enforced server-side via RLS on
  * messages.INSERT and mirrored client-side for UX (locked input bar +
  * promo banner in ChatScreen, locked previews in MessagesScreen).
+ *
+ * Filters/sorts are NO LONGER premium-gated. The gendered hard paywall at
+ * onboarding/return-entry means everyone reaching the Search screen is
+ * either a paid male or a free female — both should have full filter access.
  */
 
 /** Returns true if messaging should be locked for this user. */
@@ -16,25 +20,3 @@ export function shouldLockMessaging(
   if (!isVerified) return true;
   return gender !== "female" && !isPremium;
 }
-
-/** Search filter keys that require premium. */
-export const PREMIUM_FILTER_KEYS = [
-  "gender",
-  "age_decades",
-  "age_min",
-  "age_max",
-  "prefecture",
-  "golf_skill_level",
-  "average_score_max",
-  "last_login_days",
-] as const;
-
-/** Sort options that require premium. */
-export const PREMIUM_SORT_OPTIONS: ReadonlySet<string> = new Set([
-  "likes",
-  "registration",
-  "login",
-]);
-
-/** Default sort for free users when a premium sort is requested. */
-export const FREE_SORT_FALLBACK = "recommended" as const;

@@ -2,14 +2,22 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 
-const PRODUCTION_PROJECT_ID = 'rriwpoqhbgvprbhomckk';
+// Recognised Supabase project IDs. URLs containing any of these are treated
+// as a known production target and no banner is shown.
+const PRODUCTION_PROJECT_IDS = [
+  'rriwpoqhbgvprbhomckk', // GolfMatch JP production
+  'tylrhszuzpebehzlahfq', // GolfMatch US production
+];
+
+// JP dev branch identifier (long deleted); kept to label the banner clearly
+// if the URL ever points here again.
 const DEVELOPMENT_PROJECT_ID = 'vpbsievccbtyycsfsflh';
 
 export function EnvironmentBanner(): React.ReactElement | null {
   const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
                       process.env.EXPO_PUBLIC_SUPABASE_URL;
 
-  if (supabaseUrl?.includes(PRODUCTION_PROJECT_ID)) {
+  if (PRODUCTION_PROJECT_IDS.some((id) => supabaseUrl?.includes(id))) {
     return null;
   }
 

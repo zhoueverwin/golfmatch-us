@@ -25,22 +25,19 @@ import FilterModal from "../components/FilterModal";
 import Loading from "../components/Loading";
 import EmptyState from "../components/EmptyState";
 import TodaySwipeView from "../components/TodaySwipeView";
-import RecommendedCarouselView from "../components/RecommendedCarouselView";
 import SortModal, { SortOption } from "../components/SortModal";
 import { DataProvider } from "../services";
 import { useAuth } from "../contexts/AuthContext";
-import { useRevenueCat } from "../contexts/RevenueCatContext";
 import { userInteractionService } from "../services/userInteractionService";
 import { UserActivityService } from "../services/userActivityService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type SearchScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
-type TabKey = "today" | "recommended" | "search";
+type TabKey = "today" | "search";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "today", label: "Today Only" },
-  { key: "recommended", label: "For You" },
+  { key: "today", label: "Swipe" },
   { key: "search", label: "Search" },
 ];
 
@@ -61,7 +58,6 @@ const TAB_BAR_BASE_HEIGHT = 65;
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const { profileId, userProfile } = useAuth();
-  const { isProMember } = useRevenueCat();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>("today");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -221,20 +217,6 @@ const SearchScreen: React.FC = () => {
     setFilterModalVisible(false);
   };
 
-  const handlePremiumPress = useCallback(() => {
-    Alert.alert(
-      "Premium Feature",
-      "This feature is available to Premium members only.\n\nUpgrade to Premium to unlock advanced filters, sorting, and more.",
-      [
-        { text: "Close", style: "cancel" },
-        {
-          text: "Learn More",
-          onPress: () => navigation.navigate("Store"),
-        },
-      ],
-    );
-  }, [navigation]);
-
   const handleResetFilters = useCallback(async () => {
     setFilters({});
     await saveFilters({});
@@ -331,15 +313,6 @@ const SearchScreen: React.FC = () => {
         <TodaySwipeView onViewProfile={handleViewProfile} />
       )}
 
-      {activeTab === "recommended" && (
-        <RecommendedCarouselView
-          hasActiveFilters={false}
-          filters={{}}
-          onViewProfile={handleViewProfile}
-          onResetFilters={handleResetFilters}
-        />
-      )}
-
       {activeTab === "search" && (
         <View style={styles.searchTabContainer}>
           {searchLoading && searchProfiles.length === 0 ? (
@@ -350,7 +323,6 @@ const SearchScreen: React.FC = () => {
               renderItem={renderProfileCard}
               keyExtractor={keyExtractor}
               numColumns={2}
-              estimatedItemSize={ITEM_HEIGHT}
               overrideItemLayout={overrideItemLayout}
               contentContainerStyle={styles.profileGrid}
               showsVerticalScrollIndicator={false}
@@ -396,27 +368,25 @@ const SearchScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Filter Modal */}
+      {/* Filter Modal — gendered hard paywall already gates entry, so all
+          users reaching Search have full feature access. */}
       <FilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApply={handleApplyFilters}
         initialFilters={filters}
-        isPremium={isProMember}
-        onPremiumPress={() => {
-          setFilterModalVisible(false);
-          handlePremiumPress();
-        }}
+        isPremium={true}
+        onPremiumPress={() => setFilterModalVisible(false)}
       />
 
-      {/* Sort Modal */}
+      {/* Sort Modal — same: no in-Search gating in the US flow. */}
       <SortModal
         visible={sortModalVisible}
         currentSort={searchSort}
-        isPremium={isProMember}
+        isPremium={true}
         onSelect={setSearchSort}
         onClose={() => setSortModalVisible(false)}
-        onPremiumPress={handlePremiumPress}
+        onPremiumPress={() => {}}
       />
     </SafeAreaView>
   );

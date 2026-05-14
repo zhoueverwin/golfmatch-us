@@ -30,6 +30,8 @@ interface CachedProfile {
   average_score?: number;
   transportation?: string;
   available_days?: string;
+  is_verified?: boolean;
+  kyc_status?: string | null;
 }
 import { useUserPresence } from "../hooks/useUserPresence";
 import { supabase } from "../services/supabase";

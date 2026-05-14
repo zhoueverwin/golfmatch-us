@@ -47,13 +47,6 @@ function SettingsScreen(): React.ReactElement {
 
   const settingsItems: SettingItem[] = [
     {
-      id: "kyc",
-      title: "Identity Verification",
-      subtitle: "Verify your identity with an ID",
-      icon: "shield-checkmark",
-      onPress: () => navigation.navigate("KycVerification"),
-    },
-    {
       id: "accountLinking",
       title: "Linked Accounts",
       subtitle: "Manage email and social sign-in connections",
@@ -66,6 +59,16 @@ function SettingsScreen(): React.ReactElement {
       subtitle: "Manage push notifications",
       icon: "notifications",
       onPress: () => navigation.navigate("NotificationSettings"),
+    },
+    {
+      // Apple Guideline 3.1.2 requires a discoverable way to manage / cancel
+      // an auto-renewing subscription. Routes to MembershipStatusScreen which
+      // opens Apple's manage-subscription URL.
+      id: "subscription",
+      title: "Manage Subscription",
+      subtitle: "View, restore, or cancel your subscription",
+      icon: "card",
+      onPress: () => navigation.navigate("MembershipStatus"),
     },
     {
       id: "blocked",

@@ -317,13 +317,6 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
                 <Text style={styles.userName} numberOfLines={1}>
                   {user.name}
                 </Text>
-                {user.is_verified && (
-                  <Image
-                    source={verifyBadge}
-                    style={styles.badge}
-                    resizeMode="contain"
-                  />
-                )}
                 {user.is_premium && (
                   <Image
                     source={goldBadge}
@@ -669,13 +662,6 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
                   <Text style={styles.userName} numberOfLines={1}>
                     {user.name}
                   </Text>
-                  {user.is_verified && (
-                    <Image
-                      source={verifyBadge}
-                      style={styles.badge}
-                      resizeMode="contain"
-                    />
-                  )}
                   {user.is_premium && (
                     <Image
                       source={goldBadge}

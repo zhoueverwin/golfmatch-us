@@ -36,7 +36,8 @@ const OnboardingNameScreen: React.FC = () => {
         .update({ name: trimmed, updated_at: new Date().toISOString() })
         .eq("id", profileId);
       if (error) throw error;
-      navigation.navigate("OnboardingGender");
+      // Skip Gender + Birthdate — Didit's KYC step pulls those from the ID.
+      navigation.navigate("OnboardingState");
     } catch (err: any) {
       Alert.alert("Couldn't save", err?.message ?? "Please try again.");
     } finally {

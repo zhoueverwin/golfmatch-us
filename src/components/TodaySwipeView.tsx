@@ -11,7 +11,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
 import { Colors } from "../constants/colors";
 import { Spacing, BorderRadius } from "../constants/spacing";
@@ -22,8 +21,7 @@ import { DataProvider } from "../services";
 import { useAuth } from "../contexts/AuthContext";
 import { userInteractionService } from "../services/userInteractionService";
 import { UserActivityService } from "../services/userActivityService";
-import { useRevenueCat } from "../contexts/RevenueCatContext";
-import { useCurrentUserProfile } from "../hooks/queries/useProfile";
+import { supabase } from "../services/supabase";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const TAB_BAR_BASE_HEIGHT = 65;
@@ -34,18 +32,60 @@ interface TodaySwipeViewProps {
 
 const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
   const { profileId } = useAuth();
-  const { isProMember } = useRevenueCat();
-  const { profile: currentUser } = useCurrentUserProfile();
-  const isFemale = currentUser?.gender === "female";
-  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [users, setUsers] = useState<User[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [cardAreaHeight, setCardAreaHeight] = useState(SCREEN_HEIGHT * 0.70);
+  const [streakDays, setStreakDays] = useState<number | null>(null);
+  const [nextPicksCountdown, setNextPicksCountdown] = useState<string>("");
   const swipeCardRef = useRef<SwipeCardRef>(null);
 
   const tabBarHeight = TAB_BAR_BASE_HEIGHT + Math.max(insets.bottom * 0.5, 4);
+
+  // Bump the daily-return streak on screen mount. Idempotent server-side
+  // (no-op if today is already counted) so it's safe to call on every mount.
+  useEffect(() => {
+    if (!profileId) return;
+    supabase
+      .rpc("bump_streak", { p_user_id: profileId })
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn("[TodaySwipeView] bump_streak failed:", error.message);
+          return;
+        }
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row?.current_streak_days != null) {
+          setStreakDays(row.current_streak_days);
+        }
+      });
+  }, [profileId]);
+
+  // Countdown to the next UTC midnight, when get_daily_recommendations rolls
+  // its window and a fresh batch becomes available. Updates every second when
+  // visible.
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const nextMidnight = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() + 1,
+          0,
+          0,
+          0,
+        ),
+      );
+      const msLeft = nextMidnight.getTime() - now.getTime();
+      const h = Math.floor(msLeft / 3_600_000);
+      const m = Math.floor((msLeft % 3_600_000) / 60_000);
+      setNextPicksCountdown(`${h}h ${m}m`);
+    };
+    tick();
+    const id = setInterval(tick, 30_000); // refresh twice a minute
+    return () => clearInterval(id);
+  }, []);
 
   const loadUsers = useCallback(async () => {
     if (!profileId) return;
@@ -142,24 +182,51 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
               </View>
               <View style={styles.emptyIconShadow} />
             </View>
-            <Text style={styles.emptyTitle}>
-              You've reviewed all of today's picks
+            <Text
+              style={styles.emptyTitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              All caught up for today
             </Text>
             <Text style={styles.emptySubtitle}>
-              We'll have new picks for you tomorrow!
+              Come back tomorrow for a fresh batch.
             </Text>
-            {!isProMember && !isFemale && (
-              <TouchableOpacity
-                style={styles.premiumCta}
-                onPress={() => navigation.navigate("Store")}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="diamond" size={16} color={Colors.primary} />
-                <Text style={styles.premiumCtaText}>
-                  Premium members get up to 5 picks daily!
+
+            {/* Streak block — header + subtitle so the streak concept is
+                self-explanatory to first-time viewers. Header is the badge,
+                subtitle explains what it means and what to do. */}
+            {streakDays != null && streakDays > 0 ? (
+              <View style={styles.streakBlock}>
+                <View style={styles.streakChip}>
+                  <Text style={styles.streakEmoji}>🔥</Text>
+                  <Text style={styles.streakText}>
+                    {streakDays === 1
+                      ? "1 day in a row"
+                      : `${streakDays} days in a row`}
+                  </Text>
+                </View>
+                <Text style={styles.streakSubtitle}>
+                  {streakDays === 1
+                    ? "You opened the app today. Come back tomorrow to start a streak — long streaks unlock better recommendations."
+                    : `You've opened the app ${streakDays} days in a row. Miss a day and your streak resets.`}
                 </Text>
-              </TouchableOpacity>
-            )}
+              </View>
+            ) : null}
+
+            {/* Countdown — anchors the wait in concrete time. */}
+            {nextPicksCountdown ? (
+              <View style={styles.countdownRow}>
+                <Ionicons
+                  name="time-outline"
+                  size={16}
+                  color={Colors.text.secondary}
+                />
+                <Text style={styles.countdownText}>
+                  Next picks in {nextPicksCountdown}
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : (
           /* Card + floating bottom bar */
@@ -294,21 +361,47 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: Spacing.xs,
   },
-  premiumCta: {
+  streakBlock: {
+    alignItems: "center",
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+  },
+  streakChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: Spacing.lg,
+    gap: 8,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: "#E8F8F7",
-    borderRadius: BorderRadius.lg,
+    backgroundColor: "#FFF4E0",
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: "#FFCD7A",
   },
-  premiumCtaText: {
+  streakEmoji: {
+    fontSize: 18,
+  },
+  streakText: {
     fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.semibold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
-    color: Colors.primary,
+    color: "#B25800",
+  },
+  streakSubtitle: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    marginTop: Spacing.sm,
+    lineHeight: 20,
+  },
+  countdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: Spacing.md,
+  },
+  countdownText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.text.secondary,
   },
   cardArea: {
     flex: 1,

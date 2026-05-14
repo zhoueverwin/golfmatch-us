@@ -72,3 +72,6 @@ credentials.json
 # Environment variables (contains sensitive tokens)
 .env
 .env.local
+
+# Local build artifacts
+build-*.ipa

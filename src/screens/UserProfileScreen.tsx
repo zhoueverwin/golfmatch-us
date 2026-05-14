@@ -659,11 +659,6 @@ const UserProfileScreen: React.FC = () => {
               <View style={styles.userDetails}>
                 <View style={styles.postUserName}>
                   <Text style={styles.postUsername}>{item.user.name}</Text>
-                  {item.user.is_verified && (
-                    <View style={styles.verificationPill}>
-                      <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
-                    </View>
-                  )}
                   {item.user.is_premium && (
                     <View style={styles.premiumPill}>
                       <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />
@@ -1083,11 +1078,6 @@ const UserProfileScreen: React.FC = () => {
         <View style={styles.basicInfoSection}>
           <View style={styles.userNameRow}>
             <Text style={styles.userName}>{profile.basic?.name || 'User'}</Text>
-            {profile.status?.is_verified && (
-              <View style={styles.verificationPill}>
-                <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
-              </View>
-            )}
             {profile.status?.is_premium && (
               <View style={styles.premiumPill}>
                 <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />

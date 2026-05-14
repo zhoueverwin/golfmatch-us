@@ -560,7 +560,7 @@ const EditProfileScreen: React.FC = () => {
   const handleBack = () => {
     // Onboarding now gates required fields, so EditProfile is always
     // exitable — just pop the stack, or fall back to Main if there's
-    // nothing to pop (e.g. we landed here from OnboardingDone).
+    // nothing to pop.
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {

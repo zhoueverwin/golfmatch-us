@@ -12,6 +12,7 @@
     "src/__tests__/**",
     "mock-data-backup/**",
     "testServer.js",
-    "node_modules"
+    "node_modules",
+    "supabase/functions/**"
   ]
 }

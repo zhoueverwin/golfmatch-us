@@ -67,13 +67,6 @@ const CarouselProfileCard: React.FC<CarouselProfileCardProps> = ({
             ) : profile.gender === "male" ? (
               <Ionicons name="male" size={12} color="#64B5F6" />
             ) : null}
-            {profile.is_verified && (
-              <Image
-                source={verifyBadge}
-                style={styles.badgeIcon}
-                resizeMode="contain"
-              />
-            )}
             {profile.is_premium && (
               <Image
                 source={goldBadge}

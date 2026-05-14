@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Golfmatch",
     slug: "golfmatch",
-    version: "2.0.8",
+    version: "1.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",

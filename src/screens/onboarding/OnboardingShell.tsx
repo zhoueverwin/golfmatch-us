@@ -82,10 +82,12 @@ const OnboardingShell: React.FC<Props> = ({
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Header: back / progress dots / sign out */}
+        {/* Header: back / progress dots / sign out.
+            Back arrow hides automatically when there's no previous screen
+            (e.g. KYC is the first screen in the returning-user gate stack). */}
         <View style={styles.header}>
           <View style={styles.headerSide}>
-            {!hideBack && (
+            {!hideBack && navigation.canGoBack() && (
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={styles.iconButton}
@@ -135,36 +137,40 @@ const OnboardingShell: React.FC<Props> = ({
           <View style={styles.bodyContent}>{children}</View>
         </ScrollView>
 
-        {/* Footer buttons */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              continueDisabled && styles.primaryButtonDisabled,
-            ]}
-            onPress={onContinue}
-            disabled={continueDisabled}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={continueLabel ?? "Continue"}
-          >
-            <Text style={styles.primaryButtonText}>
-              {continueLabel ?? "Continue"}
-            </Text>
-          </TouchableOpacity>
-
-          {secondaryLabel && onSecondary ? (
+        {/* Footer buttons.
+            An explicit empty `continueLabel=""` hides the primary button so
+            screens with their own CTA (e.g. KYC) don't render a dead gray bar. */}
+        {continueLabel !== "" ? (
+          <View style={styles.footer}>
             <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={onSecondary}
-              activeOpacity={0.7}
+              style={[
+                styles.primaryButton,
+                continueDisabled && styles.primaryButtonDisabled,
+              ]}
+              onPress={onContinue}
+              disabled={continueDisabled}
+              activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={secondaryLabel}
+              accessibilityLabel={continueLabel ?? "Continue"}
             >
-              <Text style={styles.secondaryButtonText}>{secondaryLabel}</Text>
+              <Text style={styles.primaryButtonText}>
+                {continueLabel ?? "Continue"}
+              </Text>
             </TouchableOpacity>
-          ) : null}
-        </View>
+
+            {secondaryLabel && onSecondary ? (
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={onSecondary}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={secondaryLabel}
+              >
+                <Text style={styles.secondaryButtonText}>{secondaryLabel}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

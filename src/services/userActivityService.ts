@@ -315,12 +315,16 @@ export class UserActivityService {
    * Track search impressions for multiple profiles in batch.
    * Silently ignores duplicate key errors (daily dedup).
    */
-  static trackSearchImpressions(
+  static async trackSearchImpressions(
     viewerId: string,
     profileIds: string[],
     context: string = 'search',
-  ): void {
+  ): Promise<void> {
     if (!profileIds.length || !viewerId) return;
+    // Skip silently if auth hasn't attached yet — the insert would otherwise
+    // fire before the JWT is set and trip the RLS auth.uid() check.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
     // Filter out self-impressions
     const filtered = profileIds.filter((id) => id !== viewerId);
     if (!filtered.length) return;
@@ -333,14 +337,15 @@ export class UserActivityService {
       created_date: today,
     }));
 
-    supabase
+    const { error } = await supabase
       .from('search_impressions')
-      .upsert(rows, { onConflict: 'viewer_id,viewed_profile_id,context,created_date', ignoreDuplicates: true })
-      .then(({ error }) => {
-        if (error) {
-          console.error('[UserActivityService] trackSearchImpressions error:', error.code, error.message);
-        }
-      });
+      .upsert(rows, { onConflict: 'viewer_id,viewed_profile_id,context,created_date', ignoreDuplicates: true });
+    // 23505 = duplicate key (expected with daily dedup unique index).
+    // 42501 = RLS violation (happens on early-render races before the auth
+    // header is attached). Both are non-critical analytics tracking failures.
+    if (error && error.code !== '23505' && error.code !== '42501') {
+      console.error('[UserActivityService] trackSearchImpressions error:', error.code, error.message);
+    }
   }
 
   /**

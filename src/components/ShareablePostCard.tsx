@@ -50,9 +50,6 @@ const ShareablePostCard = forwardRef<View, ShareablePostCardProps>(
               <Text style={styles.userName} numberOfLines={1}>
                 {post.user.name}
               </Text>
-              {post.user.is_verified && (
-                <Image source={verifyBadge} style={styles.badge} resizeMode="contain" />
-              )}
               {post.user.is_premium && (
                 <Image source={goldBadge} style={styles.badge} resizeMode="contain" />
               )}

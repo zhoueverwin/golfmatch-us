@@ -807,11 +807,11 @@ const HomeScreen: React.FC = () => {
               <Loading />
             ) : (
               <EmptyState
-                icon="home-outline"
-                title="No posts yet"
-                subtitle="Check back soon for new posts."
-                buttonTitle="Discover Profiles"
-                onButtonPress={() => navigation.navigate("Search" as any)}
+                icon="create-outline"
+                title="Be the first to post"
+                subtitle="Share a photo from your round, a swing tip, or just say hi. Active posters get noticed faster — and more matches."
+                buttonTitle="Create a post"
+                onButtonPress={() => setShowPostModal(true)}
               />
             )
           }
@@ -855,11 +855,11 @@ const HomeScreen: React.FC = () => {
               <Loading />
             ) : (
               <EmptyState
-                icon="home-outline"
-                title="No posts yet"
-                subtitle="Check back soon for new posts."
-                buttonTitle="Discover Profiles"
-                onButtonPress={() => navigation.navigate("Search" as any)}
+                icon="people-outline"
+                title="Your following feed is empty"
+                subtitle="Posts from people you follow will show up here. Discover profiles to follow, or share your own to spark conversations."
+                buttonTitle="Share a post"
+                onButtonPress={() => setShowPostModal(true)}
               />
             )
           }

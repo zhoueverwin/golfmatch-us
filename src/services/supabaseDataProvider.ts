@@ -20,7 +20,6 @@ import {
   ContactReply,
 } from "../types/dataModels";
 import { calculateAge } from "../utils/formatters";
-import { PREMIUM_FILTER_KEYS, PREMIUM_SORT_OPTIONS, FREE_SORT_FALLBACK } from "../utils/premiumGates";
 import { ProfilesService } from "./supabase/profiles.service";
 import { PostsService } from "./supabase/posts.service";
 import { MatchesService } from "./supabase/matches.service";
@@ -170,17 +169,24 @@ class SupabaseDataProvider {
     const appliedFilters: SearchFilters = {
       ...(filters || {}),
     };
-    let appliedSort = sortBy;
+    const appliedSort = sortBy;
 
-    // Strip premium-only filters and sort for free users
-    const { isPremium } = await this.prepareViewerContext();
-    if (!isPremium) {
-      for (const key of PREMIUM_FILTER_KEYS) {
-        delete (appliedFilters as Record<string, unknown>)[key];
-      }
-      if (PREMIUM_SORT_OPTIONS.has(appliedSort)) {
-        appliedSort = FREE_SORT_FALLBACK;
-      }
+    // Force opposite-gender matching — overrides any UI filter the caller
+    // passed. Female viewer → males only; male viewer → females only. If the
+    // viewer's gender is unknown (shouldn't happen post-KYC) we return nothing
+    // rather than risk showing same-gender profiles. Filters and sort are no
+    // longer premium-gated since the hard paywall already enforces entry.
+    const { gender: viewerGender } = await this.prepareViewerContext();
+    if (viewerGender === "female") {
+      appliedFilters.gender = "male";
+    } else if (viewerGender === "male") {
+      appliedFilters.gender = "female";
+    } else {
+      return {
+        success: true,
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0, hasMore: false },
+      };
     }
 
     const result = await profilesService.searchProfiles(

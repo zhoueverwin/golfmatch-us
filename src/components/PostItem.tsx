@@ -148,7 +148,6 @@ const PostItem: React.FC<PostItemProps> = ({
             <View style={styles.userDetails}>
               <View style={styles.nameRow}>
                 <Text style={styles.username}>{item.user.name}</Text>
-                {item.user.is_verified && <VerificationBadge />}
                 {item.user.is_premium && <PremiumBadge />}
               </View>
               <Text style={styles.timestamp}>{item.timestamp}</Text>

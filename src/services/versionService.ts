@@ -73,14 +73,20 @@ class VersionService {
     }
 
     try {
+      // maybeSingle so a missing row returns null without throwing PGRST116.
+      // Without the row the app is just "version check disabled" — non-fatal.
       const { data, error } = await supabase
         .from("app_config")
         .select("value")
         .eq("key", "app_version")
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error("[VersionService] Error fetching version config:", error);
+        console.warn("[VersionService] Error fetching version config:", error);
+        return null;
+      }
+      if (!data) {
+        // Row doesn't exist yet — silently skip the version check.
         return null;
       }
 
@@ -89,7 +95,7 @@ class VersionService {
 
       return this.cachedConfig;
     } catch (error) {
-      console.error("[VersionService] Exception fetching version config:", error);
+      console.warn("[VersionService] Exception fetching version config:", error);
       return null;
     }
   }
