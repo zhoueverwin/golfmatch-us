@@ -69,7 +69,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   // Reset photo index when card changes
   React.useEffect(() => {
     setPhotoIndex(0);
-  }, [currentIndex]);
+    // Belt-and-suspenders: if currentIndex changes without going through
+    // handleSwipeComplete (e.g. parent resets the deck), force the top card
+    // back to center so the worklet doesn't render the new card off-screen.
+    translateX.value = 0;
+    translateY.value = 0;
+    isAnimating.value = false;
+  }, [currentIndex, translateX, translateY, isAnimating]);
 
   const currentUser = users[currentIndex];
   const nextUser = users[currentIndex + 1];
@@ -77,15 +83,18 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   const handleSwipeComplete = useCallback(
     (direction: "left" | "right") => {
       if (!currentUser) return;
+      // Reset the shared values BEFORE notifying the parent. The reanimated
+      // worklet snaps the card back to center on the UI thread before React
+      // commits the new currentUser, preventing a one-frame flash where the
+      // new card appears at the prior off-screen + rotated transform.
+      translateX.value = 0;
+      translateY.value = 0;
+      isAnimating.value = false;
       if (direction === "right") {
         onSwipeRight(currentUser);
       } else {
         onSwipeLeft(currentUser);
       }
-      // Reset position for next card
-      translateX.value = 0;
-      translateY.value = 0;
-      isAnimating.value = false;
     },
     [currentUser, onSwipeRight, onSwipeLeft, translateX, translateY, isAnimating],
   );
@@ -421,19 +430,27 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
 
     React.useEffect(() => {
       setPhotoIndex(0);
-    }, [currentIndex]);
+      // Safety reset on currentIndex change — see comment on the
+      // non-forwardRef variant above.
+      translateX.value = 0;
+      translateY.value = 0;
+      isAnimating.value = false;
+    }, [currentIndex, translateX, translateY, isAnimating]);
 
     const handleSwipeComplete = useCallback(
       (direction: "left" | "right") => {
         if (!currentUser) return;
+        // Reset before parent callback so the worklet centers the card
+        // before React commits the new currentUser. Prevents flash of the
+        // next card appearing at the old off-screen transform.
+        translateX.value = 0;
+        translateY.value = 0;
+        isAnimating.value = false;
         if (direction === "right") {
           onSwipeRight(currentUser);
         } else {
           onSwipeLeft(currentUser);
         }
-        translateX.value = 0;
-        translateY.value = 0;
-        isAnimating.value = false;
       },
       [currentUser, onSwipeRight, onSwipeLeft, translateX, translateY, isAnimating],
     );

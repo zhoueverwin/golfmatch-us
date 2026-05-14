@@ -5,6 +5,34 @@ import { decode } from 'base64-arraybuffer';
 /**
  * Service to handle file uploads to Supabase Storage
  */
+
+const MIME_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  mov: 'video/quicktime',
+  qt: 'video/quicktime',
+  webm: 'video/webm',
+  mkv: 'video/x-matroska',
+  '3gp': 'video/3gpp',
+};
+
+const resolveContentType = (
+  fileExt: string,
+  fileType: 'image' | 'video',
+): string => {
+  const ext = fileExt.toLowerCase();
+  const mapped = MIME_TYPES[ext];
+  if (mapped) return mapped;
+  return fileType === 'video' ? 'video/mp4' : 'image/jpeg';
+};
+
 class StorageService {
   private readonly BUCKET_NAME = 'user-uploads';
 
@@ -38,10 +66,9 @@ class StorageService {
       // Decode base64 to array buffer
       const arrayBuffer = decode(base64);
 
-      // Determine content type
-      const contentType = fileType === 'video' 
-        ? `video/${fileExt}` 
-        : `image/${fileExt}`;
+      // Determine content type from a known MIME map so Supabase/CDN serve
+      // the right Content-Type header (e.g. .mov → video/quicktime, not video/mov).
+      const contentType = resolveContentType(fileExt, fileType);
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage

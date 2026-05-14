@@ -174,9 +174,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = memo(({
         removeClippedSubviews={true}
         decelerationRate="fast"
       >
-        {images.map((image) => (
+        {images.map((image, index) => (
           <CarouselImage
-            key={image}
+            key={`${index}-${image}`}
             uri={image}
             imageWidth={imageWidth}
             imageHeight={imageHeight}

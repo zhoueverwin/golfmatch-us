@@ -79,6 +79,10 @@ const SearchScreen: React.FC = () => {
   const searchPageRef = useRef(1);
   const searchHasMoreRef = useRef(true);
   const searchIsFetchingRef = useRef(false);
+  // Monotonic request id. Each loadSearchUsers call captures the current
+  // value at start; if the latest id has advanced by response time we
+  // drop the result. Prevents stale results from rapid filter changes.
+  const searchRequestIdRef = useRef(0);
 
   // Load saved filters on mount
   useEffect(() => {
@@ -145,6 +149,11 @@ const SearchScreen: React.FC = () => {
   // Search data loading
   const loadSearchUsers = async (pageNumber = 1) => {
     const isFirstPage = pageNumber === 1;
+    // Capture the request id at start. If a newer call has overtaken us by
+    // the time the response lands, we drop everything from this call.
+    const requestId = ++searchRequestIdRef.current;
+    const isStale = () => searchRequestIdRef.current !== requestId;
+
     if (isFirstPage) {
       setSearchLoading(true);
     } else {
@@ -153,6 +162,7 @@ const SearchScreen: React.FC = () => {
 
     try {
       if (!profileId) {
+        if (isStale()) return;
         setSearchProfiles([]);
         setSearchLoading(false);
         searchIsFetchingRef.current = false;
@@ -165,6 +175,8 @@ const SearchScreen: React.FC = () => {
         20,
         searchSort,
       );
+
+      if (isStale()) return;
 
       if (response.error) {
         Alert.alert(
@@ -195,11 +207,14 @@ const SearchScreen: React.FC = () => {
       }
     } catch (error) {
       console.error("Error loading users:", error);
+      if (isStale()) return;
       Alert.alert("Error", "Something went wrong while loading users.");
       if (isFirstPage) setSearchProfiles([]);
     } finally {
-      if (isFirstPage) setSearchLoading(false);
-      searchIsFetchingRef.current = false;
+      if (!isStale()) {
+        if (isFirstPage) setSearchLoading(false);
+        searchIsFetchingRef.current = false;
+      }
     }
   };
 
