@@ -233,8 +233,16 @@ const NotificationHistoryScreen: React.FC = () => {
     <TouchableOpacity
       style={styles.markAllButton}
       onPress={handleMarkAllAsRead}
+      accessibilityRole="button"
+      accessibilityLabel="Mark all notifications as read"
     >
-      <Text style={styles.markAllText} numberOfLines={1}>Mark all read</Text>
+      <Ionicons
+        name="checkmark-done-outline"
+        size={14}
+        color={Colors.primary}
+        style={styles.markAllIcon}
+      />
+      <Text style={styles.markAllText} numberOfLines={1}>Read all</Text>
     </TouchableOpacity>
   ) : undefined;
 
@@ -280,10 +288,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   markAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 6,
     backgroundColor: Colors.primary + '10',
+  },
+  markAllIcon: {
+    marginRight: 4,
   },
   markAllText: {
     fontSize: 12,
