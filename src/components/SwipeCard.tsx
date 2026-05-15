@@ -80,23 +80,22 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   const currentUser = users[currentIndex];
   const nextUser = users[currentIndex + 1];
 
+  // Notify parent of swipe. The reanimated worklet has already reset the
+  // shared values on the UI thread before scheduling this callback (see
+  // triggerSwipe / panGesture.onEnd below), so React commits the new
+  // currentUser into a card whose transform is already at center —
+  // eliminating the one-frame flash where the next user briefly rendered at
+  // the prior off-screen + rotated transform.
   const handleSwipeComplete = useCallback(
     (direction: "left" | "right") => {
       if (!currentUser) return;
-      // Reset the shared values BEFORE notifying the parent. The reanimated
-      // worklet snaps the card back to center on the UI thread before React
-      // commits the new currentUser, preventing a one-frame flash where the
-      // new card appears at the prior off-screen + rotated transform.
-      translateX.value = 0;
-      translateY.value = 0;
-      isAnimating.value = false;
       if (direction === "right") {
         onSwipeRight(currentUser);
       } else {
         onSwipeLeft(currentUser);
       }
     },
-    [currentUser, onSwipeRight, onSwipeLeft, translateX, translateY, isAnimating],
+    [currentUser, onSwipeRight, onSwipeLeft],
   );
 
   // Programmatic swipe (for button presses)
@@ -110,6 +109,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         targetX,
         { duration: SWIPE_OUT_DURATION },
         () => {
+          "worklet";
+          // Reset on the UI thread synchronously, BEFORE notifying JS. By
+          // the time React commits the new currentUser, translateX/Y are
+          // already 0 here — useAnimatedStyle re-evaluates centered.
+          translateX.value = 0;
+          translateY.value = 0;
+          isAnimating.value = false;
           runOnJS(handleSwipeComplete)(direction);
         },
       );
@@ -140,6 +146,10 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           SCREEN_WIDTH * 1.5,
           { duration: SWIPE_OUT_DURATION },
           () => {
+            "worklet";
+            translateX.value = 0;
+            translateY.value = 0;
+            isAnimating.value = false;
             runOnJS(handleSwipeComplete)("right");
           },
         );
@@ -152,6 +162,10 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           -SCREEN_WIDTH * 1.5,
           { duration: SWIPE_OUT_DURATION },
           () => {
+            "worklet";
+            translateX.value = 0;
+            translateY.value = 0;
+            isAnimating.value = false;
             runOnJS(handleSwipeComplete)("left");
           },
         );
@@ -383,18 +397,25 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
 
   return (
     <View style={[styles.container, { height: cardHeight }]}>
-      {/* Back card */}
+      {/* Back card — keyed on the user so React mounts a fresh subtree
+          per card and Expo Image doesn't transition between profiles. */}
       {nextUser && (
         <Animated.View
+          key={`back-${nextUser.id}`}
           style={[styles.cardWrapper, styles.backCardWrapper, backCardStyle]}
         >
           {renderCard(nextUser, false)}
         </Animated.View>
       )}
 
-      {/* Top card with gestures */}
+      {/* Top card with gestures — keyed on currentUser.id so the post-swipe
+          re-render mounts a new Animated.View whose useAnimatedStyle
+          evaluates against the (already worklet-reset) translateX = 0. */}
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.cardWrapper, topCardStyle]}>
+        <Animated.View
+          key={`top-${currentUser.id}`}
+          style={[styles.cardWrapper, topCardStyle]}
+        >
           {renderCard(currentUser, true)}
         </Animated.View>
       </GestureDetector>
@@ -437,22 +458,19 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
       isAnimating.value = false;
     }, [currentIndex, translateX, translateY, isAnimating]);
 
+    // See comment on the non-forwardRef variant above — reset happens in
+    // the worklet (UI thread, synchronous) so React commits the new
+    // currentUser into a card whose transform is already centered.
     const handleSwipeComplete = useCallback(
       (direction: "left" | "right") => {
         if (!currentUser) return;
-        // Reset before parent callback so the worklet centers the card
-        // before React commits the new currentUser. Prevents flash of the
-        // next card appearing at the old off-screen transform.
-        translateX.value = 0;
-        translateY.value = 0;
-        isAnimating.value = false;
         if (direction === "right") {
           onSwipeRight(currentUser);
         } else {
           onSwipeLeft(currentUser);
         }
       },
-      [currentUser, onSwipeRight, onSwipeLeft, translateX, translateY, isAnimating],
+      [currentUser, onSwipeRight, onSwipeLeft],
     );
 
     const triggerSwipe = useCallback(
@@ -465,6 +483,10 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
           targetX,
           { duration: SWIPE_OUT_DURATION },
           () => {
+            "worklet";
+            translateX.value = 0;
+            translateY.value = 0;
+            isAnimating.value = false;
             runOnJS(handleSwipeComplete)(direction);
           },
         );
@@ -497,6 +519,10 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
             SCREEN_WIDTH * 1.5,
             { duration: SWIPE_OUT_DURATION },
             () => {
+              "worklet";
+              translateX.value = 0;
+              translateY.value = 0;
+              isAnimating.value = false;
               runOnJS(handleSwipeComplete)("right");
             },
           );
@@ -509,6 +535,10 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
             -SCREEN_WIDTH * 1.5,
             { duration: SWIPE_OUT_DURATION },
             () => {
+              "worklet";
+              translateX.value = 0;
+              translateY.value = 0;
+              isAnimating.value = false;
               runOnJS(handleSwipeComplete)("left");
             },
           );
@@ -737,6 +767,7 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
       <View style={[styles.container, { height: cardHeight }]}>
         {nextUser && (
           <Animated.View
+            key={`back-${nextUser.id}`}
             style={[styles.cardWrapper, styles.backCardWrapper, backCardStyle]}
           >
             {renderCard(nextUser, false)}
@@ -744,7 +775,10 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
         )}
 
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.cardWrapper, topCardStyle]}>
+          <Animated.View
+            key={`top-${currentUser.id}`}
+            style={[styles.cardWrapper, topCardStyle]}
+          >
             {renderCard(currentUser, true)}
           </Animated.View>
         </GestureDetector>
