@@ -41,6 +41,7 @@ import { supabase } from "../services/supabase";
 import { resolveContentType } from "../services/storageService";
 import { compressVideo } from "../services/videoCompressionService";
 import FullscreenImageViewer from "../components/FullscreenImageViewer";
+import FullscreenVideoViewer from "../components/FullscreenVideoViewer";
 import VideoPlayer from "../components/VideoPlayer";
 import MessageMenuModal from "../components/MessageMenuModal";
 import { supabaseDataProvider } from "../services/supabaseDataProvider";
@@ -84,11 +85,12 @@ const { width } = Dimensions.get("window");
 interface MessageBubbleProps {
   item: Message;
   onImagePress: (imageUri: string) => void;
+  onVideoPress: (videoUri: string) => void;
   isLocked: boolean;
   onUnlockPress: () => void;
 }
 
-const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: MessageBubbleProps) => {
+const MessageBubble = memo(({ item, onImagePress, onVideoPress, isLocked, onUnlockPress }: MessageBubbleProps) => {
   const isFromUser = item.isFromUser;
 
   // Locked message bubble for non-premium males viewing incoming messages
@@ -168,19 +170,33 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
           isFromUser ? styles.userMediaMessage : styles.otherMediaMessage,
         ]}
       >
-        <View
+        <TouchableOpacity
+          activeOpacity={0.92}
+          onPress={() => onVideoPress(playableUri)}
+          accessibilityRole="button"
+          accessibilityLabel="Play video"
           style={[
             styles.mediaFrame,
             isFromUser ? styles.mediaFrameUser : styles.mediaFrameOther,
           ]}
         >
-          <VideoPlayer
-            videoUri={playableUri}
-            style={styles.mediaSurface}
-            contentFit="cover"
-            aspectRatio={MEDIA_ASPECT_RATIO}
-          />
-        </View>
+          {/* pointerEvents="none" makes the inline preview purely visual —
+              the inner VideoPlayer's own tap handler is suppressed so the
+              entire frame routes to onVideoPress → fullscreen modal. */}
+          <View style={styles.mediaSurface} pointerEvents="none">
+            <VideoPlayer
+              videoUri={playableUri}
+              style={styles.mediaSurface}
+              contentFit="cover"
+              aspectRatio={MEDIA_ASPECT_RATIO}
+            />
+          </View>
+          {/* Visible play-button affordance on top of the preview so the
+              "tap to open fullscreen" intent reads at a glance. */}
+          <View style={styles.videoPlayBadge} pointerEvents="none">
+            <Ionicons name="play" size={26} color={Colors.white} />
+          </View>
+        </TouchableOpacity>
         <View style={styles.mediaFooter}>
           <Text style={styles.mediaTimestamp}>
             {item.timestamp}
@@ -250,7 +266,8 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
     prevProps.item.id === nextProps.item.id &&
     prevProps.item.isRead === nextProps.item.isRead &&
     prevProps.item.text === nextProps.item.text &&
-    prevProps.isLocked === nextProps.isLocked
+    prevProps.isLocked === nextProps.isLocked &&
+    prevProps.onVideoPress === nextProps.onVideoPress
   );
 });
 
@@ -317,6 +334,8 @@ const ChatScreen: React.FC = () => {
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageGallery, setImageGallery] = useState<string[]>([]);
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [lastActiveAt, setLastActiveAt] = useState<string | null>(null);
 
@@ -1135,15 +1154,28 @@ const ChatScreen: React.FC = () => {
     }, 100);
   }, []);
 
+  const handleVideoPress = useCallback((videoUri: string) => {
+    setSelectedVideoUri(videoUri);
+    setVideoViewerVisible(true);
+  }, []);
+
+  const handleVideoViewerClose = useCallback(() => {
+    setVideoViewerVisible(false);
+    // Clear the source on the next tick so the modal fade-out animation
+    // doesn't blank to black before the user sees it close.
+    setTimeout(() => setSelectedVideoUri(null), 250);
+  }, []);
+
   // Memoized renderItem for FlatList
   const renderMessage = useCallback(({ item }: { item: Message }) => (
     <MessageBubble
       item={item}
       onImagePress={handleImagePress}
+      onVideoPress={handleVideoPress}
       isLocked={shouldLockMessages && !item.isFromUser}
       onUnlockPress={handleUnlockPress}
     />
-  ), [handleImagePress, shouldLockMessages, handleUnlockPress]);
+  ), [handleImagePress, handleVideoPress, shouldLockMessages, handleUnlockPress]);
 
   if (loading) {
     return (
@@ -1545,6 +1577,13 @@ const ChatScreen: React.FC = () => {
         onClose={() => setImageViewerVisible(false)}
       />
 
+      {/* Fullscreen Video Viewer — opens on tap of any video bubble. */}
+      <FullscreenVideoViewer
+        visible={videoViewerVisible}
+        videoUri={selectedVideoUri}
+        onClose={handleVideoViewerClose}
+      />
+
       {/* Message Menu Modal */}
       <MessageMenuModal
         visible={showUserMenu}
@@ -1748,6 +1787,22 @@ const styles = StyleSheet.create({
   mediaSurface: {
     width: '100%',
     height: '100%',
+  },
+  // Large central play affordance over the video preview. Heavier than the
+  // inline VideoPlayer's default icon so the "tap to play" intent reads at
+  // a glance against any video poster frame.
+  videoPlayBadge: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 54,
+    height: 54,
+    marginLeft: -27,
+    marginTop: -27,
+    borderRadius: 27,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mediaFooter: {
     flexDirection: "row",
