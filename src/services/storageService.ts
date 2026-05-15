@@ -23,7 +23,7 @@ const MIME_TYPES: Record<string, string> = {
   '3gp': 'video/3gpp',
 };
 
-const resolveContentType = (
+export const resolveContentType = (
   fileExt: string,
   fileType: 'image' | 'video',
 ): string => {

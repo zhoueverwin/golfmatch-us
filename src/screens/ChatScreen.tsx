@@ -38,6 +38,8 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { messagesService } from "../services/supabase/messages.service";
 import { Message as DBMessage } from "../types/dataModels";
 import { supabase } from "../services/supabase";
+import { resolveContentType } from "../services/storageService";
+import { compressVideo } from "../services/videoCompressionService";
 import FullscreenImageViewer from "../components/FullscreenImageViewer";
 import VideoPlayer from "../components/VideoPlayer";
 import MessageMenuModal from "../components/MessageMenuModal";
@@ -48,6 +50,13 @@ import { BlurView } from "expo-blur";
 import Toast from "../components/Toast";
 import { useRevenueCat } from "../contexts/RevenueCatContext";
 import { shouldLockMessaging } from "../utils/premiumGates";
+
+// Mirror PostCreationModal's video limits so the Feed and Chat paths stay
+// consistent. Supabase's project-level upload cap is 50MB on free tier; the
+// `message-media` bucket has no per-bucket file_size_limit set, so this is
+// the effective ceiling.
+const VIDEO_MAX_FILE_SIZE_MB = 50;
+const VIDEO_MAX_FILE_SIZE_BYTES = VIDEO_MAX_FILE_SIZE_MB * 1024 * 1024;
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, "Chat">;
 
@@ -911,56 +920,141 @@ const ChatScreen: React.FC = () => {
     }
   };
 
-  const uploadVideoToStorage = async (localUri: string): Promise<string | null> => {
+  // Prepare a video for upload: clean URI, pre-flight size check, compress
+  // when needed, re-check, and surface specific errors. Returns a local URI
+  // that's safe to upload, or null if the user-facing path was already
+  // resolved (size-too-large alert shown / canceled).
+  const prepareVideoForUpload = async (
+    rawUri: string,
+  ): Promise<{ uri: string; sizeBytes: number } | null> => {
+    // iOS Photos appends a #YnBsaXN0... metadata fragment that breaks the
+    // upload path; strip it before doing anything else.
+    const cleanUri = rawUri.split("#")[0];
+
+    const info = await FileSystem.getInfoAsync(cleanUri);
+    const originalSize = ((info as any).size as number | undefined) ?? 0;
+    console.log("[ChatScreen] Selected video", {
+      uri: cleanUri,
+      sizeMB: originalSize ? (originalSize / (1024 * 1024)).toFixed(1) : "unknown",
+    });
+
+    // Fast-fail on absurdly large files so we don't even attempt to
+    // compress a 1GB video (compression itself would run out of memory).
+    if (originalSize > 500 * 1024 * 1024) {
+      Alert.alert(
+        "Video too large",
+        `Please choose a video under ${VIDEO_MAX_FILE_SIZE_MB}MB. The one you picked is ${(
+          originalSize /
+          (1024 * 1024)
+        ).toFixed(0)}MB.`,
+      );
+      return null;
+    }
+
+    // Compress to 720p. compressVideo always runs (minimumFileSizeForCompress: 1)
+    // so even small videos benefit from a consistent re-encode.
+    let finalUri = cleanUri;
+    let finalSize = originalSize;
     try {
-      console.log('[ChatScreen] Starting video upload:', localUri);
-      
-      // Generate unique filename
+      const compressed = await compressVideo(cleanUri, undefined, {
+        maxSize: 720,
+      });
+      finalUri = compressed.uri;
+      finalSize = compressed.compressedSize;
+      console.log("[ChatScreen] Compression complete:", {
+        original: `${(compressed.originalSize / (1024 * 1024)).toFixed(2)}MB`,
+        compressed: `${(compressed.compressedSize / (1024 * 1024)).toFixed(2)}MB`,
+        savings: `${(compressed.compressionRatio * 100).toFixed(1)}%`,
+      });
+    } catch (compressionError) {
+      // If compression fails, fall back to the original if it's small enough.
+      console.warn("[ChatScreen] Compression failed, using original:", compressionError);
+      if (originalSize > VIDEO_MAX_FILE_SIZE_BYTES) {
+        Alert.alert(
+          "File size too large",
+          `Videos must be ${VIDEO_MAX_FILE_SIZE_MB}MB or less.\nSelected: ${(
+            originalSize /
+            (1024 * 1024)
+          ).toFixed(1)}MB`,
+        );
+        return null;
+      }
+    }
+
+    if (finalSize > VIDEO_MAX_FILE_SIZE_BYTES) {
+      Alert.alert(
+        "File size too large",
+        `Even after compression, the video must be ${VIDEO_MAX_FILE_SIZE_MB}MB or less.\nCompressed: ${(
+          finalSize /
+          (1024 * 1024)
+        ).toFixed(1)}MB\n\nPlease choose a shorter video.`,
+      );
+      return null;
+    }
+
+    return { uri: finalUri, sizeBytes: finalSize };
+  };
+
+  const uploadVideoToStorage = async (
+    localUri: string,
+  ): Promise<string | null> => {
+    try {
+      console.log("[ChatScreen] Starting video upload:", localUri);
+
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(7);
-      const fileExt = localUri.split('.').pop()?.toLowerCase() || 'mp4';
+      const fileExt = localUri.split(".").pop()?.toLowerCase() || "mp4";
       const fileName = `${chatId}/${timestamp}_${randomId}.${fileExt}`;
+      // Use the shared MIME map so .mov → video/quicktime etc.
+      const contentType = resolveContentType(fileExt, "video");
 
-      console.log('[ChatScreen] Generated filename:', fileName);
-
-      // Read file as base64
       const base64 = await FileSystem.readAsStringAsync(localUri, {
-        encoding: 'base64',
+        encoding: "base64",
       });
-
-      console.log('[ChatScreen] File read, size:', base64.length);
-
-      // Decode base64 to ArrayBuffer
       const arrayBuffer = decode(base64);
+      console.log("[ChatScreen] Uploading bytes:", arrayBuffer.byteLength, contentType);
 
-      console.log('[ChatScreen] Converted to ArrayBuffer, size:', arrayBuffer.byteLength);
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('message-media')
+      const { error } = await supabase.storage
+        .from("message-media")
         .upload(fileName, arrayBuffer, {
-          contentType: `video/${fileExt}`,
-          cacheControl: '3600',
+          contentType,
+          cacheControl: "3600",
           upsert: false,
         });
 
       if (error) {
-        console.error('[ChatScreen] Upload error:', error);
-        throw error;
+        console.error("[ChatScreen] Supabase upload error:", error);
+        // Translate the most common Supabase storage failures into messages
+        // the user can act on.
+        const msg = (error as any)?.message?.toLowerCase() ?? "";
+        if (msg.includes("payload too large") || msg.includes("exceeded")) {
+          Alert.alert(
+            "Upload too large",
+            "The video is over the server limit. Please try a shorter clip.",
+          );
+        } else if (msg.includes("mime") || msg.includes("type")) {
+          Alert.alert(
+            "Unsupported format",
+            "This video format isn't supported. Try recording or exporting as MP4.",
+          );
+        } else {
+          Alert.alert("Upload failed", "Couldn't upload the video. Check your connection and try again.");
+        }
+        return null;
       }
 
-      console.log('[ChatScreen] Upload successful:', data);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("message-media").getPublicUrl(fileName);
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('message-media')
-        .getPublicUrl(fileName);
-
-      console.log('[ChatScreen] Public URL:', publicUrl);
+      console.log("[ChatScreen] Public URL:", publicUrl);
       return publicUrl;
     } catch (error) {
-      console.error('[ChatScreen] Error uploading video:', error);
-      Alert.alert("Error", "Failed to upload video.");
+      console.error("[ChatScreen] Unexpected upload failure:", error);
+      Alert.alert(
+        "Upload failed",
+        "Something went wrong while sending the video. Please try again.",
+      );
       return null;
     }
   };
@@ -969,20 +1063,29 @@ const ChatScreen: React.FC = () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["videos"],
-        allowsEditing: true,
+        // allowsEditing forces the legacy UIImagePickerController which can
+        // return uncompressed original-quality video. We rely on the
+        // compression step below instead, so leave editing off.
+        allowsEditing: false,
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        setSending(true);
-        const uploadedUrl = await uploadVideoToStorage(result.assets[0].uri);
-        
+      if (result.canceled || !result.assets[0]) return;
+
+      setSending(true);
+      try {
+        const prepared = await prepareVideoForUpload(result.assets[0].uri);
+        if (!prepared) return; // size-too-large alert already shown
+
+        const uploadedUrl = await uploadVideoToStorage(prepared.uri);
         if (uploadedUrl) {
           await sendMessage("", uploadedUrl, "video");
         }
+      } finally {
         setSending(false);
       }
-    } catch (_error) {
+    } catch (error) {
+      console.error("[ChatScreen] Video picker error:", error);
       setSending(false);
       Alert.alert("Error", "Failed to choose video.");
     }
