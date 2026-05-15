@@ -58,6 +58,13 @@ import { shouldLockMessaging } from "../utils/premiumGates";
 const VIDEO_MAX_FILE_SIZE_MB = 50;
 const VIDEO_MAX_FILE_SIZE_BYTES = VIDEO_MAX_FILE_SIZE_MB * 1024 * 1024;
 
+// Media bubble layout. A single source of truth keeps the frame, the inner
+// surface, and the VideoPlayer's intrinsic aspectRatio in lockstep so the
+// Yoga layout engine can't apply the aspectRatio constraint *inside* a
+// mismatched parent and cause off-center rendering.
+const MEDIA_WIDTH_RATIO = 0.62;       // % of screen width
+const MEDIA_ASPECT_RATIO = 3 / 4;     // portrait, like iMessage / WhatsApp
+
 type ChatScreenRouteProp = RouteProp<RootStackParamList, "Chat">;
 
 interface Message {
@@ -121,12 +128,16 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
         ]}
       >
         <TouchableOpacity
-          activeOpacity={0.9}
+          activeOpacity={0.92}
           onPress={() => onImagePress(item.imageUri!)}
+          style={[
+            styles.mediaFrame,
+            isFromUser ? styles.mediaFrameUser : styles.mediaFrameOther,
+          ]}
         >
           <ExpoImage
             source={{ uri: item.imageUri }}
-            style={styles.messageImage}
+            style={styles.mediaSurface}
             contentFit="cover"
             cachePolicy="memory-disk"
             transition={0}
@@ -157,11 +168,17 @@ const MessageBubble = memo(({ item, onImagePress, isLocked, onUnlockPress }: Mes
           isFromUser ? styles.userMediaMessage : styles.otherMediaMessage,
         ]}
       >
-        <View style={styles.messageVideoContainer}>
+        <View
+          style={[
+            styles.mediaFrame,
+            isFromUser ? styles.mediaFrameUser : styles.mediaFrameOther,
+          ]}
+        >
           <VideoPlayer
             videoUri={playableUri}
-            style={styles.messageVideo}
-            contentFit="contain"
+            style={styles.mediaSurface}
+            contentFit="cover"
+            aspectRatio={MEDIA_ASPECT_RATIO}
           />
         </View>
         <View style={styles.mediaFooter}>
@@ -1623,8 +1640,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesList: {
-    paddingHorizontal: 6,
-    paddingVertical: 8,
+    // 12pt horizontal gutter — slightly more breathing room than the prior
+    // 6, and matches the bubble inset users perceive as a "chat margin".
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexGrow: 1,
   },
   messageBubble: {
@@ -1693,38 +1712,49 @@ const styles = StyleSheet.create({
   readIcon: {
     opacity: 0.8,
   },
-  messageImage: {
-    width: width * 0.55,
-    height: width * 0.55,
-    borderRadius: 16,
-  },
-  messageVideoContainer: {
-    width: width * 0.55,
-    height: width * 0.55,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
+  // Outer media bubble: just hosts the frame + the footer. Alignment lives
+  // here so the right-edge gutter matches the text bubble exactly.
   mediaMessageBubble: {
     marginBottom: 6,
   },
   userMediaMessage: {
     alignSelf: "flex-end",
-    marginRight: -2,
   },
   otherMediaMessage: {
     alignSelf: "flex-start",
-    marginLeft: -2,
+  },
+  // The frame is the actual visual chip — fixed width, aspect-ratio sized,
+  // asymmetric rounded corners that match the text-bubble "tail" pattern.
+  mediaFrame: {
+    width: width * MEDIA_WIDTH_RATIO,
+    aspectRatio: MEDIA_ASPECT_RATIO,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: Colors.gray[100],
+    // iOS shadow — soft, sits flush against the white background.
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    // Android.
+    elevation: 2,
+  },
+  mediaFrameUser: {
+    borderTopRightRadius: 6, // mirrors the text bubble's clipped corner
+  },
+  mediaFrameOther: {
+    borderTopLeftRadius: 6,
+  },
+  mediaSurface: {
+    width: '100%',
+    height: '100%',
   },
   mediaFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingTop: 3,
+    paddingTop: 4,
     gap: 3,
-  },
-  messageVideo: {
-    width: '100%',
-    height: '100%',
   },
   inputContainer: {
     position: "absolute",
