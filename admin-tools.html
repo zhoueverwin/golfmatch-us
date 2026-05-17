@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Tools - Golfmatch Global</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    line-height: 1.5;
+    padding: 16px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, #20B2AA, #178f89);
+    color: white; border-radius: 12px; margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(32,178,170,0.3);
+  }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header .info { font-size: 13px; opacity: 0.9; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 18px; border: 2px solid #cbd5e0; border-radius: 8px;
+    background: white; color: #4a5568; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: #20B2AA; color: #20B2AA; }
+  .tab-btn.active { background: #20B2AA; color: white; border-color: #20B2AA; }
+  .tab-btn .count {
+    display: inline-block; background: rgba(0,0,0,0.15); border-radius: 10px;
+    padding: 0 7px; font-size: 12px; margin-left: 4px;
+  }
+  .tab-btn.active .count { background: rgba(255,255,255,0.3); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .panel, .card {
+    background: white; border-radius: 10px; padding: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 14px;
+  }
+  .panel h2, .card h2 {
+    font-size: 13px; font-weight: 700; color: #20B2AA;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 2px solid #e2f5f4;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* Hero cards */
+  .hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 768px) { .hero-grid { grid-template-columns: repeat(2, 1fr); } }
+  .hero-card {
+    background: white; border-radius: 10px; padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+  }
+  .hero-card .label { font-size: 12px; color: #718096; margin-bottom: 4px; }
+  .hero-card .value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hero-card .sub { font-size: 11px; color: #a0aec0; margin-top: 2px; }
+  .delta { font-size: 12px; font-weight: 600; }
+  .delta.up { color: #38a169; }
+  .delta.down { color: #e53e3e; }
+  .delta.neutral { color: #a0aec0; }
+
+  .stat-row {
+    display: flex; justify-content: space-between; padding: 5px 0;
+    border-bottom: 1px solid #f7fafc;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: #4a5568; font-size: 13px; }
+  .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .section-sep { margin-top: 8px; border-top: 2px solid #f0f4f8; padding-top: 8px; }
+
+  /* Bar charts */
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bar-label { font-size: 12px; color: #4a5568; width: 80px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 20px; background: #edf2f7; border-radius: 4px; overflow: hidden; }
+  .bar-fill {
+    height: 100%; background: linear-gradient(90deg, #20B2AA, #38d9cf);
+    border-radius: 4px; display: flex; align-items: center; padding-left: 6px; min-width: 28px;
+  }
+  .bar-num { font-size: 11px; font-weight: 600; color: white; white-space: nowrap; }
+  .reason-bar .bar-fill { background: linear-gradient(90deg, #e53e3e, #fc8181); }
+
+  /* Mini charts */
+  .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+  .mini-chart-card {
+    background: white; border-radius: 10px; padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .mini-chart-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+  }
+  .mini-chart-title { font-size: 13px; font-weight: 700; color: #4a5568; }
+  .mini-chart-value { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mini-chart-svg { width: 100%; height: 140px; display: block; }
+
+  /* History table */
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th {
+    background: #f7fafc; color: #4a5568; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 10px; text-align: right; border-bottom: 2px solid #e2e8f0;
+  }
+  th:first-child { text-align: left; }
+  td { padding: 7px 10px; text-align: right; font-size: 13px; border-bottom: 1px solid #f0f4f8; }
+  td:first-child { text-align: left; font-weight: 500; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #e6fffa; color: #234e52; }
+  .badge-red { background: #fff5f5; color: #742a2a; }
+  .badge-yellow { background: #fffff0; color: #744210; }
+
+  /* Period selector */
+  .period-bar { display: flex; gap: 6px; align-items: center; }
+  .period-btn {
+    padding: 4px 12px; border: 1px solid #cbd5e0; border-radius: 6px;
+    background: white; color: #4a5568; font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  .period-btn:hover { border-color: #20B2AA; color: #20B2AA; }
+  .period-btn.active { background: #20B2AA; color: white; border-color: #20B2AA; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: filter 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: #20B2AA; color: white; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn-ghost { background: white; border: 1.5px solid #cbd5e0; color: #4a5568; }
+  .btn-ghost:hover:not(:disabled) { border-color: #20B2AA; color: #20B2AA; }
+
+  /* Form fields */
+  .form-row { margin-bottom: 12px; }
+  .form-row label {
+    display: block; font-size: 12px; font-weight: 600; color: #4a5568;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px;
+  }
+  .form-row input[type=text],
+  .form-row textarea,
+  .form-row select {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid #e2e8f0; border-radius: 8px;
+    font-size: 14px; font-family: inherit;
+    color: #1a202c; background: #fafbfc;
+  }
+  .form-row input[type=text]:focus, .form-row textarea:focus, .form-row select:focus {
+    outline: none; border-color: #20B2AA; background: white;
+  }
+  .form-row textarea { resize: vertical; min-height: 70px; }
+  .helper { font-size: 12px; color: #718096; margin-top: 4px; }
+  .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* Inquiry cards */
+  .inquiry {
+    border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px;
+    margin-bottom: 12px; background: #fafbfc;
+  }
+  .inquiry.replied { background: #f0fff4; border-color: #c6f6d5; }
+  .inq-head { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+    background: #edf2f7; flex-shrink: 0;
+  }
+  .avatar-placeholder {
+    width: 40px; height: 40px; border-radius: 50%; background: #edf2f7;
+    display: flex; align-items: center; justify-content: center;
+    color: #a0aec0; font-size: 18px; flex-shrink: 0;
+  }
+  .inq-meta { flex: 1; min-width: 0; }
+  .inq-meta .name { font-weight: 700; font-size: 14px; }
+  .inq-meta .sub { font-size: 12px; color: #718096; }
+  .inq-subject { font-weight: 600; font-size: 14px; color: #2d3748; margin-bottom: 4px; }
+  .inq-message {
+    background: white; border: 1px solid #e2e8f0; border-radius: 6px;
+    padding: 10px 12px; font-size: 14px; color: #2d3748; white-space: pre-wrap;
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .inq-replies {
+    background: #ebf8ff; border-left: 3px solid #4299e1;
+    padding: 8px 12px; font-size: 13px; margin-bottom: 10px; border-radius: 4px;
+  }
+  .inq-replies .r-body { white-space: pre-wrap; }
+  .inq-replies .r-meta { font-size: 11px; color: #4a5568; margin-top: 4px; }
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+  }
+  .status-open    { background: #fefcbf; color: #975a16; }
+  .status-replied { background: #c6f6d5; color: #276749; }
+
+  /* User search */
+  .user-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border: 1.5px solid #e2e8f0;
+    border-radius: 8px; cursor: pointer; background: white; margin-bottom: 6px;
+  }
+  .user-row:hover { border-color: #20B2AA; background: #f0fafa; }
+  .user-row.selected { border-color: #20B2AA; background: #e6fffe; }
+  .user-row .name { font-weight: 600; font-size: 14px; }
+  .user-row .sub { font-size: 12px; color: #718096; }
+  .no-push { color: #e53e3e; font-size: 11px; font-weight: 600; }
+
+  /* Moderation */
+  .mod-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .mod-tab {
+    padding: 5px 12px; border: 1px solid #cbd5e0; border-radius: 6px;
+    background: white; color: #4a5568; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .mod-tab:hover { border-color: #e53e3e; color: #e53e3e; }
+  .mod-tab.active { background: #e53e3e; color: white; border-color: #e53e3e; }
+  .mod-user {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    background: white; border-radius: 8px; margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 4px solid #e53e3e;
+  }
+  .mod-user.banned { border-left-color: #a0aec0; opacity: 0.85; }
+  .mod-user-info { flex: 1; min-width: 0; }
+  .mod-user-name { font-weight: 700; font-size: 14px; }
+  .mod-user-meta { font-size: 12px; color: #718096; margin-top: 2px; }
+  .mod-user-reasons { font-size: 11px; color: #e53e3e; margin-top: 4px; }
+  .mod-user-reasons span {
+    background: #fff5f5; padding: 1px 6px; border-radius: 4px;
+    margin-right: 4px; display: inline-block; margin-bottom: 2px;
+  }
+  .mod-score {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+  .mod-score.high   { background: #fed7d7; color: #9b2c2c; }
+  .mod-score.medium { background: #fefcbf; color: #975a16; }
+  .mod-score.low    { background: #e2e8f0; color: #4a5568; }
+  .mod-btn { padding: 6px 14px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .mod-btn-ban   { background: #e53e3e; color: white; }
+  .mod-btn-unban { background: #38a169; color: white; }
+  .mod-log-entry { font-size: 12px; color: #4a5568; padding: 6px 0; border-bottom: 1px solid #f0f4f8; }
+
+  .empty { text-align: center; padding: 32px 20px; color: #a0aec0; font-size: 14px; }
+  .loading { text-align: center; padding: 32px 20px; color: #718096; font-size: 14px; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    padding: 12px 20px; border-radius: 8px; color: white;
+    font-size: 14px; font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0; transition: opacity 0.2s; z-index: 1000; max-width: 90%;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #38a169; }
+  .toast.error   { background: #e53e3e; }
+
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    header { flex-direction: column; gap: 6px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Admin Tools — Golfmatch Global</h1>
+    <div class="info" id="headerInfo">Loading…</div>
+  </div>
+  <div class="info">v2.0</div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('moderation')">🛡️ Moderation <span class="count" id="cntFlagged">0</span></button>
+  <button class="tab-btn" onclick="switchTab('kyc')">🪪 KYC Review <span class="count" id="cntKyc">0</span></button>
+  <button class="tab-btn" onclick="switchTab('inquiries')">📧 Inquiries <span class="count" id="cntInquiries">0</span></button>
+  <button class="tab-btn" onclick="switchTab('user')">👤 Send to user</button>
+  <button class="tab-btn" onclick="switchTab('broadcast')">📢 Broadcast</button>
+</div>
+
+<!-- DASHBOARD TAB -->
+<div class="tab-content active" id="tab-dashboard">
+  <div id="dashboardBody" class="loading">Loading dashboard…</div>
+</div>
+
+<!-- MODERATION TAB -->
+<div class="tab-content" id="tab-moderation">
+  <div id="moderationBody" class="loading">Loading moderation data…</div>
+</div>
+
+<!-- KYC REVIEW TAB -->
+<div class="tab-content" id="tab-kyc">
+  <div id="kycBody" class="loading">Loading KYC review queue…</div>
+</div>
+
+<!-- INQUIRIES TAB -->
+<div class="tab-content" id="tab-inquiries">
+  <div class="panel">
+    <h2>User inquiries</h2>
+    <div class="actions" style="margin-bottom: 12px;">
+      <select id="inquiryStatus" onchange="loadInquiries()">
+        <option value="open">Open</option>
+        <option value="replied">Replied</option>
+        <option value="all">All</option>
+      </select>
+      <button class="btn btn-ghost" onclick="loadInquiries()">Refresh</button>
+    </div>
+    <div id="inquiriesList"></div>
+  </div>
+</div>
+
+<!-- SEND TO USER TAB -->
+<div class="tab-content" id="tab-user">
+  <div class="panel">
+    <h2>Send notification to a single user</h2>
+    <div class="form-row">
+      <label>Find user (name or UUID)</label>
+      <input type="text" id="userQuery" placeholder="Type a name or paste a UUID" oninput="onUserSearch()">
+      <div class="helper">Banned users are filtered automatically.</div>
+    </div>
+    <div id="userResults" style="margin-bottom: 12px;"></div>
+    <div id="userForm" style="display: none;">
+      <div class="form-row"><label>Title</label>
+        <input type="text" id="userTitle" maxlength="60" placeholder="e.g. We answered your question"></div>
+      <div class="form-row"><label>Body</label>
+        <textarea id="userBody" maxlength="300" placeholder="The message they'll see on lock screen and in app inbox."></textarea></div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="sendToUser()">Send notification</button>
+        <span id="userStatus" style="font-size: 13px; color: #718096;"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BROADCAST TAB -->
+<div class="tab-content" id="tab-broadcast">
+  <div class="panel">
+    <h2>Broadcast to many users</h2>
+    <div class="form-row"><label>Target audience</label>
+      <select id="bcTarget">
+        <option value="all">All users with push enabled</option>
+        <option value="male">Males only</option>
+        <option value="female">Females only</option>
+        <option value="verified">Verified users only</option>
+      </select></div>
+    <div class="form-row"><label>Title</label>
+      <input type="text" id="bcTitle" maxlength="60" placeholder="e.g. New feature available"></div>
+    <div class="form-row"><label>Body</label>
+      <textarea id="bcBody" maxlength="300" placeholder="Keep it short — lock-screen previews truncate around 140 chars."></textarea></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="broadcast(true)">Dry run (count only)</button>
+      <button class="btn btn-primary" onclick="broadcast(false)">Send broadcast</button>
+      <span id="bcStatus" style="font-size: 13px; color: #718096;"></span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var API_BASE = 'https://bvnwjrxdrbvctesfmedn.supabase.co/functions/v1/admin-tools';
+var currentDays = 30;
+var modSubTab = 'flagged';
+var lastDashboard = null;
+var lastMod = null;
+
+function getKey() { return new URLSearchParams(window.location.search).get('key') || ''; }
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function num(n) { if (n == null) return '—'; return Number(n).toLocaleString(); }
+function pct(n) { if (n == null) return '—'; return n + '%'; }
+function formatDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function formatDateShort(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || 'success');
+  setTimeout(function () { el.className = 'toast ' + (type || 'success'); }, 3200);
+}
+function delta(today, yesterday) {
+  if (yesterday === 0 && today === 0) return '<span class="delta neutral">→ 0</span>';
+  if (yesterday === 0) return '<span class="delta up">↑ NEW</span>';
+  var diff = today - yesterday;
+  var p = Math.round((diff / yesterday) * 100);
+  if (diff > 0) return '<span class="delta up">↑ ' + diff + ' (+' + p + '%)</span>';
+  if (diff < 0) return '<span class="delta down">↓ ' + Math.abs(diff) + ' (' + p + '%)</span>';
+  return '<span class="delta neutral">→ 0%</span>';
+}
+function heroCard(label, today, yesterday) {
+  return '<div class="hero-card"><div class="label">' + label + '</div>' +
+    '<div class="value">' + num(today) + '</div>' +
+    '<div class="sub">Yesterday ' + num(yesterday) + '</div>' +
+    delta(today, yesterday) + '</div>';
+}
+function statRow(label, value, sep) {
+  var cls = sep ? ' class="section-sep"' : '';
+  return '<div class="stat-row"' + cls + '><span class="stat-label">' + label + '</span><span class="stat-value">' + value + '</span></div>';
+}
+function badge(value, type) { return '<span class="badge badge-' + type + '">' + value + '</span>'; }
+function barChart(entries, maxVal, extraClass, labelWidth) {
+  return entries.map(function(e) {
+    var w = maxVal > 0 ? Math.round((e.value / maxVal) * 100) : 0;
+    var cls = extraClass ? ' ' + extraClass : '';
+    var lw = labelWidth ? 'width:' + labelWidth : '';
+    return '<div class="bar-row' + cls + '"><span class="bar-label" style="' + lw + '">' + esc(e.label) + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.max(w, 8) + '%"><span class="bar-num">' + e.value + '</span></div></div></div>';
+  }).join('');
+}
+
+async function api(action, opts) {
+  opts = opts || {};
+  var qs = '?key=' + encodeURIComponent(getKey()) + '&action=' + encodeURIComponent(action);
+  if (opts.params) for (var k in opts.params) qs += '&' + k + '=' + encodeURIComponent(opts.params[k]);
+  var fetchOpts = { method: opts.body ? 'POST' : 'GET' };
+  if (opts.body) {
+    fetchOpts.headers = { 'Content-Type': 'application/json' };
+    fetchOpts.body = JSON.stringify(opts.body);
+  }
+  var res = await fetch(API_BASE + qs, fetchOpts);
+  var data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+  document.getElementById('tab-' + t).classList.add('active');
+  // Activate the button by index
+  var idx = { dashboard: 0, moderation: 1, kyc: 2, inquiries: 3, user: 4, broadcast: 5 }[t];
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  if (t === 'dashboard' && !lastDashboard) loadDashboard();
+  if (t === 'moderation' && !lastMod) loadModeration();
+  if (t === 'kyc') loadKycReview();
+  if (t === 'inquiries') loadInquiries();
+}
+
+// ============================================================ DASHBOARD ====
+
+var MINI_CHARTS = [
+  { key: 'dau', label: 'DAU', color: '#e53e3e' },
+  { key: 'wau', label: 'WAU', color: '#3182ce' },
+  { key: 'mau', label: 'MAU', color: '#805ad5' },
+  { key: 'new_users', label: 'New users', color: '#20B2AA' },
+  { key: 'likes', label: 'Likes', color: '#f6ad55' },
+  { key: 'matches', label: 'Matches', color: '#e53e3e' },
+  { key: 'messages', label: 'Messages', color: '#805ad5' },
+  { key: 'profile_views', label: 'Profile views', color: '#3182ce' },
+  { key: 'posts', label: 'Posts', color: '#38a169' },
+  { key: 'deletions', label: 'Deletions', color: '#718096' },
+];
+
+function buildMiniChart(history, key, color) {
+  if (!history || history.length < 2)
+    return '<div style="color:#a0aec0;text-align:center;padding:30px;font-size:12px;">Not enough data</div>';
+  var vals = history.map(function(row) { return Number(row[key]) || 0; });
+  var maxVal = Math.max.apply(null, vals) || 1;
+  var lastVal = vals[vals.length - 1];
+  var pad = { top: 8, right: 30, bottom: 24, left: 36 };
+  var w = 500, h = 140;
+  var innerW = w - pad.left - pad.right, innerH = h - pad.top - pad.bottom;
+  var stepX = innerW / Math.max(history.length - 1, 1);
+  var gridLines = '', yLabels = '';
+  for (var i = 0; i <= 3; i++) {
+    var yVal = Math.round(maxVal * i / 3);
+    var yPos = pad.top + innerH - (innerH * i / 3);
+    gridLines += '<line x1="' + pad.left + '" y1="' + yPos + '" x2="' + (w - pad.right) + '" y2="' + yPos + '" stroke="#f0f4f8" stroke-width="1"/>';
+    yLabels += '<text x="' + (pad.left - 4) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#a0aec0" font-size="9">' + yVal + '</text>';
+  }
+  var maxLabels = 6;
+  var shown = { 0: true, [history.length - 1]: true };
+  if (history.length > 2) {
+    var step = (history.length - 1) / (Math.min(maxLabels, history.length) - 1);
+    for (var si = 1; si < Math.min(maxLabels, history.length) - 1; si++) shown[Math.round(si * step)] = true;
+  }
+  var xLabels = '';
+  history.forEach(function(row, idx) {
+    if (shown[idx]) {
+      var x = pad.left + idx * stepX;
+      var parts = row.snapshot_date.split('-');
+      var anchor = idx === 0 ? 'start' : (idx === history.length - 1 ? 'end' : 'middle');
+      xLabels += '<text x="' + x + '" y="' + (h - 4) + '" text-anchor="' + anchor + '" fill="#a0aec0" font-size="9">' + parseInt(parts[1]) + '/' + parseInt(parts[2]) + '</text>';
+    }
+  });
+  var firstX = pad.left, lastX = pad.left + (history.length - 1) * stepX;
+  var baseY = pad.top + innerH;
+  var areaPoints = history.map(function(row, idx) {
+    var x = pad.left + idx * stepX;
+    var val = Number(row[key]) || 0;
+    var y = pad.top + innerH - (val / maxVal * innerH);
+    return x + ',' + y;
+  }).join(' ');
+  var area = '<polygon points="' + firstX + ',' + baseY + ' ' + areaPoints + ' ' + lastX + ',' + baseY + '" fill="' + color + '" opacity="0.08"/>';
+  var line = '<polyline points="' + areaPoints + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  var lastY = pad.top + innerH - (lastVal / maxVal * innerH);
+  var dot = '<circle cx="' + lastX + '" cy="' + lastY + '" r="3" fill="' + color + '"/>';
+  return '<svg class="mini-chart-svg" viewBox="0 0 ' + w + ' ' + h + '">' +
+    gridLines + yLabels + xLabels + area + line + dot + '</svg>';
+}
+
+function buildChartsGrid(history) {
+  return '<div class="charts-grid">' + MINI_CHARTS.map(function(chart) {
+    var vals = (history || []).map(function(row) { return Number(row[chart.key]) || 0; });
+    var lastVal = vals.length > 0 ? vals[vals.length - 1] : 0;
+    var prevVal = vals.length > 1 ? vals[vals.length - 2] : 0;
+    return '<div class="mini-chart-card">' +
+      '<div class="mini-chart-header">' +
+      '<span class="mini-chart-title" style="color:' + chart.color + '">' + chart.label + '</span>' +
+      '<span class="mini-chart-value">' + num(lastVal) + ' ' + delta(lastVal, prevVal) + '</span>' +
+      '</div>' + buildMiniChart(history, chart.key, chart.color) + '</div>';
+  }).join('') + '</div>';
+}
+
+function setPeriod(days) { currentDays = days; loadDashboard(); }
+
+async function loadDashboard() {
+  document.getElementById('dashboardBody').className = 'loading';
+  document.getElementById('dashboardBody').textContent = 'Loading dashboard…';
+  try {
+    var data = await api('dashboard', { params: { days: currentDays } });
+    lastDashboard = data;
+    renderDashboard(data);
+  } catch (e) {
+    document.getElementById('dashboardBody').className = 'empty';
+    document.getElementById('dashboardBody').textContent = 'Error: ' + e.message;
+  }
+}
+
+function renderDashboard(data) {
+  var s = data.stats, history = data.history;
+  var d = s.daily, t = s.totals, dem = s.demographics, p = s.premium;
+  var eng = s.engagement, ch = s.churn, sup = s.support;
+
+  document.getElementById('headerInfo').textContent = 'Last updated ' + s.generated_at + ' UTC · Total users: ' + num(t.total_users);
+
+  var heroes = '<div class="hero-grid">' +
+    heroCard('New users', d.today.new_users, d.yesterday.new_users) +
+    heroCard('Matches', d.today.matches, d.yesterday.matches) +
+    heroCard('Messages', d.today.messages, d.yesterday.messages) +
+    heroCard('Likes', d.today.likes, d.yesterday.likes) +
+    heroCard('Profile views', d.today.profile_views, d.yesterday.profile_views) +
+    heroCard('Inquiries', d.today.inquiries, d.yesterday.inquiries) +
+    heroCard('Deletions', d.today.deletions, d.yesterday.deletions) +
+    heroCard('Posts', d.today.posts, d.yesterday.posts) +
+    '</div>';
+
+  var periods = [7, 14, 30, 90];
+  var periodBtns = periods.map(function(dd) {
+    var cls = dd === currentDays ? 'period-btn active' : 'period-btn';
+    return '<button class="' + cls + '" onclick="setPeriod(' + dd + ')">' + dd + 'd</button>';
+  }).join('');
+
+  var ageEntries = Object.entries(dem.age_distribution).map(function(e) { return { label: e[0], value: Number(e[1]) }; });
+  var maxAge = Math.max.apply(null, ageEntries.map(function(e) { return e.value; })) || 1;
+  var prefEntries = dem.top_prefectures.map(function(pp) { return { label: pp.prefecture, value: pp.count }; });
+  var maxPref = prefEntries.length > 0 ? prefEntries[0].value : 1;
+  var skillEntries = Object.entries(dem.skill_levels).map(function(e) { return { label: e[0], value: Number(e[1]) }; });
+  var maxSkill = Math.max.apply(null, skillEntries.map(function(e) { return e.value; })) || 1;
+
+  var reasonEntries = (ch.deletion_reasons || []).map(function(r) { return { label: r.reason_code, value: r.count }; });
+  var maxReason = reasonEntries.length > 0 ? reasonEntries[0].value : 1;
+
+  var mfRatio = dem.gender.female > 0 ? (dem.gender.male / dem.gender.female).toFixed(1) : '—';
+
+  var historyRows = history.slice().reverse().map(function(row) {
+    var parts = row.snapshot_date.split('-');
+    return '<tr><td>' + parts[1] + '/' + parts[2] + '</td>' +
+      '<td>' + num(row.new_users) + '</td>' +
+      '<td>' + num(row.likes) + '</td>' +
+      '<td>' + num(row.matches) + '</td>' +
+      '<td>' + num(row.messages) + '</td>' +
+      '<td>' + num(row.profile_views) + '</td>' +
+      '<td>' + num(row.posts) + '</td>' +
+      '<td>' + num(row.dau) + '</td>' +
+      '<td>' + num(row.wau) + '</td>' +
+      '<td>' + num(row.mau) + '</td>' +
+      '<td>' + num(row.deletions) + '</td></tr>';
+  }).join('');
+
+  var html = heroes +
+    '<div style="margin-bottom:14px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+    '<h2 style="font-size:13px;font-weight:700;color:#20B2AA;text-transform:uppercase;letter-spacing:1px;margin:0;">Trends</h2>' +
+    '<div class="period-bar">' + periodBtns +
+    '<button class="period-btn" onclick="backfill()">Backfill 90d</button></div>' +
+    '</div>' + buildChartsGrid(history) + '</div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>Totals</h2>' +
+    statRow('Total users', num(t.total_users)) +
+    statRow('Complete profiles', num(t.complete_profiles)) +
+    statRow('Likes', num(t.total_likes)) +
+    statRow('Matches', num(t.total_matches)) +
+    statRow('Messages', num(t.total_messages)) +
+    statRow('Profile views', num(t.total_views)) +
+    statRow('Posts / reactions', num(t.total_posts) + ' / ' + num(t.total_reactions)) +
+    '</div>' +
+    '<div class="card"><h2>User attributes</h2>' +
+    statRow('Male', num(dem.gender.male)) +
+    statRow('Female', num(dem.gender.female)) +
+    statRow('M:F ratio', mfRatio + ':1') +
+    statRow('Unknown gender', num(dem.gender.unknown)) +
+    '<div style="margin-top:10px;"><div class="stat-label" style="font-weight:600;margin-bottom:6px;">Age distribution</div>' +
+    barChart(ageEntries, maxAge) + '</div></div></div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>Top prefectures</h2>' +
+    (prefEntries.length > 0 ? barChart(prefEntries, maxPref) : '<div class="empty">No data</div>') +
+    '</div>' +
+    '<div class="card"><h2>Skill levels</h2>' +
+    barChart(skillEntries, maxSkill) + '</div></div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>Premium / revenue</h2>' +
+    statRow('Premium members', num(p.total_premium)) +
+    statRow('  Male', num(p.premium_male)) +
+    statRow('  Female', num(p.premium_female)) +
+    statRow('Conversion rate', pct(p.premium_rate_pct)) +
+    statRow('Active basic', num(p.active_basic), true) +
+    statRow('Active permanent', num(p.active_permanent)) +
+    statRow('Total revenue', '¥' + num(p.total_revenue), true) +
+    statRow('This month', '¥' + num(p.revenue_this_month)) +
+    statRow('via RevenueCat', num(p.premium_by_source.revenuecat), true) +
+    statRow('via Manual grant', num(p.premium_by_source.manual)) +
+    statRow('Permanent grant', num(p.premium_by_source.permanent)) +
+    '</div>' +
+    '<div class="card"><h2>Engagement</h2>' +
+    statRow('DAU', num(eng.dau)) +
+    statRow('WAU (7d)', num(eng.wau)) +
+    statRow('MAU (30d)', num(eng.mau)) +
+    statRow('Active (24h)', badge(num(eng.active_24h), 'green'), true) +
+    statRow('Active (7d)', badge(num(eng.active_7d), 'green')) +
+    statRow('Inactive (30d+)', badge(num(eng.inactive_30d), 'red')) +
+    statRow('Match rate', pct(eng.match_rate_pct), true) +
+    statRow('Avg msgs/match', eng.avg_messages_per_match != null ? eng.avg_messages_per_match : '—') +
+    '</div></div>' +
+
+    '<div class="card"><h2>Daily history (' + currentDays + ' days)</h2>' +
+    '<div style="max-height:400px;overflow:auto;"><table><thead><tr>' +
+    '<th style="text-align:left">Date</th><th>New</th><th>Likes</th><th>Matches</th><th>Msg</th><th>Views</th><th>Posts</th><th>DAU</th><th>WAU</th><th>MAU</th><th>Deletes</th>' +
+    '</tr></thead><tbody>' + historyRows + '</tbody></table></div></div>' +
+
+    '<div class="grid-2">' +
+    '<div class="card"><h2>Churn</h2>' +
+    statRow('Total deletions', num(ch.total_deletions)) +
+    statRow('This week', num(ch.deletions_this_week)) +
+    statRow('Avg days active', (ch.avg_days_active != null ? ch.avg_days_active : '—') + 'd') +
+    statRow('Premium churn', badge(num(ch.churned_premium), 'red')) +
+    (reasonEntries.length > 0
+      ? '<div style="margin-top:10px;"><div class="stat-label" style="font-weight:600;margin-bottom:6px;">Reasons</div>' + barChart(reasonEntries, maxReason, 'reason-bar', '130px') + '</div>'
+      : '') +
+    '</div>' +
+    '<div class="card"><h2>Support</h2>' +
+    statRow('Open inquiries', sup.open_inquiries > 0 ? badge(sup.open_inquiries, 'red') : badge('0', 'green')) +
+    statRow('Total inquiries', num(sup.total_inquiries)) +
+    statRow('KYC pending', sup.pending_kyc > 0 ? badge(sup.pending_kyc, 'yellow') : badge('0', 'green'), true) +
+    statRow('KYC approved', num(sup.approved_kyc)) +
+    statRow('Pending reports', sup.pending_reports > 0 ? badge(sup.pending_reports, 'red') : badge('0', 'green'), true) +
+    statRow('Total blocks', num(sup.total_blocks)) +
+    '</div></div>';
+
+  document.getElementById('dashboardBody').className = '';
+  document.getElementById('dashboardBody').innerHTML = html;
+}
+
+async function backfill() {
+  if (!confirm('Recompute the last 90 days of snapshots from raw tables?')) return;
+  try {
+    await api('backfill_snapshots', { body: { days: 90 } });
+    toast('Backfill complete', 'success');
+    loadDashboard();
+  } catch (e) { toast('Backfill failed: ' + e.message, 'error'); }
+}
+
+// ============================================================= MODERATION ====
+
+async function loadModeration() {
+  document.getElementById('moderationBody').className = 'loading';
+  document.getElementById('moderationBody').textContent = 'Loading moderation data…';
+  try {
+    var data = await api('moderation');
+    lastMod = data;
+    var openFlagged = (data.flagged || []).filter(function(f) { return !f.is_banned; }).length;
+    document.getElementById('cntFlagged').textContent = openFlagged;
+    renderModeration();
+  } catch (e) {
+    document.getElementById('moderationBody').className = 'empty';
+    document.getElementById('moderationBody').textContent = 'Error: ' + e.message;
+  }
+}
+
+function setModSubTab(t) { modSubTab = t; renderModeration(); }
+function scoreClass(s) { if (s >= 40) return 'high'; if (s >= 20) return 'medium'; return 'low'; }
+
+function renderModeration() {
+  if (!lastMod) return;
+  var flagged = (lastMod.flagged || []).filter(function(f) { return !f.is_banned; });
+  var banned = lastMod.banned || [];
+  var log = lastMod.log || [];
+
+  var tabs = '<div class="mod-tabs">' +
+    '<button class="mod-tab' + (modSubTab === 'flagged' ? ' active' : '') + '" onclick="setModSubTab(\'flagged\')">Flagged (' + flagged.length + ')</button>' +
+    '<button class="mod-tab' + (modSubTab === 'banned' ? ' active' : '') + '" onclick="setModSubTab(\'banned\')">Banned (' + banned.length + ')</button>' +
+    '<button class="mod-tab' + (modSubTab === 'log' ? ' active' : '') + '" onclick="setModSubTab(\'log\')">Action log</button>' +
+    '</div>';
+
+  var content = '';
+  if (modSubTab === 'flagged') {
+    if (flagged.length === 0) content = '<div class="empty">No flagged users</div>';
+    else content = flagged.map(function(f) {
+      var meta = esc(f.gender || '—') + ' · ' + esc(f.prefecture || '—') + ' · joined ' + formatDateShort(f.created_at);
+      var reasons = (f.reasons || []).map(function(r) { return '<span>' + esc(r) + '</span>'; }).join('');
+      return '<div class="mod-user">' +
+        '<div class="mod-score ' + scoreClass(f.score) + '">' + f.score + '</div>' +
+        '<div class="mod-user-info">' +
+          '<div class="mod-user-name">' + esc(f.user_name) + (f.is_verified ? ' ✓' : '') + '</div>' +
+          '<div class="mod-user-meta">' + meta + '</div>' +
+          '<div class="mod-user-reasons">' + reasons + '</div>' +
+        '</div>' +
+        '<button class="mod-btn mod-btn-ban" onclick="doBan(\'' + f.user_id + '\', \'' + (f.user_name || '').replace(/\'/g, "\\\\'") + '\')">Ban</button>' +
+        '</div>';
+    }).join('');
+  } else if (modSubTab === 'banned') {
+    if (banned.length === 0) content = '<div class="empty">No banned users</div>';
+    else content = banned.map(function(b) {
+      return '<div class="mod-user banned">' +
+        '<div class="mod-score low">BAN</div>' +
+        '<div class="mod-user-info">' +
+          '<div class="mod-user-name">' + esc(b.name) + '</div>' +
+          '<div class="mod-user-meta">' + esc(b.gender || '—') + ' · banned ' + formatDateShort(b.banned_at) + ' · reason: ' + esc(b.ban_reason || '—') + '</div>' +
+        '</div>' +
+        '<button class="mod-btn mod-btn-unban" onclick="doUnban(\'' + b.id + '\', \'' + (b.name || '').replace(/\'/g, "\\\\'") + '\')">Unban</button>' +
+        '</div>';
+    }).join('');
+  } else {
+    if (log.length === 0) content = '<div class="empty">No actions logged</div>';
+    else content = log.map(function(l) {
+      var actCol = l.action === 'ban' ? '#e53e3e' : (l.action === 'unban' ? '#38a169' : '#4a5568');
+      return '<div class="mod-log-entry">' + formatDateShort(l.created_at) +
+        ' <span style="color:' + actCol + ';font-weight:700;">' + esc(l.action.toUpperCase()) + '</span> ' +
+        esc(l.target_user_id) + ' — ' + esc(l.reason || '—') + ' (by ' + esc(l.performed_by || '—') + ')</div>';
+    }).join('');
+  }
+
+  document.getElementById('moderationBody').className = '';
+  document.getElementById('moderationBody').innerHTML = '<div class="card"><h2 style="color:#e53e3e;border-bottom-color:#fed7d7;">Moderation</h2>' + tabs + content + '</div>';
+}
+
+async function doBan(userId, userName) {
+  var reason = prompt('Ban ' + userName + '. Reason:', 'Spam / suspicious activity');
+  if (reason === null) return;
+  try {
+    await api('moderate', { body: { action: 'ban', user_id: userId, reason: reason } });
+    toast(userName + ' banned', 'success');
+    loadModeration();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function doUnban(userId, userName) {
+  if (!confirm('Unban ' + userName + '?')) return;
+  try {
+    await api('moderate', { body: { action: 'unban', user_id: userId } });
+    toast(userName + ' unbanned', 'success');
+    loadModeration();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// ============================================================== KYC REVIEW ====
+// Queue powered by profiles.kyc_status='pending_review' (set when the user
+// clicks "Submit for manual review" after 2 Didit failures). Admin reviews
+// the actual images in Didit's console — no images in this UI.
+
+async function loadKycReview() {
+  var body = document.getElementById('kycBody');
+  body.className = 'loading';
+  body.textContent = 'Loading KYC review queue…';
+  try {
+    var data = await api('kyc_review_list');
+    var subs = data.submissions || [];
+    document.getElementById('cntKyc').textContent = subs.length;
+    renderKycReview(subs);
+  } catch (e) {
+    body.className = 'empty';
+    body.textContent = 'Error: ' + esc(e.message);
+  }
+}
+
+function renderKycReview(items) {
+  var body = document.getElementById('kycBody');
+  if (items.length === 0) {
+    body.className = '';
+    body.innerHTML = '<div class="card"><h2 style="color:#e53e3e;border-bottom-color:#fed7d7;">KYC Review Queue</h2><div class="empty">No users awaiting manual review</div></div>';
+    return;
+  }
+
+  var cards = items.map(function(p) {
+    var pic = (p.profile_pictures && p.profile_pictures[0]) || '';
+    var avatar = pic
+      ? '<img class="avatar" src="' + esc(pic) + '" alt="">'
+      : '<div class="avatar-placeholder">👤</div>';
+
+    // Build a search query string the admin can paste into the Didit
+    // console to find this user's session. Most KYC consoles accept
+    // name or email; we surface name + uuid.
+    var lookupHint =
+      'Look up "' + esc(p.name || '(unnamed)') + '" in Didit console to review their ID and selfie.';
+
+    return '<div class="card" style="border-left:4px solid #e53e3e;">' +
+      '<div class="inq-head">' + avatar +
+        '<div class="inq-meta">' +
+          '<div class="name">' + esc(p.name || '(unnamed)') +
+            (p.has_push_token ? '' : ' <span class="no-push">NO PUSH TOKEN</span>') +
+          '</div>' +
+          '<div class="sub">' + esc(p.gender || '—') +
+            ' · ' + esc(p.age != null ? p.age + ' yrs' : '—') +
+            ' · ' + esc(p.prefecture || '—') +
+            ' · ' + (p.kyc_attempt_count || 0) + ' failed attempts' +
+            ' · requested ' + formatDate(p.updated_at) +
+          '</div>' +
+          '<div class="sub" style="margin-top:2px;font-family:monospace;font-size:11px;">' + esc(p.id) + '</div>' +
+        '</div>' +
+        '<span class="status-badge" style="background:#fed7d7;color:#9b2c2c;">Pending review</span>' +
+      '</div>' +
+      '<div class="helper" style="margin-bottom:10px;">' + lookupHint + '</div>' +
+      '<div class="form-row" style="margin-bottom:8px;">' +
+        '<label>Notes to user (optional, included in rejection push)</label>' +
+        '<textarea id="kyc-notes-' + p.id + '" placeholder="If you reject, this text is sent as the push notification body."></textarea>' +
+      '</div>' +
+      '<div class="actions">' +
+        '<button class="btn btn-primary" style="background:#38a169;" onclick="kycDecide(\'' + p.id + '\', \'approve\', \'' + esc((p.name || '').replace(/\'/g, "\\\\'")) + '\')">✓ Approve</button>' +
+        '<button class="btn" style="background:#e53e3e;color:white;" onclick="kycDecide(\'' + p.id + '\', \'reject\', \'' + esc((p.name || '').replace(/\'/g, "\\\\'")) + '\')">✗ Reject</button>' +
+        '<span style="font-size:12px;color:#718096;">Sends a push to the user.</span>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+
+  body.className = '';
+  body.innerHTML = '<h2 style="font-size:13px;font-weight:700;color:#e53e3e;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px 0;">KYC Review Queue (' + items.length + ')</h2>' + cards;
+}
+
+async function kycDecide(userId, decision, userName) {
+  var notesEl = document.getElementById('kyc-notes-' + userId);
+  var notes = (notesEl && notesEl.value || '').trim();
+  var confirmMsg = decision === 'approve'
+    ? 'Approve ' + userName + '? They\'ll be marked as verified and get a push notification.'
+    : 'Reject ' + userName + '? They\'ll get a push and can retry Didit (or contact support).';
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    await api('kyc_review_decide', { body: { user_id: userId, decision: decision, notes: notes || undefined } });
+    toast(decision === 'approve' ? userName + ' approved' : userName + ' rejected', 'success');
+    loadKycReview();
+  } catch (e) {
+    toast('Failed: ' + e.message, 'error');
+  }
+}
+
+// ============================================================== INQUIRIES ====
+
+async function loadInquiries() {
+  var status = document.getElementById('inquiryStatus').value;
+  var list = document.getElementById('inquiriesList');
+  list.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    var data = await api('inquiries', { params: { status: status } });
+    renderInquiries(data.inquiries || []);
+  } catch (e) {
+    list.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderInquiries(items) {
+  document.getElementById('cntInquiries').textContent = items.filter(function(i) { return i.status !== 'replied'; }).length;
+  var list = document.getElementById('inquiriesList');
+  if (items.length === 0) { list.innerHTML = '<div class="empty">No inquiries</div>'; return; }
+  list.innerHTML = items.map(function(i) {
+    var p = i.profile || {};
+    var pic = (p.profile_pictures && p.profile_pictures[0]) || '';
+    var avatar = pic ? '<img class="avatar" src="' + esc(pic) + '" alt="">' : '<div class="avatar-placeholder">👤</div>';
+    var replies = (i.replies || [])
+      .sort(function(a,b) { return new Date(a.created_at) - new Date(b.created_at); })
+      .map(function(r) {
+        return '<div class="inq-replies"><div class="r-body">' + esc(r.reply_message) + '</div>' +
+          '<div class="r-meta">' + (r.from_admin ? 'Admin' : 'User') + ' · ' + formatDate(r.created_at) +
+          (r.is_read ? ' · read' : '') + '</div></div>';
+      }).join('');
+    var sCls = i.status === 'replied' ? 'replied' : 'open';
+    var sBadge = '<span class="status-badge status-' + sCls + '">' + esc(i.status) + '</span>';
+    var replyBox = '<div class="form-row" style="margin-top:10px;"><textarea id="msg-' + i.id + '" placeholder="Your reply..."></textarea></div>' +
+      '<div class="actions"><button class="btn btn-primary" onclick="sendReply(\'' + i.id + '\')">Send reply</button></div>';
+    return '<div class="inquiry ' + sCls + '">' +
+      '<div class="inq-head">' + avatar +
+        '<div class="inq-meta"><div class="name">' + esc(p.name || '(unknown)') + '</div>' +
+        '<div class="sub">' + esc(p.gender || '—') + ' · ' + esc(p.prefecture || '—') + ' · ' + formatDate(i.created_at) + '</div></div>' +
+        sBadge + '</div>' +
+      '<div class="inq-subject">' + esc(i.subject) + '</div>' +
+      '<div class="inq-message">' + esc(i.message) + '</div>' +
+      replies +
+      (i.status !== 'replied' ? replyBox : '') +
+      '</div>';
+  }).join('');
+}
+
+async function sendReply(id) {
+  var msg = (document.getElementById('msg-' + id).value || '').trim();
+  if (!msg) { toast('Write a reply first', 'error'); return; }
+  try {
+    await api('reply', { body: { inquiry_id: id, message: msg } });
+    toast('Reply sent + push delivered', 'success');
+    loadInquiries();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// ========================================================== SEND TO USER ====
+
+var userSearchTimer = null, selectedUser = null;
+function onUserSearch() {
+  if (userSearchTimer) clearTimeout(userSearchTimer);
+  userSearchTimer = setTimeout(doUserSearch, 250);
+}
+
+async function doUserSearch() {
+  var q = (document.getElementById('userQuery').value || '').trim();
+  var box = document.getElementById('userResults');
+  if (q.length < 1) { box.innerHTML = ''; return; }
+  try {
+    var data = await api('user_search', { params: { q: q } });
+    var users = data.users || [];
+    if (users.length === 0) { box.innerHTML = '<div class="empty">No matches</div>'; return; }
+    box.innerHTML = users.map(function(u) {
+      var pic = (u.profile_pictures && u.profile_pictures[0]) || '';
+      var avatar = pic ? '<img class="avatar" src="' + esc(pic) + '" alt="">' : '<div class="avatar-placeholder">👤</div>';
+      var pushFlag = u.has_push_token ? '' : ' <span class="no-push">NO PUSH TOKEN</span>';
+      return '<div class="user-row" onclick="selectUser(\'' + u.id + '\', \'' + esc(u.name || '') + '\')">' +
+        avatar +
+        '<div><div class="name">' + esc(u.name || '(unnamed)') + pushFlag + '</div>' +
+        '<div class="sub">' + esc(u.gender || '—') + ' · ' + esc(u.prefecture || '—') + ' · ' + esc(u.id) + '</div></div></div>';
+    }).join('');
+  } catch (e) { box.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>'; }
+}
+
+function selectUser(id, name) {
+  selectedUser = { id: id, name: name };
+  document.querySelectorAll('.user-row').forEach(function(r) { r.classList.remove('selected'); });
+  event.currentTarget.classList.add('selected');
+  document.getElementById('userForm').style.display = 'block';
+  document.getElementById('userStatus').textContent = 'Selected: ' + name;
+}
+
+async function sendToUser() {
+  if (!selectedUser) { toast('Pick a user first', 'error'); return; }
+  var title = (document.getElementById('userTitle').value || '').trim();
+  var body = (document.getElementById('userBody').value || '').trim();
+  if (!title || !body) { toast('Title and body required', 'error'); return; }
+  try {
+    await api('notify_user', { body: { user_id: selectedUser.id, title: title, body: body } });
+    toast('Sent to ' + selectedUser.name, 'success');
+    document.getElementById('userTitle').value = '';
+    document.getElementById('userBody').value = '';
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// =========================================================== BROADCAST ====
+
+async function broadcast(dryRun) {
+  var title = (document.getElementById('bcTitle').value || '').trim();
+  var body = (document.getElementById('bcBody').value || '').trim();
+  var target = document.getElementById('bcTarget').value;
+  if (!title || !body) { toast('Title and body required', 'error'); return; }
+  if (!dryRun && !confirm('Send "' + title + '" to "' + target + '" users? Cannot be undone.')) return;
+  var statusEl = document.getElementById('bcStatus');
+  statusEl.textContent = dryRun ? 'Counting…' : 'Sending…';
+  try {
+    var data = await api('notify_all', { body: { title: title, body: body, target: target, dry_run: !!dryRun } });
+    if (dryRun) {
+      statusEl.textContent = 'Would send to ' + data.would_send_to + ' users';
+      toast('Dry run: ' + data.would_send_to + ' recipients', 'success');
+    } else {
+      statusEl.textContent = 'Sent ' + data.sent + '/' + data.total + (data.failed ? ' (' + data.failed + ' failed)' : '');
+      toast('Broadcast complete: ' + data.sent + ' sent', 'success');
+    }
+  } catch (e) { statusEl.textContent = ''; toast('Failed: ' + e.message, 'error'); }
+}
+
+// ================================================================ INIT ====
+
+(async function init() {
+  if (!getKey()) {
+    document.body.innerHTML = '<div class="empty">Missing ?key= in URL.</div>';
+    return;
+  }
+  try { await api('ping'); } catch (e) {
+    document.body.innerHTML = '<div class="empty">Auth failed: ' + esc(e.message) + '</div>';
+    return;
+  }
+  loadDashboard();
+  // Refresh dashboard every 5 minutes; other tabs refresh on demand.
+  setInterval(function() {
+    if (document.getElementById('tab-dashboard').classList.contains('active')) loadDashboard();
+  }, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
