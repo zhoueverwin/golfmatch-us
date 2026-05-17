@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: "Golfmatch Dating",
+    name: "Golfmatch",
     slug: "golfmatch",
     version: "1.0",
     orientation: "portrait",
