@@ -17,6 +17,8 @@ export interface User {
   profile_pictures: string[];
   is_verified: boolean;
   is_premium?: boolean;
+  current_streak_days?: number;
+  longest_streak_days?: number;
   kyc_status?: 'not_started' | 'pending_review' | 'approved' | 'retry' | 'rejected';
   kyc_submitted_at?: string | null;
   kyc_verified_at?: string | null;
@@ -174,6 +176,7 @@ export interface UserProfile {
   status?: {
     is_verified: boolean;
     is_premium?: boolean;
+    current_streak_days?: number;
     last_login: string;
   };
   location?: {

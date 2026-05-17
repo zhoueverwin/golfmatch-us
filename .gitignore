@@ -72,6 +72,18 @@ credentials.json
 # Environment variables (contains sensitive tokens)
 .env
 .env.local
+.env.bak*
+.env.*.bak
 
 # Local build artifacts
 build-*.ipa
+
+# Claude Code local state
+.claude/
+
+# Database migration artifacts (contain prod data dumps, secrets, PII)
+migration_artifacts/
+
+# Asset backups
+*.jpg.bak
+*.png.bak

@@ -17,9 +17,9 @@ import ImageCarousel from "./ImageCarousel";
 import VideoPlayer from "./VideoPlayer";
 import YouTubeEmbed from "./YouTubeEmbed";
 import { extractYouTubeVideos } from "../utils/youtubeUtils";
+import { StreakBadge } from "./StreakBadge";
 
 const verifyBadge = require("../../assets/images/badges/Verify.png");
-const goldBadge = require("../../assets/images/badges/Gold.png");
 const messageIcon = require("../../assets/images/Icons/message.png");
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -39,12 +39,6 @@ const ProfileImage = memo(({ uri, name }: { uri: string; name: string }) => (
 const VerificationBadge = memo(() => (
   <View style={styles.verificationPill}>
     <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
-  </View>
-));
-
-const PremiumBadge = memo(() => (
-  <View style={styles.premiumPill}>
-    <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />
   </View>
 ));
 
@@ -148,7 +142,7 @@ const PostItem: React.FC<PostItemProps> = ({
             <View style={styles.userDetails}>
               <View style={styles.nameRow}>
                 <Text style={styles.username}>{item.user.name}</Text>
-                {item.user.is_premium && <PremiumBadge />}
+                <StreakBadge days={item.user.current_streak_days} />
               </View>
               <Text style={styles.timestamp}>{item.timestamp}</Text>
             </View>

@@ -97,9 +97,9 @@ const helpDetails: Record<string, HelpDetail> = {
     description:
       "Send a Like to anyone who catches your eye to start a potential match.",
     steps: [
-      "Find a profile in the Search or Home tab",
-      "Tap their profile to open it",
-      "Tap the heart icon to send a Like",
+      "Tap the Search tab at the bottom",
+      "Go to the Swipe tab for card-style discovery — swipe right to Like, left to Pass",
+      "Or go to the Search tab, tap any profile to open it, and tap the heart icon",
     ],
     additionalInfo: "When they Like you back, you've got a Match.",
   },
@@ -127,16 +127,16 @@ const helpDetails: Record<string, HelpDetail> = {
       "Open Messages to start a conversation",
     ],
     additionalInfo:
-      "You'll get a notification when you Match. A Premium membership is required to send messages.",
+      "You'll get a notification when you Match. Male users need a Premium membership to send messages.",
   },
   "like-history": {
     id: "like-history",
-    title: "Review Your Past Likes",
+    title: "View Likes You've Sent",
     description:
       "You can review every Like you've sent.",
     steps: [
       "Tap My Page at the bottom",
-      "Tap Past Likes",
+      "Tap Likes Sent",
       "Browse all the Likes you've sent",
     ],
   },
@@ -199,14 +199,14 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "message-send",
     title: "Send a Message",
     description:
-      "Message anyone you've Matched with. A Premium membership is required to message.",
+      "Message anyone you've Matched with. Male users need a Premium membership to send messages.",
     steps: [
       "Tap the Messages tab at the bottom",
       "Choose the person you want to chat with",
-      "Type your message",
-      "Tap Send",
+      "Type your message and tap Send",
+      "You can also send images, videos, and emoji",
     ],
-    additionalInfo: "You can also send images and videos.",
+    additionalInfo: "Videos are auto-compressed before sending. Quick emoji reactions and pre-filled opening messages are available to help break the ice.",
   },
   "message-read": {
     id: "message-read",
@@ -215,8 +215,9 @@ const helpDetails: Record<string, HelpDetail> = {
       "You'll see new messages via push notifications and inside the app.",
     steps: [
       "Tap the Messages tab at the bottom",
-      "Unread conversations show a badge",
+      "Conversations with unread messages show an 'Unreplied' badge",
       "Tap a conversation to read",
+      "Read receipts show when the other person has seen your message",
     ],
   },
   "message-notification": {
@@ -253,13 +254,13 @@ const helpDetails: Record<string, HelpDetail> = {
       "Find your ideal golf partner from the Search screen. GolfMatch uses an intelligent matching algorithm to surface the people most compatible with you.",
     steps: [
       "Tap the Search tab at the bottom",
-      "Recommended tab: shows your most compatible matches (recommended)",
-      "Newest tab: shows newly registered users",
+      "Swipe tab: card-style discovery — swipe right to Like, swipe left to Pass",
+      "Search tab: browse a grid of profiles; use Sort and Filter to narrow results",
       "Tap a profile to see details",
       "Send a Like if you're interested",
     ],
     additionalInfo:
-      "How the Recommended tab works\nThe Recommended tab ranks users using six factors:\n\n1. Calendar overlap (30 pts)\nUsers whose available days line up with yours over the next 30 days. Higher score means you're more likely to actually play together.\n\n2. Skill compatibility (25 pts)\nUsers at a similar skill level (Beginner, Intermediate, Advanced, Pro). Closer levels make for a better round.\n\n3. Score similarity (20 pts)\nSimilar average scores rank highest, especially within 5 strokes.\n\n4. Location (15 pts)\nUsers in the same or nearby states.\n\n5. Activity (10 pts)\nRecently active users rank higher, with the highest scores for those active in the last 24 hours.\n\n6. Profile completeness (10 pts)\nUsers with 3+ photos, a thoughtful bio, and verified status rank higher.\n\nTotal scores determine the order.\n\nGet better matches\nSet your available days in the Calendar to match with more compatible people. Tap Set Available Days from the calendar on your profile.\n\nFilters\nUse filters to narrow down who you see:\n- Age range\n- State\n- Skill level\n- Average score\n- Last active",
+      "How the Recommended sort works\nIn the Search tab, sorting by Recommended ranks users using six factors:\n\n1. Calendar overlap (30 pts)\nUsers whose available days line up with yours over the next 30 days. Higher score means you're more likely to actually play together.\n\n2. Skill compatibility (25 pts)\nUsers at a similar skill level (Beginner, Intermediate, Advanced, Pro). Closer levels make for a better round.\n\n3. Score similarity (20 pts)\nSimilar average scores rank highest, especially within 5 strokes.\n\n4. Location (15 pts)\nUsers in the same or nearby states.\n\n5. Activity (10 pts)\nRecently active users rank higher, with the highest scores for those active in the last 24 hours.\n\n6. Profile completeness (10 pts)\nUsers with 3+ photos, a thoughtful bio, and verified status rank higher.\n\nTotal scores determine the order.\n\nGet better matches\nSet your available days in the Calendar to match with more compatible people. Tap Calendar from My Page.\n\nFilters\nUse filters to narrow down who you see:\n- Age range\n- State\n- Skill level\n- Average score\n- Last active",
   },
   "filter-feature": {
     id: "filter-feature",
@@ -319,10 +320,11 @@ const helpDetails: Record<string, HelpDetail> = {
       "Premium members can send unlimited messages.",
     steps: [
       "Unlimited messaging with anyone you've matched with",
+      "Access member-only features",
       "Build deeper connections faster",
-      "Cancel anytime, no extra fees",
+      "Cancel anytime, no hidden fees",
     ],
-    additionalInfo: "Premium is $30/month.",
+    additionalInfo: "See the Store for current pricing. Subscriptions are billed through the App Store or Google Play and auto-renew each month.",
   },
   "membership-purchase": {
     id: "membership-purchase",

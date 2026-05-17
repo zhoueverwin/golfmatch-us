@@ -48,9 +48,9 @@ import { blocksService } from "../services/supabase/blocks.service";
 import { hiddenPostsService } from "../services/hiddenPosts.service";
 import { useProfile } from "../hooks/queries/useProfile";
 import { useUserPosts, useReactToPost, useUnreactToPost } from "../hooks/queries/usePosts";
+import { StreakBadge } from "../components/StreakBadge";
 
 const verifyBadge = require("../../assets/images/badges/Verify.png");
-const goldBadge = require("../../assets/images/badges/Gold.png");
 
 const { width } = Dimensions.get("window");
 
@@ -659,11 +659,7 @@ const UserProfileScreen: React.FC = () => {
               <View style={styles.userDetails}>
                 <View style={styles.postUserName}>
                   <Text style={styles.postUsername}>{item.user.name}</Text>
-                  {item.user.is_premium && (
-                    <View style={styles.premiumPill}>
-                      <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />
-                    </View>
-                  )}
+                  <StreakBadge days={item.user.current_streak_days} />
                 </View>
                 <Text style={styles.timestamp}>{item.timestamp}</Text>
               </View>
@@ -1078,11 +1074,7 @@ const UserProfileScreen: React.FC = () => {
         <View style={styles.basicInfoSection}>
           <View style={styles.userNameRow}>
             <Text style={styles.userName}>{profile.basic?.name || 'User'}</Text>
-            {profile.status?.is_premium && (
-              <View style={styles.premiumPill}>
-                <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />
-              </View>
-            )}
+            <StreakBadge days={profile.status?.current_streak_days} />
           </View>
 
           {/* Online Status / Last Active */}

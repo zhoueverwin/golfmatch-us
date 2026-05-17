@@ -16,10 +16,10 @@ import { Typography } from "../constants/typography";
 import { ProfileCardProps } from "../types";
 import Card from "./Card";
 import { getAgeRange, calculateAge, isUserOnline } from "../utils/formatters";
+import { StreakBadge } from "./StreakBadge";
 
 const PinOutlineIcon = require("../../assets/images/Icons/Pin-Outline.png");
 const verifyBadge = require("../../assets/images/badges/Verify.png");
-const goldBadge = require("../../assets/images/badges/Gold.png");
 
 const { width } = Dimensions.get("window");
 const horizontalPadding = Spacing.md * 2;
@@ -86,11 +86,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               ) : profile.gender === "male" ? (
                 <Ionicons name="male" size={14} color="#64B5F6" />
               ) : null}
-              {profile.is_premium && (
-                <View style={styles.premiumPill}>
-                  <Image source={goldBadge} style={styles.badgeIcon} resizeMode="contain" />
-                </View>
-              )}
+              <StreakBadge days={profile.current_streak_days} />
             </View>
             <View style={styles.overlayRow}>
               <Image source={PinOutlineIcon} style={styles.pinIcon} />

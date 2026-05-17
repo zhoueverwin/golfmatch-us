@@ -1137,6 +1137,7 @@ class SupabaseDataProvider {
       status: {
         is_verified: user.is_verified,
         is_premium: user.is_premium,
+        current_streak_days: user.current_streak_days ?? 0,
         last_login: user.last_login,
       },
       location: {

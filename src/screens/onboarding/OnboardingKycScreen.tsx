@@ -47,6 +47,15 @@ const OnboardingKycScreen: React.FC = () => {
   const initialPhase: "intro" | "waiting" =
     userProfile?.kyc_status === "pending_review" ? "waiting" : "intro";
 
+  // Sticky flag: was the user already rejected when this screen mounted?
+  // Drives the "Verification not accepted — please try again" banner so
+  // returning rejected/revoked users see *why* they're back on this screen.
+  // We freeze it at mount so a successful retry doesn't keep showing the
+  // banner while the new realtime status streams in.
+  const wasPreviouslyRejected = useRef(
+    userProfile?.kyc_status === "rejected",
+  ).current;
+
   const [phase, setPhase] = useState<"intro" | "creating" | "waiting" | "done">(
     initialPhase,
   );
@@ -284,9 +293,30 @@ const OnboardingKycScreen: React.FC = () => {
 
     return (
       <View style={styles.body}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="shield-checkmark" size={48} color={Colors.primary} />
-        </View>
+        {wasPreviouslyRejected ? (
+          <View style={styles.rejectionNotice}>
+            <View style={styles.rejectionIconCircle}>
+              <Ionicons name="alert-circle" size={32} color={Colors.error} />
+            </View>
+            <Text style={styles.rejectionTitle}>
+              Previous verification was not accepted
+            </Text>
+            <Text style={styles.rejectionBody}>
+              Your last ID check didn't pass our review. This usually happens
+              when the photo is blurry, the ID has expired, or the document
+              couldn't be matched to you. Please try again with a clear photo
+              of a valid, current government ID.
+            </Text>
+            <Text style={styles.rejectionContact}>
+              If you've already submitted a valid ID and believe this is a
+              mistake, contact support from the Help screen.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.iconCircle}>
+            <Ionicons name="shield-checkmark" size={48} color={Colors.primary} />
+          </View>
+        )}
         <Text style={styles.bullet}>
           <Text style={styles.bulletStrong}>1. </Text>Take a photo of a
           government ID (driver's license or passport)
@@ -331,8 +361,12 @@ const OnboardingKycScreen: React.FC = () => {
   return (
     <OnboardingShell
       step={4}
-      title="Verify your identity"
-      subtitle="Required for safety. Takes about a minute, fully automatic."
+      title={wasPreviouslyRejected ? "Try verification again" : "Verify your identity"}
+      subtitle={
+        wasPreviouslyRejected
+          ? "Submit a clear photo of a valid, current government ID."
+          : "Required for safety. Takes about a minute, fully automatic."
+      }
       continueDisabled
       onContinue={() => {}}
       // Hide the default Continue button — our body has its own CTA.
@@ -366,6 +400,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.lg,
+  },
+  rejectionNotice: {
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.error + "08",
+    borderWidth: 1,
+    borderColor: Colors.error + "30",
+    alignItems: "center",
+  },
+  rejectionIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.error + "15",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+  },
+  rejectionTitle: {
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.text.primary,
+    textAlign: "center",
+    marginBottom: Spacing.xs,
+  },
+  rejectionBody: {
+    fontSize: Typography.fontSize.sm,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.primary,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: Spacing.sm,
+  },
+  rejectionContact: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 18,
   },
   bullet: {
     fontSize: Typography.fontSize.base,

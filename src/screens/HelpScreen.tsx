@@ -47,7 +47,7 @@ const helpCategories: HelpCategory[] = [
       { id: "like-send", title: "How to send a Like" },
       { id: "like-receive", title: "How to view Likes you've received" },
       { id: "like-match", title: "What is a Match?" },
-      { id: "like-history", title: "View past Likes" },
+      { id: "like-history", title: "View Likes you've sent" },
     ],
   },
   {

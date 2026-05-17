@@ -26,10 +26,10 @@ import { Spacing, BorderRadius } from "../constants/spacing";
 import { Typography } from "../constants/typography";
 import { User } from "../types/dataModels";
 import { getAgeRange, calculateAge } from "../utils/formatters";
+import { StreakBadge } from "./StreakBadge";
 
 const PinOutlineIcon = require("../../assets/images/Icons/Pin-Outline.png");
 const verifyBadge = require("../../assets/images/badges/Verify.png");
-const goldBadge = require("../../assets/images/badges/Gold.png");
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
   Dimensions.get("window");
@@ -340,13 +340,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
                 <Text style={styles.userName} numberOfLines={1}>
                   {user.name}
                 </Text>
-                {user.is_premium && (
-                  <Image
-                    source={goldBadge}
-                    style={styles.badge}
-                    resizeMode="contain"
-                  />
-                )}
+                <StreakBadge days={user.current_streak_days} />
                 <View style={styles.genderAgeBadge}>
                   {user.gender === "male" ? (
                     <Ionicons name="male" size={14} color="#5B9BD5" />
@@ -709,13 +703,7 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
                   <Text style={styles.userName} numberOfLines={1}>
                     {user.name}
                   </Text>
-                  {user.is_premium && (
-                    <Image
-                      source={goldBadge}
-                      style={styles.badge}
-                      resizeMode="contain"
-                    />
-                  )}
+                  <StreakBadge days={user.current_streak_days} />
                   <View style={styles.genderAgeBadge}>
                   {user.gender === "male" ? (
                     <Ionicons name="male" size={14} color="#5B9BD5" />

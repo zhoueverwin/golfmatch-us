@@ -21,6 +21,7 @@ interface CachedProfile {
   bio?: string;
   profile_pictures: string[];
   is_premium?: boolean;
+  current_streak_days?: number;
   blood_type?: string;
   height?: string;
   body_type?: string;
@@ -141,6 +142,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     .eq("id", id);
                 } catch (err) {
                   console.warn("[AuthContext] Failed to update login timestamps:", err);
+                }
+              })();
+              // Bump the daily-return streak once per app open. Idempotent
+              // server-side: same-day calls return the existing count unchanged.
+              (async () => {
+                try {
+                  const { data, error } = await supabase.rpc("bump_streak", { p_user_id: id });
+                  if (error || !isMounted) return;
+                  const row = Array.isArray(data) ? data[0] : data;
+                  const days = row?.current_streak_days;
+                  if (typeof days === "number") {
+                    setUserProfile((prev) =>
+                      prev ? { ...prev, current_streak_days: days } : prev,
+                    );
+                  }
+                } catch (err) {
+                  console.warn("[AuthContext] bump_streak failed:", err);
                 }
               })();
             } else if (retryCount < 3 && isMounted) {

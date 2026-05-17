@@ -56,7 +56,7 @@ const OnboardingStateScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={4}
+      step={2}
       title="Where do you live?"
       subtitle="We use this to surface golfers near you."
       continueDisabled={!selected || saving}

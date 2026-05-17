@@ -12,7 +12,8 @@ export class PostsService {
     name,
     profile_pictures,
     is_verified,
-    is_premium
+    is_premium,
+    current_streak_days
   `;
 
   // Minimal post fields needed for feed display
@@ -35,6 +36,7 @@ export class PostsService {
     profile_pictures,
     is_verified,
     is_premium,
+    current_streak_days,
     prefecture,
     golf_skill_level,
     average_score
@@ -92,6 +94,7 @@ export class PostsService {
         profile_pictures: user?.profile_pictures || [],
         is_verified: user?.is_verified || false,
         is_premium: user?.is_premium || false,
+        current_streak_days: user?.current_streak_days ?? 0,
         last_login: '',
         created_at: '',
         updated_at: '',

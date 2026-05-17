@@ -13,7 +13,6 @@ export default {
       supportsTablet: true,
       bundleIdentifier: "golfmatchdating.us.com",
       googleServicesFile: "./GoogleService-Info.plist",
-      appStoreIcon: "./assets/icon.png",
       infoPlist: {
         UIBackgroundModes: [
           "remote-notification"

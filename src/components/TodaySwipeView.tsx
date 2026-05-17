@@ -21,7 +21,6 @@ import { DataProvider } from "../services";
 import { useAuth } from "../contexts/AuthContext";
 import { userInteractionService } from "../services/userInteractionService";
 import { UserActivityService } from "../services/userActivityService";
-import { supabase } from "../services/supabase";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const TAB_BAR_BASE_HEIGHT = 65;
@@ -31,35 +30,17 @@ interface TodaySwipeViewProps {
 }
 
 const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
-  const { profileId } = useAuth();
+  const { profileId, userProfile } = useAuth();
   const insets = useSafeAreaInsets();
   const [users, setUsers] = useState<User[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [cardAreaHeight, setCardAreaHeight] = useState(SCREEN_HEIGHT * 0.70);
-  const [streakDays, setStreakDays] = useState<number | null>(null);
   const [nextPicksCountdown, setNextPicksCountdown] = useState<string>("");
   const swipeCardRef = useRef<SwipeCardRef>(null);
 
   const tabBarHeight = TAB_BAR_BASE_HEIGHT + Math.max(insets.bottom * 0.5, 4);
-
-  // Bump the daily-return streak on screen mount. Idempotent server-side
-  // (no-op if today is already counted) so it's safe to call on every mount.
-  useEffect(() => {
-    if (!profileId) return;
-    supabase
-      .rpc("bump_streak", { p_user_id: profileId })
-      .then(({ data, error }) => {
-        if (error) {
-          console.warn("[TodaySwipeView] bump_streak failed:", error.message);
-          return;
-        }
-        const row = Array.isArray(data) ? data[0] : data;
-        if (row?.current_streak_days != null) {
-          setStreakDays(row.current_streak_days);
-        }
-      });
-  }, [profileId]);
+  const streakDays = userProfile?.current_streak_days ?? null;
 
   // Countdown to the next UTC midnight, when get_daily_recommendations rolls
   // its window and a fresh batch becomes available. Updates every second when

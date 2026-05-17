@@ -218,6 +218,42 @@ Deno.serve(async (req: Request) => {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+  // Permanent lockout: if an admin has previously marked this user's KYC as
+  // permanently_rejected (e.g. confirmed fake ID via Didit console), no
+  // subsequent Didit verdict can re-approve them. Force-write rejected and
+  // skip everything else.
+  const { data: lockoutRows, error: lockoutError } = await supabase
+    .from("kyc_submissions")
+    .select("id")
+    .eq("user_id", profileId)
+    .eq("permanently_rejected", true)
+    .limit(1);
+
+  if (lockoutError) {
+    console.error(
+      `[didit-webhook] permanently_rejected lookup failed for ${profileId}:`,
+      lockoutError,
+    );
+  } else if (lockoutRows && lockoutRows.length > 0) {
+    console.warn(
+      `[didit-webhook] Ignoring verdict for permanently-rejected user ${profileId} ` +
+        `(incoming status=${profileStatus}, session=${event.session_id})`,
+    );
+    await supabase
+      .from("profiles")
+      .update({
+        kyc_status: "rejected",
+        is_verified: false,
+        kyc_verified_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profileId);
+    return new Response(
+      JSON.stringify({ status: "ok", action: "permanently_rejected_lockout" }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   // Approved: pull ID-extracted fields and write them as the source of truth.
   if (profileStatus === "approved") {
     const idData = event.decision?.id_verifications?.[0];
