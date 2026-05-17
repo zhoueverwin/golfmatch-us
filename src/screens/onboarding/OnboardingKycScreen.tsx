@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -69,6 +68,16 @@ const OnboardingKycScreen: React.FC = () => {
   );
   const advancedRef = useRef(false);
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Read attempt count from the profile (auto-incremented by a DB trigger
+  // whenever kyc_status flips to 'rejected'/'retry'). Used to gate the
+  // "Submit for manual review" escape hatch — only available after 2
+  // prior Didit failures, so the admin queue isn't spammed by drive-by
+  // attempts.
+  const [manualReviewSubmitting, setManualReviewSubmitting] = useState(false);
+  const attemptCount =
+    (userProfile as { kyc_attempt_count?: number } | null | undefined)
+      ?.kyc_attempt_count ?? 0;
 
   // When we enter "waiting", arm a 90s timer that surfaces a retry/escape
   // affordance if Didit hasn't returned a verdict by then (pending_review
@@ -160,25 +169,53 @@ const OnboardingKycScreen: React.FC = () => {
         navigation.navigate("OnboardingPaywall");
       }
     } else if (status === "rejected") {
-      advancedRef.current = true;
-      Alert.alert(
-        "Verification failed",
-        "We couldn't verify your identity. You can retry, or sign out to switch accounts.",
-        [
-          {
-            text: "Retry",
-            onPress: () => {
-              advancedRef.current = false;
-              setPhase("intro");
-            },
-          },
-        ],
-      );
+      // Didit already shows its own "verification failed" notification on the
+      // user's device; don't duplicate it with an in-app Alert. Just bounce
+      // back to the intro phase so the user can retry via the "Start
+      // Verification" CTA. We deliberately do NOT set advancedRef.current here
+      // because setPhase("intro") is idempotent — if realtime redelivers the
+      // same "rejected" event, the second call has no visible effect.
+      setPhase("intro");
     } else if (status === "retry") {
       // Didit timed out / abandoned — let them restart.
       setPhase("intro");
     }
     // pending_review → keep waiting
+  };
+
+  // Escape hatch for users who've failed Didit's automated check at least
+  // twice. Parks their latest submission in the admin review queue
+  // (kyc_submissions.status = 'pending_review') so a human can review the ID
+  // images and approve manually. The user lands on the same "Under review"
+  // waiting screen they'd see if Didit itself had escalated.
+  const submitForManualReview = async () => {
+    if (manualReviewSubmitting || !session?.access_token) return;
+    setManualReviewSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const fnUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/request-kyc-review`;
+      const res = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      // Re-use the existing "Under review" UI by flipping into the waiting
+      // phase with pending_review state. Realtime will navigate the user
+      // onward once an admin makes a decision.
+      setLiveKycStatus("pending_review");
+      setPhase("waiting");
+    } catch (e: unknown) {
+      setErrorMessage(
+        (e as Error)?.message ?? "Couldn't submit for manual review.",
+      );
+    } finally {
+      setManualReviewSubmitting(false);
+    }
   };
 
   const startVerification = async () => {
@@ -354,6 +391,29 @@ const OnboardingKycScreen: React.FC = () => {
         >
           <Text style={styles.primaryButtonText}>Start verification</Text>
         </TouchableOpacity>
+
+        {wasPreviouslyRejected && attemptCount >= 2 ? (
+          <>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              activeOpacity={0.85}
+              onPress={submitForManualReview}
+              disabled={manualReviewSubmitting}
+            >
+              {manualReviewSubmitting ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Text style={styles.secondaryButtonText}>
+                  Submit for manual review
+                </Text>
+              )}
+            </TouchableOpacity>
+            <Text style={styles.secondaryHelper}>
+              A team member will review your submission within 48 hours. You'll
+              get a notification when it's done.
+            </Text>
+          </>
+        ) : null}
       </View>
     );
   };
@@ -501,6 +561,36 @@ const styles = StyleSheet.create({
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     fontWeight: Typography.fontWeight.bold,
     color: Colors.white,
+  },
+  // Ghost variant of primaryButton — same shape, transparent fill, teal
+  // border. Visually subordinate so the user gravitates toward the primary
+  // "Start verification" CTA first and only reaches for manual review as a
+  // fallback.
+  secondaryButton: {
+    height: 56,
+    borderRadius: BorderRadius.full,
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+  },
+  secondaryButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.primary,
+  },
+  secondaryHelper: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 18,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
   waitingTitle: {
     fontSize: Typography.fontSize.lg,
