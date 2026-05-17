@@ -34,6 +34,7 @@ import { Typography } from "../constants/typography";
 import { UserProfile, CalendarData, Post } from "../types/dataModels";
 import Loading from "../components/Loading";
 import EmptyState from "../components/EmptyState";
+import EmptyPostsHint from "../components/EmptyPostsHint";
 import GolfCalendar from "../components/GolfCalendar";
 import ImageCarousel from "../components/ImageCarousel";
 import VideoPlayer from "../components/VideoPlayer";
@@ -1189,9 +1190,11 @@ const UserProfileScreen: React.FC = () => {
             </View>
           ) : (
             <View style={styles.emptyPostsContainer}>
-              <EmptyState
-                title="No Posts Yet"
-                subtitle="This user hasn't posted anything yet."
+              <EmptyPostsHint
+                isOwnProfile={profileId === userId}
+                onCreatePost={() =>
+                  navigation.navigate("Main", { screen: "Home" })
+                }
               />
             </View>
           )}

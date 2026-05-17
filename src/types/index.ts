@@ -2,6 +2,7 @@
 export * from "./dataModels";
 export * from "./auth";
 import { User, SearchFilters } from "./dataModels";
+import type { NavigatorScreenParams } from "@react-navigation/native";
 
 // Matching and Likes Types
 export interface Like {
@@ -71,7 +72,7 @@ export type RootStackParamList = {
   OnboardingPhoto: undefined;
   OnboardingKyc: undefined;
   OnboardingPaywall: undefined;
-  Main: undefined;
+  Main: NavigatorScreenParams<MainTabParamList> | undefined;
   Chat: { chatId: string; userId: string; userName: string; userImage: string };
   Profile: { userId: string; refresh?: boolean };
   EditProfile: undefined;
