@@ -5,6 +5,13 @@ import { createBottomTabNavigator, BottomTabBarProps } from "@react-navigation/b
 import { Ionicons } from "@expo/vector-icons";
 import { TouchableOpacity, View, Image, Text, Linking, Platform } from "react-native";
 import { LinkingOptions } from "@react-navigation/native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 import { Colors } from "../constants/colors";
 import { RootStackParamList, MainTabParamList } from "../types";
@@ -63,7 +70,120 @@ import MembershipStatusScreen from "../screens/MembershipStatusScreen";
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Custom tab bar component
+// ---------- Animated bottom tab bar ("bounce-lift") ----------
+// Layout stays classic (icon on top, label always visible below). On every
+// activation the icon does a one-shot kick: jumps up + scales up briefly, then
+// settles at a small permanent lift so the active tab is still distinct at
+// rest. Inspired by Instagram/Threads/ensports — motion lives on the icon, not
+// in the layout.
+
+type TabItemProps = {
+  isFocused: boolean;
+  iconSource: number;
+  label: string;
+  showBadge: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+  accessibilityLabel?: string;
+};
+
+const TabItem = ({
+  isFocused,
+  iconSource,
+  label,
+  showBadge,
+  onPress,
+  onLongPress,
+  accessibilityLabel,
+}: TabItemProps) => {
+  // Steady-state focus value (0 = unfocused, 1 = focused). Springs smoothly.
+  const focus = useSharedValue(isFocused ? 1 : 0);
+  // One-shot kick value (0 → 1 → 0). Pulses only when becoming focused.
+  const kick = useSharedValue(0);
+  const prevFocused = useRef(isFocused);
+
+  useEffect(() => {
+    focus.value = withSpring(isFocused ? 1 : 0, {
+      damping: 16,
+      stiffness: 200,
+      mass: 1,
+    });
+    // Trigger the bounce only on the unfocused → focused transition so re-
+    // renders (e.g., badge updates) don't make every active tab re-jump.
+    if (isFocused && !prevFocused.current) {
+      kick.value = withSequence(
+        withTiming(1, { duration: 140 }),
+        withSpring(0, { damping: 9, stiffness: 180 }),
+      );
+    }
+    prevFocused.current = isFocused;
+  }, [isFocused, focus, kick]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [
+      // Steady lift -2pt when active + transient -6pt during the kick.
+      { translateY: -2 * focus.value + -6 * kick.value },
+      // Steady scale 1.06 when active + transient pop of +0.14 during kick.
+      { scale: 1 + 0.06 * focus.value + 0.14 * kick.value },
+    ],
+  }));
+
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={isFocused ? { selected: true } : {}}
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      activeOpacity={0.75}
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingTop: 20,
+        paddingBottom: 14,
+      }}
+    >
+      <Animated.View style={[iconStyle, { position: "relative" }]}>
+        <Image
+          source={iconSource}
+          style={{
+            width: 22,
+            height: 22,
+            marginTop: -2,
+            marginBottom: 4,
+          }}
+          resizeMode="contain"
+          fadeDuration={0}
+        />
+        {showBadge && (
+          <View
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: Colors.primary,
+            }}
+          />
+        )}
+      </Animated.View>
+      <Text
+        style={{
+          fontSize: 10,
+          fontWeight: "600",
+          marginTop: 0,
+          color: isFocused ? Colors.primary : Colors.gray[500],
+        }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
 const CustomTabBar = (props: BottomTabBarProps) => {
   const { insets } = props;
   const tabBarHeight = 65;
@@ -114,130 +234,58 @@ const CustomTabBar = (props: BottomTabBarProps) => {
             });
           };
 
-          const iconSize = 22;
-          let iconSource;
+          let iconSource: number;
+          let label: string;
+          let showBadge = false;
           switch (route.name) {
             case "Home":
               iconSource = isFocused
                 ? require("../../assets/images/Icons/Home-Fill.png")
                 : require("../../assets/images/Icons/Home-Outline.png");
+              label = "Feed";
               break;
             case "Search":
               iconSource = isFocused
                 ? require("../../assets/images/Icons/Search-Fill.png")
                 : require("../../assets/images/Icons/Search-Outline.png");
+              label = "Discover";
               break;
             case "Connections":
               iconSource = isFocused
                 ? require("../../assets/images/Icons/Users-Fill.png")
                 : require("../../assets/images/Icons/Users-Outline.png");
+              label = "Connections";
+              showBadge = hasNewConnections;
               break;
             case "Messages":
               iconSource = isFocused
                 ? require("../../assets/images/Icons/Message-Fill.png")
                 : require("../../assets/images/Icons/Message-Outline.png");
+              label = "Messages";
+              showBadge = hasNewMessages;
               break;
             case "MyPage":
               iconSource = isFocused
                 ? require("../../assets/images/Icons/Profile-Fill.png")
                 : require("../../assets/images/Icons/Profile-Outline.png");
+              label = "My Page";
+              showBadge = hasNewMyPageNotification;
               break;
             default:
               return null;
           }
 
-          const label =
-            route.name === "Home"
-              ? "Feed"
-              : route.name === "Search"
-              ? "Discover"
-              : route.name === "Connections"
-              ? "Connections"
-              : route.name === "Messages"
-              ? "Messages"
-              : route.name === "MyPage"
-              ? "My Page"
-              : "";
-
           return (
-            <TouchableOpacity
+            <TabItem
               key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
+              isFocused={isFocused}
+              iconSource={iconSource}
+              label={label}
+              showBadge={showBadge}
               onPress={onPress}
               onLongPress={onLongPress}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingTop: 20,
-                paddingBottom: 14,
-              }}
-            >
-              <View style={{ position: "relative" }}>
-                <Image
-                  source={iconSource}
-                  style={{
-                    width: iconSize,
-                    height: iconSize,
-                    marginTop: -2,
-                    marginBottom: 4,
-                  }}
-                  resizeMode="contain"
-                  fadeDuration={0}
-                />
-                {route.name === "Connections" && hasNewConnections && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: -4,
-                      right: -4,
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: Colors.primary,
-                    }}
-                  />
-                )}
-                {route.name === "Messages" && hasNewMessages && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: -4,
-                      right: -4,
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: Colors.primary,
-                    }}
-                  />
-                )}
-                {route.name === "MyPage" && hasNewMyPageNotification && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: -4,
-                      right: -4,
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: Colors.primary,
-                    }}
-                  />
-                )}
-              </View>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "600",
-                  marginTop: 0,
-                  color: isFocused ? Colors.primary : Colors.gray[500],
-                }}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
+              accessibilityLabel={options.tabBarAccessibilityLabel}
+            />
           );
         })}
       </View>
@@ -248,6 +296,7 @@ const CustomTabBar = (props: BottomTabBarProps) => {
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator
+      initialRouteName="Search"
       tabBar={(props: BottomTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -261,11 +310,6 @@ const MainTabNavigator = () => {
       }}
     >
       <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{ tabBarLabel: "Discover" }}
-      />
-      <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{ tabBarLabel: "Feed" }}
@@ -274,6 +318,11 @@ const MainTabNavigator = () => {
         name="Connections"
         component={ConnectionsScreen}
         options={{ tabBarLabel: "Connections" }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{ tabBarLabel: "Discover" }}
       />
       <Tab.Screen
         name="Messages"
