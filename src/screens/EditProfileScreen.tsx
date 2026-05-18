@@ -484,7 +484,7 @@ const EditProfileScreen: React.FC = () => {
         },
         golf: {
           experience: formData.golf_experience,
-          skill_level: formData.golf_skill_level, // Save Japanese value directly to DB
+          skill_level: formData.golf_skill_level,
           average_score: formData.average_score,
           best_score: formData.best_score,
           transportation: formData.transportation,
@@ -1181,7 +1181,6 @@ const EditProfileScreen: React.FC = () => {
               "Advanced",
               "Pro",
             ])}
-            {/* Note: Values are persisted to DB; update DB constraint if needed */}
 
             {renderInputField("Average Score", "average_score", "e.g. 120-130")}
             {renderInputField("Best Score", "best_score", "e.g. 88")}

@@ -19,7 +19,6 @@ import YouTubeEmbed from "./YouTubeEmbed";
 import { extractYouTubeVideos } from "../utils/youtubeUtils";
 import { StreakBadge } from "./StreakBadge";
 
-const verifyBadge = require("../../assets/images/badges/Verify.png");
 const messageIcon = require("../../assets/images/Icons/message.png");
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -34,12 +33,6 @@ const ProfileImage = memo(({ uri, name }: { uri: string; name: string }) => (
     transition={0}
     accessibilityLabel={`${name}'s profile photo`}
   />
-));
-
-const VerificationBadge = memo(() => (
-  <View style={styles.verificationPill}>
-    <Image source={verifyBadge} style={styles.badgeIcon} resizeMode="contain" />
-  </View>
 ));
 
 interface PostItemProps {
@@ -412,15 +405,5 @@ const styles = StyleSheet.create({
   },
   disabledActionText: {
     color: Colors.gray[400],
-  },
-  verificationPill: {
-    marginLeft: Spacing.xs,
-  },
-  premiumPill: {
-    marginLeft: Spacing.xs,
-  },
-  badgeIcon: {
-    width: 16,
-    height: 16,
   },
 });

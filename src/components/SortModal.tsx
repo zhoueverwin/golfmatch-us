@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Colors } from "../constants/colors";
-import { Spacing, BorderRadius } from "../constants/spacing";
+import { Spacing, BorderRadius, Shadows } from "../constants/spacing";
 import { Typography } from "../constants/typography";
 
 export type SortOption = "recommended" | "login" | "likes" | "registration";
@@ -19,41 +19,65 @@ export type SortOption = "recommended" | "login" | "likes" | "registration";
 interface SortOptionItem {
   key: SortOption;
   label: string;
-  premium: boolean;
+  description: string;
+  iconOutline: keyof typeof Ionicons.glyphMap;
+  iconFilled: keyof typeof Ionicons.glyphMap;
 }
 
+/**
+ * Each option carries a short description that demystifies the sort logic
+ * — "Recommended" alone doesn't tell the user what the algorithm actually
+ * does; "Best matches for you" does. Subtitles also help differentiate
+ * "Recently active" from "Newest members" which can read as similar at a
+ * glance.
+ */
 const SORT_OPTIONS: SortOptionItem[] = [
-  { key: "recommended", label: "Recommended", premium: false },
-  { key: "login", label: "Recently active", premium: true },
-  { key: "likes", label: "Most liked", premium: true },
-  { key: "registration", label: "Newest members", premium: true },
+  {
+    key: "recommended",
+    label: "Recommended",
+    description: "Best matches for you",
+    iconOutline: "ribbon-outline",
+    iconFilled: "ribbon",
+  },
+  {
+    key: "login",
+    label: "Recently active",
+    description: "Active in the last few hours",
+    iconOutline: "time-outline",
+    iconFilled: "time",
+  },
+  {
+    key: "likes",
+    label: "Most liked",
+    description: "Profiles with the most Likes",
+    iconOutline: "heart-outline",
+    iconFilled: "heart",
+  },
+  {
+    key: "registration",
+    label: "Newest members",
+    description: "Recently joined GolfMatch",
+    iconOutline: "person-add-outline",
+    iconFilled: "person-add",
+  },
 ];
 
 interface SortModalProps {
   visible: boolean;
   currentSort: SortOption;
-  isPremium: boolean;
   onSelect: (sort: SortOption) => void;
   onClose: () => void;
-  onPremiumPress?: () => void;
 }
 
 const SortModal: React.FC<SortModalProps> = ({
   visible,
   currentSort,
-  isPremium,
   onSelect,
   onClose,
-  onPremiumPress,
 }) => {
   const insets = useSafeAreaInsets();
 
   const handleSelect = (option: SortOptionItem) => {
-    if (option.premium && !isPremium) {
-      onClose();
-      onPremiumPress?.();
-      return;
-    }
     onSelect(option.key);
     onClose();
   };
@@ -65,17 +89,31 @@ const SortModal: React.FC<SortModalProps> = ({
       animationType="slide"
       onRequestClose={onClose}
     >
+      {/* Tap-anywhere-outside-to-dismiss scrim */}
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay} />
       </TouchableWithoutFeedback>
 
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }]}>
+      <View
+        style={[
+          styles.sheet,
+          { paddingBottom: Math.max(insets.bottom, Spacing.md) },
+        ]}
+      >
+        {/* iOS-style drag handle. Visual affordance for swipe-down-to-dismiss
+            (the underlying Modal already handles the gesture on iOS). */}
+        <View style={styles.handleContainer}>
+          <View style={styles.handle} />
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={onClose}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close sort options"
           >
             <Ionicons name="close" size={24} color={Colors.text.primary} />
           </TouchableOpacity>
@@ -83,43 +121,64 @@ const SortModal: React.FC<SortModalProps> = ({
           <View style={styles.headerSpacer} />
         </View>
 
-        {/* Options */}
-        {SORT_OPTIONS.map((option, index) => {
-          const isSelected = currentSort === option.key;
-          const isLocked = option.premium && !isPremium;
+        {/* Options card */}
+        <View style={styles.cardWrapper}>
+          <View style={styles.card}>
+            {SORT_OPTIONS.map((option, index) => {
+              const isSelected = currentSort === option.key;
+              const isLast = index === SORT_OPTIONS.length - 1;
 
-          return (
-            <React.Fragment key={option.key}>
-              {/* Divider before premium section */}
-              {index > 0 && !SORT_OPTIONS[index - 1].premium && option.premium && (
-                <View style={styles.sectionDivider} />
-              )}
-              <TouchableOpacity
-                style={[
-                  styles.optionRow,
-                  option.premium && styles.optionRowPremium,
-                ]}
-                onPress={() => handleSelect(option)}
-                activeOpacity={isLocked ? 1 : 0.6}
-              >
-                <Text
-                  style={[
-                    styles.optionLabel,
-                    isLocked && styles.optionLabelLocked,
-                  ]}
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.row, !isLast && styles.rowBorder]}
+                  onPress={() => handleSelect(option)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${option.label}, ${option.description}`}
+                  accessibilityState={{ selected: isSelected }}
                 >
-                  {option.label}
-                </Text>
-                {isSelected && !isLocked && (
-                  <Ionicons name="checkmark" size={22} color={Colors.primary} />
-                )}
-                {isLocked && (
-                  <Ionicons name="lock-closed" size={18} color="#D4A017" />
-                )}
-              </TouchableOpacity>
-            </React.Fragment>
-          );
-        })}
+                  <View style={styles.rowLeft}>
+                    <View
+                      style={[
+                        styles.iconContainer,
+                        isSelected && styles.iconContainerActive,
+                      ]}
+                    >
+                      <Ionicons
+                        name={isSelected ? option.iconFilled : option.iconOutline}
+                        size={18}
+                        color={isSelected ? Colors.primary : Colors.gray[500]}
+                      />
+                    </View>
+                    <View style={styles.rowText}>
+                      <Text
+                        style={[
+                          styles.rowLabel,
+                          isSelected && styles.rowLabelActive,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                      <Text style={styles.rowDescription}>
+                        {option.description}
+                      </Text>
+                    </View>
+                  </View>
+                  {isSelected ? (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={22}
+                      color={Colors.primary}
+                    />
+                  ) : (
+                    <View style={styles.unselectedDot} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
       </View>
     </Modal>
   );
@@ -128,19 +187,34 @@ const SortModal: React.FC<SortModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   sheet: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
   },
+
+  // iOS drag handle (purely visual — the gesture is handled by Modal itself)
+  handleContainer: {
+    alignItems: "center",
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  handle: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.gray[300],
+  },
+
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
   },
   closeButton: {
@@ -150,7 +224,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: Typography.fontSize.base,
+    fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.bold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     color: Colors.text.primary,
@@ -158,28 +232,78 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 32,
   },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: Colors.gray[100],
-    marginHorizontal: Spacing.lg,
+
+  // Options card
+  cardWrapper: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
   },
-  optionRow: {
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+    ...Shadows.small,
+  },
+
+  // Row
+  row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md + 2,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
+    minHeight: 64,
   },
-  optionRowPremium: {
-    backgroundColor: "#FFF8E1",
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.gray[200],
   },
-  optionLabel: {
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.gray[100],
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.sm + 2,
+  },
+  iconContainerActive: {
+    backgroundColor: Colors.primary + "15",
+  },
+  rowText: {
+    flex: 1,
+  },
+  rowLabel: {
     fontSize: Typography.fontSize.base,
     fontFamily: Typography.fontFamily.regular,
     color: Colors.text.primary,
+    marginBottom: 2,
   },
-  optionLabelLocked: {
+  rowLabelActive: {
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.primary,
+  },
+  rowDescription: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.fontFamily.regular,
     color: Colors.text.secondary,
+    lineHeight: 16,
+  },
+
+  // Empty placeholder circle for unselected rows — keeps the right column
+  // a constant width so labels don't shift when the user picks a new sort.
+  unselectedDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: Colors.gray[300],
   },
 });
 

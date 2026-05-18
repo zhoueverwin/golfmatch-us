@@ -32,8 +32,6 @@ import { getProfilePicture } from "../constants/defaults";
 import { useUserPosts, useReactToPost, useUnreactToPost } from "../hooks/queries/usePosts";
 import { useAuth } from "../contexts/AuthContext";
 
-const verifyBadge = require("../../assets/images/badges/Verify.png");
-
 const { width } = Dimensions.get("window");
 
 type UserPostsScreenRouteProp = RouteProp<RootStackParamList, "UserPosts">;

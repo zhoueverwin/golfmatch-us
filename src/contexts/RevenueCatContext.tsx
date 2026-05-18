@@ -8,6 +8,12 @@ import { Platform } from "react-native";
 
 interface RevenueCatContextType {
   isInitialized: boolean;
+  // True once we've attempted to login the current authenticated user to
+  // RevenueCat and either resolved their CustomerInfo or failed trying.
+  // AppNavigator gates paywall vs. Main on this — otherwise non-female
+  // users see a one-frame paywall flash on cold start before
+  // isProMember flips from its default `false`.
+  isEntitlementResolved: boolean;
   isProMember: boolean;
   customerInfo: CustomerInfo | null;
   currentOffering: PurchasesOffering | null;
@@ -35,6 +41,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const { profileId, user } = useAuth();
   const queryClient = useQueryClient();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isEntitlementResolved, setIsEntitlementResolved] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
   const [isProMember, setIsProMember] = useState(false);
@@ -305,8 +312,12 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           const info = await revenueCatService.login(profileId);
           loggedInProfileRef.current = profileId;
           if (info) {
-            updateCustomerState(info);
+            await updateCustomerState(info);
           }
+          // Mark resolved even on login failure — otherwise AppNavigator's
+          // gate would deadlock on a transient RC error and the user would
+          // be stuck on the loading screen forever.
+          setIsEntitlementResolved(true);
         }
       } else if (!isAuthenticated && wasAuthenticated) {
         // User logged out (was previously logged in) - reset RevenueCat
@@ -317,6 +328,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
         setIsProMember(false);
         setExpirationDate(null);
         setWillRenew(false);
+        setIsEntitlementResolved(false);
       }
 
       // Update previous user ref
@@ -355,6 +367,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
 
   const value: RevenueCatContextType = {
     isInitialized,
+    isEntitlementResolved,
     isProMember,
     customerInfo,
     currentOffering,

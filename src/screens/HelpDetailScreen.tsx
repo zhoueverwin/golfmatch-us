@@ -146,9 +146,9 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "post-create",
     title: "Create a Post",
     description:
-      "Create posts from the Home screen. You'll need to complete identity verification (KYC) first.",
+      "Create posts from the Home screen. You'll need to complete identity verification first.",
     steps: [
-      "Tap the + button at the bottom right of Home",
+      "Tap the + button in the top right of Home",
       "Write your post text",
       "Optionally add photos or video",
       "Tap Post",
@@ -317,24 +317,25 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "membership-benefits",
     title: "Premium Benefits",
     description:
-      "Premium members can send unlimited messages.",
+      "Your monthly subscription includes the features below.",
     steps: [
-      "Unlimited messaging with anyone you've matched with",
-      "Access member-only features",
-      "Build deeper connections faster",
-      "Cancel anytime, no hidden fees",
+      "Featured placement — your profile is featured in daily recommendations and search results across the app",
+      "Direct messaging — send messages to anyone you've matched with",
+      "Daily curated picks — a fresh batch of hand-picked compatible golfers delivered every day",
     ],
-    additionalInfo: "See the Store for current pricing. Subscriptions are billed through the App Store or Google Play and auto-renew each month.",
+    additionalInfo:
+      "Subscriptions are billed through the App Store or Google Play and auto-renew monthly. Cancel anytime from your device's subscription settings.",
   },
   "membership-purchase": {
     id: "membership-purchase",
     title: "Subscribe to Premium",
     description:
-      "Buy a Premium membership from the Store screen.",
+      "Start a subscription from the Manage Subscription page in Settings.",
     steps: [
-      "Tap Store from My Page",
+      "Tap Settings from My Page",
+      "Tap Manage Subscription",
+      "Tap Become a Premium Member",
       "Review what's included",
-      "Tap Subscribe",
       "Complete payment via the App Store or Google Play",
     ],
   },
@@ -357,7 +358,9 @@ const helpDetails: Record<string, HelpDetail> = {
     description:
       "If you switched devices and your subscription isn't showing up, restore your purchase.",
     steps: [
-      "Tap Store from My Page",
+      "Tap Settings from My Page",
+      "Tap Manage Subscription",
+      "Tap Become a Premium Member to open the Store",
       "Tap Restore Purchases at the bottom",
       "Sign in with your Apple ID or Google account",
       "Your purchase will be restored",
@@ -369,30 +372,29 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "kyc-process",
     title: "Identity Verification Steps",
     description:
-      "Once verified, a verified badge will appear on your profile.",
+      "Identity verification is part of signing up. You can't use GolfMatch until verification is complete — we'll guide you through it automatically.",
     steps: [
-      "Tap Settings from My Page",
-      "Tap Identity Verification",
-      "Choose your ID document type",
-      "Take photos of the front and back of your ID",
-      "Take a selfie",
-      "Take a photo holding your ID next to your face",
-      "Take a photo of yourself playing golf",
-      "Submit and wait for review",
+      "After you finish entering your basic profile during signup, you'll be taken to the verification step",
+      "Tap Start Verification — a secure verification page opens",
+      "Scan a government-issued ID when prompted",
+      "Take a short selfie video for a liveness check",
+      "Return to GolfMatch and wait for the result",
     ],
+    additionalInfo:
+      "Most results come back within a few minutes. Complex cases can take up to 24 hours. If your status ever needs to be refreshed, you can re-verify from Settings → Manage Subscription → Identity Verification.",
   },
   "kyc-documents": {
     id: "kyc-documents",
     title: "Accepted ID Documents",
     description:
-      "You can verify your identity with any of the following.",
+      "Verification accepts most government-issued photo IDs.",
     steps: [
-      "State ID Card",
       "Driver's License",
+      "State ID Card",
       "Passport",
-      "Health Insurance Card",
     ],
-    additionalInfo: "Make sure your document is not expired.",
+    additionalInfo:
+      "Your document must be unexpired and show clear, glare-free photos of both sides where applicable.",
   },
   "kyc-required": {
     id: "kyc-required",
@@ -404,13 +406,14 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "kyc-failed",
     title: "If Verification Fails",
     description:
-      "If your verification didn't go through, check the following.",
+      "If your verification was rejected, you can retry. Most failures are fixed with a clearer scan in better lighting.",
     steps: [
-      "Make sure your document photo is sharp and in focus",
-      "All four corners of the document must be visible",
-      "Make sure your document is not expired",
-      "Your selfie should be bright and clear",
-      "If you still need help, contact support",
+      "Use a well-lit area when scanning your ID and recording the selfie",
+      "Make sure all corners of your ID are visible and free of glare",
+      "Use an unexpired government-issued ID",
+      "Hold the ID steady and follow the on-screen prompts carefully",
+      "After two failed attempts, a manual review option becomes available",
+      "If issues continue, contact support and we'll help you through it",
     ],
   },
 
@@ -579,7 +582,7 @@ const helpDetails: Record<string, HelpDetail> = {
       "App won't start → fully close the app and reopen",
       "Photos not loading → check your internet connection",
       "Not getting notifications → check your device and app notification settings",
-      "Can't sign in → double-check your email and try again",
+      "Can't sign in → make sure you're using the same Google or Apple account you originally signed up with",
     ],
   },
   "bug-app-update": {
@@ -601,14 +604,14 @@ const helpDetails: Record<string, HelpDetail> = {
     title: "Privacy Policy",
     description:
       "Read our Privacy Policy on the web. Tap the link below to open it.",
-    link: "https://www.golfmatch.info/?page=privacypolicy-jp",
+    link: "https://dating.golfmatch.info/privacy.html",
   },
   "terms-of-service": {
     id: "terms-of-service",
     title: "Terms of Service",
     description:
       "Read our Terms of Service on the web. Tap the link below to open it.",
-    link: "https://www.golfmatch.info/?page=termsofuse-jp",
+    link: "https://dating.golfmatch.info/terms.html",
   },
   "contact-support": {
     id: "contact-support",
@@ -635,7 +638,7 @@ const HelpDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StandardHeader
-          title="Help"
+          title=""
           showBackButton
           onBackPress={() => navigation.goBack()}
         />
@@ -653,7 +656,7 @@ const HelpDetailScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="Help & Support"
+        title=""
         showBackButton
         onBackPress={() => navigation.goBack()}
       />

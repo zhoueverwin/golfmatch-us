@@ -115,9 +115,11 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: Typography.fontSize.lg,
+    lineHeight: Typography.fontSize.lg * 1.5,
     fontWeight: Typography.fontWeight.semibold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
     textAlign: 'center',
+    includeFontPadding: false,
   },
   placeholder: {
     width: 24,

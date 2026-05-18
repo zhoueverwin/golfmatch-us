@@ -571,7 +571,7 @@ const ContactReplyScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="Contact & Replies"
+        title=""
         showBackButton
         onBackPress={() => navigation.goBack()}
       />

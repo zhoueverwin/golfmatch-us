@@ -578,14 +578,14 @@ const StoreScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                Linking.openURL("https://www.golfmatch.info/?page=privacypolicy-jp");
+                Linking.openURL("https://dating.golfmatch.info/privacy.html");
               }}
             >
               <Text style={styles.termsLink}>Privacy Policy</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                Linking.openURL("https://www.golfmatch.info/?page=termsofuse-jp");
+                Linking.openURL("https://dating.golfmatch.info/terms.html");
               }}
             >
               <Text style={styles.termsLink}>Terms of Service</Text>

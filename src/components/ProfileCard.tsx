@@ -19,7 +19,6 @@ import { getAgeRange, calculateAge, isUserOnline } from "../utils/formatters";
 import { StreakBadge } from "./StreakBadge";
 
 const PinOutlineIcon = require("../../assets/images/Icons/Pin-Outline.png");
-const verifyBadge = require("../../assets/images/badges/Verify.png");
 
 const { width } = Dimensions.get("window");
 const horizontalPadding = Spacing.md * 2;

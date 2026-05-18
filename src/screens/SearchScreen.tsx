@@ -7,7 +7,6 @@ import {
   StatusBar,
   Alert,
   Dimensions,
-  ScrollView,
 } from "react-native";
 import { FlashList, ListRenderItemInfo } from "@shopify/flash-list";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -292,35 +291,35 @@ const SearchScreen: React.FC = () => {
     >
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
-      {/* Header with scrollable tabs — no filter icon */}
+      {/* Header with pill segmented control — matches the patterns used
+          by HomeScreen (For You / Following) and ConnectionsScreen
+          (Likes / Matches). Two tabs only, so no horizontal scroll needed. */}
       <View style={styles.header}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContent}
-          style={styles.tabScroll}
-        >
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={styles.tab}
-              onPress={() => setActiveTab(tab.key)}
-              accessibilityRole="tab"
-              accessibilityLabel={`Show ${tab.label} profiles`}
-              accessibilityState={{ selected: activeTab === tab.key }}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab.key && styles.activeTabText,
-                ]}
+        <View style={styles.tabPillContainer}>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, isActive && styles.activeTab]}
+                onPress={() => setActiveTab(tab.key)}
+                accessibilityRole="tab"
+                accessibilityLabel={`Show ${tab.label} profiles`}
+                accessibilityState={{ selected: isActive }}
+                activeOpacity={0.85}
               >
-                {tab.label}
-              </Text>
-              {activeTab === tab.key && <View style={styles.tabUnderline} />}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={[
+                    styles.tabText,
+                    isActive && styles.activeTabText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* Tab Content */}
@@ -384,24 +383,21 @@ const SearchScreen: React.FC = () => {
       )}
 
       {/* Filter Modal — gendered hard paywall already gates entry, so all
-          users reaching Search have full feature access. */}
+          users reaching Search have full feature access. The premium /
+          locked / yellow-highlight logic that used to live here was
+          removed when filters/sorts stopped being premium-gated. */}
       <FilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApply={handleApplyFilters}
         initialFilters={filters}
-        isPremium={true}
-        onPremiumPress={() => setFilterModalVisible(false)}
       />
 
-      {/* Sort Modal — same: no in-Search gating in the US flow. */}
       <SortModal
         visible={sortModalVisible}
         currentSort={searchSort}
-        isPremium={true}
         onSelect={setSearchSort}
         onClose={() => setSortModalVisible(false)}
-        onPremiumPress={() => {}}
       />
     </SafeAreaView>
   );
@@ -413,44 +409,42 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  tabScroll: {
-    flex: 1,
-  },
-  tabScrollContent: {
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.lg,
-    alignItems: "flex-end",
+  // Pill segmented control — same shape used by HomeScreen.tsx:969 and
+  // ConnectionsScreen.tsx:477. Gray track with primary-filled active pill.
+  tabPillContainer: {
+    flexDirection: "row",
+    backgroundColor: Colors.gray[100],
+    borderRadius: BorderRadius.full,
+    padding: 4,
   },
   tab: {
-    paddingVertical: Spacing.sm + 2,
+    flex: 1,
+    paddingVertical: Spacing.sm,
     alignItems: "center",
-    position: "relative",
+    justifyContent: "center",
+    borderRadius: BorderRadius.full,
+  },
+  activeTab: {
+    backgroundColor: Colors.primary,
   },
   tabText: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.medium,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
-    color: Colors.gray[400],
+    color: Colors.gray[500],
+    textAlign: "center",
+    includeFontPadding: false,
   },
   activeTabText: {
-    fontWeight: Typography.fontWeight.bold,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
-    color: Colors.text.primary,
-  },
-  tabUnderline: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: Colors.primary,
-    borderRadius: 1.5,
+    color: Colors.white,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
   },
   searchTabContainer: {
     flex: 1,

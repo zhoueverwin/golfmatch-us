@@ -20,6 +20,7 @@ import { RootStackParamList } from "../types";
 import { Availability } from "../types/dataModels";
 import { DataProvider } from "../services";
 import StandardHeader from "../components/StandardHeader";
+import Toast from "../components/Toast";
 
 type CalendarEditScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -33,6 +34,7 @@ const CalendarEditScreen: React.FC = () => {
   >({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
 
   // Generate calendar data
   const generateCalendarData = (date: Date) => {
@@ -171,12 +173,11 @@ const CalendarEditScreen: React.FC = () => {
         console.error("Save failed:", response.error);
         Alert.alert("Error", `Failed to save: ${response.error}`);
       } else {
-        Alert.alert("Saved", "Your golf availability has been updated.", [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        // Inline toast (auto-fades after 1.5s) instead of an alert+goBack —
+        // calendar edits are iterative (users typically set availability
+        // across multiple months in one session), so we keep them on this
+        // screen and just confirm the save.
+        setShowSavedToast(true);
       }
     } catch (error) {
       console.error("Error saving availability:", error);
@@ -448,6 +449,14 @@ const CalendarEditScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      <Toast
+        visible={showSavedToast}
+        message="Saved"
+        type="success"
+        duration={1500}
+        onHide={() => setShowSavedToast(false)}
+      />
     </SafeAreaView>
   );
 };

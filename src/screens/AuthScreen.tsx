@@ -191,14 +191,14 @@ const AuthScreen: React.FC = () => {
               By continuing, you agree to our{" "}
               <Text
                 style={styles.linkText}
-                onPress={() => Linking.openURL("https://www.golfmatch.info/?page=termsofuse-jp")}
+                onPress={() => Linking.openURL("https://dating.golfmatch.info/terms.html")}
               >
                 Terms of Service
               </Text>
               {" "}and{" "}
               <Text
                 style={styles.linkText}
-                onPress={() => Linking.openURL("https://www.golfmatch.info/?page=privacypolicy-jp")}
+                onPress={() => Linking.openURL("https://dating.golfmatch.info/privacy.html")}
               >
                 Privacy Policy
               </Text>

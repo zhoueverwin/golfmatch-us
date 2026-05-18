@@ -176,7 +176,7 @@ const HelpScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StandardHeader
-        title="Help & Contact"
+        title=""
         showBackButton
         onBackPress={() => navigation.goBack()}
       />

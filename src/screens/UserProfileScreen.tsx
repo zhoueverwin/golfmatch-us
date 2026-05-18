@@ -51,8 +51,6 @@ import { useProfile } from "../hooks/queries/useProfile";
 import { useUserPosts, useReactToPost, useUnreactToPost } from "../hooks/queries/usePosts";
 import { StreakBadge } from "../components/StreakBadge";
 
-const verifyBadge = require("../../assets/images/badges/Verify.png");
-
 const { width } = Dimensions.get("window");
 
 // Cache calendar data to persist across component unmounts

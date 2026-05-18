@@ -364,7 +364,7 @@ const linking: LinkingOptions<RootStackParamList> = {
 
 const AppNavigatorContent = () => {
   const { user, loading, profileId, userProfile: cachedProfile } = useAuth();
-  const { isProMember } = useRevenueCat();
+  const { isProMember, isEntitlementResolved } = useRevenueCat();
 
   // Universal KYC gate: returning users who never completed Didit verification
   // are pushed through it before reaching Main. Without this, accounts created
@@ -655,6 +655,29 @@ const AppNavigatorContent = () => {
   // Show loading while checking if user is new (only for authenticated users)
   if (user && isNewUser === null) {
     return null; // Will show loading screen while checking profile
+  }
+
+  // Wait for RevenueCat to resolve entitlement before deciding which gated
+  // stack to render. isProMember defaults to false until updateCustomerState
+  // runs; without this gate, non-female returning users see a one-frame
+  // paywall before the navigator swaps to Main.
+  if (user && !isEntitlementResolved) {
+    return null;
+  }
+
+  // Wait for cachedProfile before letting the navigator decide which gated
+  // stack to render. The gates below (needsKycGate, needsPaywallGate) read
+  // cachedProfile.is_verified and cachedProfile.gender — if we render
+  // while cachedProfile is null, BOTH gates evaluate to false and the
+  // navigator briefly mounts the Main stack. When cachedProfile arrives
+  // a beat later, gates re-evaluate and the navigator swaps stacks (e.g.
+  // a non-premium male sees Main flash then gets redirected to the
+  // OnboardingPaywall stack). Holding render until cachedProfile is
+  // loaded eliminates that double-mount. If profile fetch fails terminally,
+  // AuthContext signs the user out (see AuthContext.tsx fetchProfileWithRetry),
+  // so this guard can't deadlock.
+  if (user && profileId && !cachedProfile) {
+    return null;
   }
 
   return (

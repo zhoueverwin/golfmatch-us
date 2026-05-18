@@ -87,9 +87,9 @@ function SettingsScreen(): React.ReactElement {
     {
       id: "about",
       title: "About",
-      subtitle: "https://www.golfmatch.info/",
+      subtitle: "https://dating.golfmatch.info/",
       icon: "information-circle",
-      onPress: () => Linking.openURL("https://www.golfmatch.info/"),
+      onPress: () => Linking.openURL("https://dating.golfmatch.info/"),
     },
     {
       id: "delete",
