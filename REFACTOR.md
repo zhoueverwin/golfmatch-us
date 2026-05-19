@@ -121,12 +121,71 @@ Detailed reasoning in conversation history (2026-05-19). Sequence:
 | # | Phase | Status | Effort | Gate |
 |---|---|---|---|---|
 | 0 | Safety net (this file, characterization tests, baseline tag) | ✅ done | ~3 days | — |
-| 1 | `ServiceResponse` discriminated union | in progress | ~3 days | Phase 0 green |
-| 2 | Centralize `legacy_id` resolution | pending | ~3 days | Phase 1 shipped |
-| 3 | React Query convention + top-5 read paths | pending (parallel with #2) | ~1 sprint | hook seam established before #4 |
-| 4 | Collapse `dataProviderSwitcher` + `supabaseDataProvider` layers | pending | ~2 weeks | #2 done, #3 hook layer in place |
+| 1 | `ServiceResponse` discriminated union | ✅ done | ~3 days | Phase 0 green |
+| 2 | Centralize `legacy_id` resolution | ✅ done | ~3 days | Phase 1 shipped |
+| 3 | React Query convention + top-5 hooks (additive, no screen migrations) | ✅ partial | ~1 sprint | hook seam established before #4 |
+| 4 | Collapse `dataProviderSwitcher` + `supabaseDataProvider` layers | partial | ~2 weeks | #2 done, #3 hook layer in place |
 
-Each phase: TestFlight soak (48-72h) before starting the next.
+Each phase originally required a TestFlight soak (48-72h) before
+starting the next. That gate was bypassed in the 2026-05-19 session at
+the user's explicit direction so all phases could land as one drop. The
+soak now happens AFTER Phase 4 lands, with the safety burden carried by
+the characterization tests, the additive structure of Phases 3-4, and
+the per-commit revertibility of each phase.
+
+## Phase 4 audit findings (deferred follow-ups)
+
+Phase 4 in this session is **partial**. Deleting `dataProviderSwitcher.ts`
+and `supabaseDataProvider.ts` outright is the "real" Phase 4 — that
+requires migrating ~30 screen call sites and per-screen QA, out of
+scope for an automated session. What was done here:
+
+- Removed the dead `DataProviderConfig` / mock-provider fallback config
+- Documented the layer's status and next-step contracts in file headers
+
+What was discovered (logged as TODOs in the source):
+
+The `dataProviderSwitcher` typed `currentProvider` as `any`. A throwaway
+experiment with `currentProvider: SupabaseDataProvider` surfaced **11
+contract drifts** between the switcher's declared return types and what
+the underlying provider actually returns. Examples:
+
+- `getUserProfile`: declares `ServiceResponse<User>`, provider returns
+  `ServiceResponse<UserProfile>` (different shape)
+- `getUserPosts`: declares `<Post>`, provider returns `<Post[]>`
+- `likePost` / `unlikePost`: declare `<Post>`, provider returns `<void>`
+- `sendMessage`: declares `<Message>`, provider returns `<void>`
+- `getOrCreateChat`: declares `<Chat>`, provider returns `<string>`
+- `subscribeToMessages`: doesn't exist on provider at all
+- Several arity / enum mismatches
+
+These are real-but-not-tripped runtime bugs because callers were either
+casting around the lie or accessing the runtime shape directly (which
+the `any` permits silently). Fixing each requires touching its callers,
+which is the screen-migration work that Phase 4 properly comprises.
+
+The TODO comment in `dataProviderSwitcher.ts` keeps this discoverable
+for whoever picks up Phase 4 properly.
+
+## Remaining follow-up work (for future sessions)
+
+These are *not* in the committed phases — they need real QA loops:
+
+1. **Migrate screens to the React Query hooks** added in Phase 3. The
+   hooks (`useMatches`, `useRecommendations`, `useUnreadCount`, etc.)
+   exist but no screen consumes them yet. Each migration is one screen
+   + manual QA + soak.
+2. **Fix the 11 switcher contract drifts** above, screen-by-screen.
+3. **Delete `dataProviderSwitcher.ts`** once screens import services
+   directly.
+4. **Inline `supabaseDataProvider.ts` orchestration** into domain
+   services and delete the file.
+5. **Re-enable the 13 quarantined test suites** file-by-file.
+6. **Drop `legacy_id`** from the `User` type and DB column now that
+   Phase 2 has shipped (no inline consumers remain).
+7. **NotificationContext** still maintains its own unread-count state
+   via a realtime subscription; migrate it to consume `useUnreadCount`
+   and call `refetch()` on the realtime event.
 
 ---
 

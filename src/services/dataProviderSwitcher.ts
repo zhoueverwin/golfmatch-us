@@ -1,6 +1,25 @@
 // Data Provider Switcher
-// This class provides a unified interface that can switch between different data providers
-// Currently configured to use Supabase only (no fallback to mock data)
+//
+// Thin forwarding facade over the concrete data provider. Originally
+// existed to swap between a mock provider and Supabase; the mock path
+// was retired long ago. The class is preserved as the stable import
+// surface for screens (`import { DataProvider } from "../services"`),
+// which means Phase 4's eventual deletion of this file requires
+// migrating ~30 screen call sites — out of scope for this PR.
+//
+// Phase 4 cleanup applied here:
+//   1. Dead DataProviderConfig / mock-fallback constructor parameter
+//      removed. There is one provider, and the constructor reflects that.
+//   2. Untracked tech debt logged: `currentProvider: any` lies. A
+//      throwaway experiment with `currentProvider: SupabaseDataProvider`
+//      surfaced ~11 contract drifts between this facade's declared
+//      return types and what the provider actually returns
+//      (getUserProfile: declared <User>, returns <UserProfile>;
+//       likePost: declared <Post>, returns <void>; etc.). Each one is
+//      a real-but-not-tripped runtime bug because callers were either
+//      casting around the lie or accessing the runtime shape directly.
+//      Fixing each requires touching its caller(s); deferred until
+//      Phase 4's screen-migration pass.
 
 import {
   User,
@@ -16,37 +35,16 @@ import {
   ContactInquiry,
 } from "../types/dataModels";
 
-// Import Supabase data provider only
 import supabaseDataProvider from "./supabaseDataProvider";
 
-// Configuration
-interface DataProviderConfig {
-  useSupabase: boolean;
-  fallbackToMock: boolean;
-}
-
-const DEFAULT_CONFIG: DataProviderConfig = {
-  useSupabase: true, // Set to true to use Supabase, false for mock data
-  fallbackToMock: false, // No fallback to mock data - use Supabase only
-};
-
 class DataProviderSwitcher {
-  private config: DataProviderConfig;
-  private currentProvider: any;
+  // TODO(refactor #4): currentProvider's `any` typing hides ~11 contract
+  // drifts between this facade and SupabaseDataProvider. See file header.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly currentProvider: any;
 
-  constructor(config: DataProviderConfig = DEFAULT_CONFIG) {
-    this.config = config;
-    this.initializeProvider();
-  }
-
-  private initializeProvider(): void {
-    if (this.config.useSupabase) {
-      this.currentProvider = supabaseDataProvider;
-    } else {
-      throw new Error(
-        "Mock data provider is no longer available. Please use Supabase.",
-      );
-    }
+  constructor() {
+    this.currentProvider = supabaseDataProvider;
   }
 
   // ============================================================================
