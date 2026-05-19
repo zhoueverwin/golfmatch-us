@@ -493,10 +493,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   tabText: {
-    fontSize: Typography.fontSize.sm,
+    // Match HomeScreen / SearchScreen pill segmented control: 16pt with
+    // centering + Android padding off. The previous fontSize.sm (14pt)
+    // made Likes/Matches read visibly smaller than the equivalent tabs
+    // on the other two primary tabbed surfaces.
+    fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.medium,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
     color: Colors.gray[500],
+    textAlign: "center",
+    includeFontPadding: false,
   },
   activeTabText: {
     color: Colors.white,
