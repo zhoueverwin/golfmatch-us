@@ -77,7 +77,7 @@ export class NotificationService {
 
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -280,7 +280,6 @@ export class NotificationService {
       return {
         success: false,
         error: error.message || 'Failed to fetch notifications',
-        data: [],
       };
     }
   }
@@ -303,7 +302,6 @@ export class NotificationService {
       return {
         success: false,
         error: error.message || 'Failed to get unread count',
-        data: 0,
       };
     }
   }
@@ -320,7 +318,7 @@ export class NotificationService {
 
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -339,7 +337,7 @@ export class NotificationService {
 
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -382,7 +380,7 @@ export class NotificationService {
       
       if (!responseText || responseText.trim() === '') {
         console.warn('Empty response from push notification service');
-        return { success: true }; // Treat empty response as success
+        return { success: true, data: undefined }; // Treat empty response as success
       }
 
       let result;
@@ -398,7 +396,7 @@ export class NotificationService {
         throw new Error(result.data.message);
       }
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       console.error('Error sending push notification:', error);
       return {
@@ -424,7 +422,7 @@ export class NotificationService {
 
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,

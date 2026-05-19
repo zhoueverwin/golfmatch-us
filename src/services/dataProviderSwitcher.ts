@@ -93,7 +93,7 @@ class DataProviderSwitcher {
     userId: string,
     page: number = 1,
     limit: number = 20,
-  ): Promise<PaginatedServiceResponse<Post>> {
+  ): Promise<PaginatedServiceResponse<Post[]>> {
     return await this.currentProvider.getUserPosts(userId, page, limit);
   }
 
@@ -356,14 +356,14 @@ class DataProviderSwitcher {
   async getRecommendedPosts(
     page: number = 1,
     limit: number = 20,
-  ): Promise<PaginatedServiceResponse<Post>> {
+  ): Promise<PaginatedServiceResponse<Post[]>> {
     return await this.currentProvider.getRecommendedPosts(page, limit);
   }
 
   async getFollowingPosts(
     page: number = 1,
     limit: number = 20,
-  ): Promise<PaginatedServiceResponse<Post>> {
+  ): Promise<PaginatedServiceResponse<Post[]>> {
     return await this.currentProvider.getFollowingPosts(page, limit);
   }
 

@@ -35,11 +35,6 @@ export class AvailabilityService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: {
-              year,
-              month,
-              days: [],
-            },
           };
         }
 
@@ -69,11 +64,6 @@ export class AvailabilityService {
       return {
         success: false,
         error: error.message || "Failed to fetch availability",
-        data: {
-          year,
-          month,
-          days: [],
-        },
       };
     }
   }
@@ -174,9 +164,7 @@ export class AvailabilityService {
 
       if (error) throw error;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -211,7 +199,6 @@ export class AvailabilityService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: false,
           };
         }
 
@@ -264,7 +251,6 @@ export class AvailabilityService {
       return {
         success: false,
         error: error.message || "Failed to update user availability",
-        data: false,
       };
     }
   }

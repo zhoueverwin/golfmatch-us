@@ -207,14 +207,6 @@ export class ProfilesService {
       return {
         success: false,
         error: error.message || "Failed to search profiles",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
       };
     }
   }
@@ -282,14 +274,6 @@ export class ProfilesService {
       return {
         success: false,
         error: error.message || 'Failed to fetch intelligent recommendations',
-        data: [],
-        pagination: {
-          page: 1,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
       };
     }
   }
@@ -380,7 +364,6 @@ export class ProfilesService {
         return {
           success: false,
           error: error.message || 'Failed to fetch daily recommendations',
-          data: [],
         };
       }
 
@@ -415,7 +398,6 @@ export class ProfilesService {
       return {
         success: false,
         error: error.message || 'Failed to fetch daily recommendations',
-        data: [],
       };
     }
   }
@@ -438,7 +420,7 @@ export class ProfilesService {
         return { success: false, error: error.message };
       }
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       console.error('[ProfilesService] Error in markRecommendationSwiped:', error);
       return { success: false, error: error.message };
@@ -468,7 +450,6 @@ export class ProfilesService {
       return {
         success: false,
         error: error.message || "Failed to fetch users",
-        data: [],
       };
     }
   }
@@ -500,7 +481,6 @@ export class ProfilesService {
       return {
         success: false,
         error: error.message || "Failed to fetch online status",
-        data: new Map(),
       };
     }
   }

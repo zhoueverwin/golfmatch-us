@@ -47,7 +47,6 @@ export class MessagesService {
       return {
         success: false,
         error: error.message || 'Failed to load chats',
-        data: [],
       };
     }
   }
@@ -80,7 +79,6 @@ export class MessagesService {
       return {
         success: false,
         error: error.message || "Failed to fetch messages",
-        data: [],
       };
     }
   }
@@ -138,9 +136,7 @@ export class MessagesService {
 
       if (error) throw error;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -153,7 +149,7 @@ export class MessagesService {
    * Batch mark multiple messages as read in a single query
    */
   async markMessagesAsRead(messageIds: string[]): Promise<ServiceResponse<void>> {
-    if (messageIds.length === 0) return { success: true };
+    if (messageIds.length === 0) return { success: true, data: undefined };
     try {
       const { error } = await supabase
         .from("messages")
@@ -162,7 +158,7 @@ export class MessagesService {
 
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -203,7 +199,6 @@ export class MessagesService {
       return {
         success: false,
         error: error.message || "Failed to fetch message previews",
-        data: [],
       };
     }
   }
@@ -311,7 +306,6 @@ export class MessagesService {
       return {
         success: false,
         error: error.message || "Failed to fetch unmessaged matches",
-        data: [],
       };
     }
   }
@@ -337,7 +331,6 @@ export class MessagesService {
       return {
         success: false,
         error: error.message || 'Failed to get unread count',
-        data: 0,
       };
     }
   }

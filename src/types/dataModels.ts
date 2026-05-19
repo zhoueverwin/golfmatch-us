@@ -241,26 +241,34 @@ export interface PaginatedResponse<T> {
 }
 
 // Service response types
-export interface ServiceResponse<T> {
-  success?: boolean;
-  data?: T;
-  error?: string;
-  loading?: boolean;
-}
+//
+// Discriminated on `success`. When `success: true`, `data` is required and
+// `error` is absent; when `success: false`, `error` is required and `data`
+// is absent. This means `if (response.success)` properly narrows `data` to
+// the non-undefined branch — no more `!` assertions needed at call sites.
+//
+// The conditional type lets `ServiceResponse<void>` skip the `data` field
+// entirely on the success branch (so callers can still `return { success: true }`
+// for void-returning operations), while non-void T still enforces `data`
+// on success.
+export type ServiceResponse<T> =
+  | { success: true; data: T; error?: undefined }
+  | { success: false; data?: undefined; error: string };
 
-export interface PaginatedServiceResponse<T> {
-  success?: boolean;
-  data?: T;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages?: number;
-    hasMore: boolean;
-  };
-  error?: string;
-  loading?: boolean;
-}
+export type PaginatedServiceResponse<T> =
+  | {
+      success: true;
+      data: T;
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages?: number;
+        hasMore: boolean;
+      };
+      error?: undefined;
+    }
+  | { success: false; data?: undefined; pagination?: undefined; error: string };
 
 // Contact Inquiry Types
 export interface ContactReply {

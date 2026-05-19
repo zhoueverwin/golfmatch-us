@@ -1364,9 +1364,7 @@ class AuthService {
         console.log('[AuthService] Account deletion completed successfully');
       }
 
-      return {
-        success: true,
-      };
+      return { success: true };
     } catch (error) {
       logAuthError('Account deletion exception', error);
       return {
@@ -1435,9 +1433,7 @@ class AuthService {
       flushEvents();
       firebaseClearUserId();
 
-      return {
-        success: true,
-      };
+      return { success: true };
     } catch (error) {
       return {
         success: false,

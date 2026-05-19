@@ -203,9 +203,7 @@ export class MembershipService {
         };
       }
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       console.error("[MembershipService] Exception canceling membership:", error);
       return {

@@ -99,7 +99,6 @@ export class ContactInquiriesService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: [],
           };
         }
 
@@ -135,7 +134,6 @@ export class ContactInquiriesService {
       return {
         success: false,
         error: error.message || "Failed to fetch contact inquiries",
-        data: [],
       };
     }
   }
@@ -207,9 +205,7 @@ export class ContactInquiriesService {
 
       if (error) throw error;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -235,9 +231,7 @@ export class ContactInquiriesService {
 
       if (error) throw error;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,

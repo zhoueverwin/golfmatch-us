@@ -55,7 +55,6 @@ export class ReportsService {
       return {
         success: false,
         error: error.message || "Failed to check rate limit",
-        data: false,
       };
     }
   }
@@ -151,7 +150,6 @@ export class ReportsService {
       return {
         success: false,
         error: error.message || "Failed to fetch report history",
-        data: [],
       };
     }
   }
@@ -195,7 +193,6 @@ export class ReportsService {
       return {
         success: false,
         error: error.message || "Failed to check existing report",
-        data: false,
       };
     }
   }

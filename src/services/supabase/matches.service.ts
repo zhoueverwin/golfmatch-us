@@ -158,7 +158,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to like user",
-        data: { matched: false },
       };
     }
   }
@@ -214,7 +213,7 @@ export class MatchesService {
         .eq("type", "like");
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return { success: false, error: error.message || "Failed to undo like" };
     }
@@ -248,7 +247,6 @@ export class MatchesService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: [],
           };
         }
 
@@ -270,7 +268,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to fetch user likes",
-        data: [],
       };
     }
   }
@@ -300,7 +297,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to fetch matches",
-        data: [],
       };
     }
   }
@@ -356,7 +352,6 @@ export class MatchesService {
         return {
           success: false,
           error: `User not found: ${!resolvedUser1Id ? user1Id : user2Id}`,
-          data: false,
         };
       }
 
@@ -382,7 +377,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to check match",
-        data: false,
       };
     }
   }
@@ -403,7 +397,6 @@ export class MatchesService {
         return {
           success: false,
           error: `User not found: ${!resolvedUser1Id ? user1Id : user2Id}`,
-          data: false,
         };
       }
 
@@ -440,7 +433,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to check mutual likes",
-        data: false,
       };
     }
   }
@@ -465,7 +457,6 @@ export class MatchesService {
         return {
           success: false,
           error: `Current user not found: ${currentUserId}`,
-          data: {},
         };
       }
 
@@ -535,7 +526,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to batch check mutual likes",
-        data: {},
       };
     }
   }
@@ -555,7 +545,6 @@ export class MatchesService {
         return {
           success: false,
           error: `User not found: ${userId}`,
-          data: [],
         };
       }
 
@@ -577,7 +566,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || 'Failed to get received likes',
-        data: [],
       };
     }
   }
@@ -598,7 +586,6 @@ export class MatchesService {
         return {
           success: false,
           error: `User not found: ${userId}`,
-          data: [],
         };
       }
 
@@ -619,7 +606,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || 'Failed to get received likes',
-        data: [],
       };
     }
   }
@@ -645,7 +631,6 @@ export class MatchesService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: [],
           };
         }
 
@@ -673,7 +658,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to fetch received likes",
-        data: [],
       };
     }
   }
@@ -702,7 +686,6 @@ export class MatchesService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: [],
           };
         }
 
@@ -735,7 +718,6 @@ export class MatchesService {
       return {
         success: false,
         error: error.message || "Failed to fetch unseen matches",
-        data: [],
       };
     }
   }
@@ -795,9 +777,7 @@ export class MatchesService {
 
       if (updateError) throw updateError;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,

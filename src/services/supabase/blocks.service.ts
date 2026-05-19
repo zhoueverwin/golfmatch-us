@@ -74,9 +74,7 @@ export class BlocksService {
 
       if (error) throw error;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       console.error("[BlocksService] Failed to unblock user:", error);
       return {
@@ -110,7 +108,6 @@ export class BlocksService {
       return {
         success: false,
         error: error.message || "Failed to check block status",
-        data: false,
       };
     }
   }
@@ -135,7 +132,6 @@ export class BlocksService {
       return {
         success: false,
         error: error.message || "Failed to fetch block list",
-        data: [],
       };
     }
   }
@@ -199,7 +195,6 @@ export class BlocksService {
       return {
         success: false,
         error: error.message || "Failed to fetch block list",
-        data: [],
       };
     }
   }

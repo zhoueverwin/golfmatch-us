@@ -23,9 +23,11 @@ export class PostReactionsService {
         .maybeSingle();
 
       if (existingReaction) {
-        // If same reaction type, remove it (toggle off)
+        // If same reaction type, remove it (toggle off). removeReaction
+        // returns ServiceResponse<void>, but toggleReaction's caller only
+        // checks `success`/`error` — the data field is intentionally absent.
         if (existingReaction.reaction_type === reactionType) {
-          return await this.removeReaction(postId, userId);
+          return (await this.removeReaction(postId, userId)) as ServiceResponse<PostReaction>;
         }
         // If different reaction type, update it
         const { data, error } = await supabase
@@ -70,7 +72,7 @@ export class PostReactionsService {
   async removeReaction(
     postId: string,
     userId: string
-  ): Promise<ServiceResponse<PostReaction>> {
+  ): Promise<ServiceResponse<void>> {
     try {
       const { error } = await supabase
         .from('post_reactions')

@@ -344,14 +344,6 @@ export class PostsService {
       return {
         success: false,
         error: error.message || "Failed to fetch posts",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
       };
     }
   }
@@ -384,14 +376,6 @@ export class PostsService {
           return {
             success: false,
             error: `User not found: ${userId}`,
-            data: [],
-            pagination: {
-              page,
-              limit,
-              total: 0,
-              totalPages: 0,
-              hasMore: false,
-            },
           };
         }
 
@@ -441,14 +425,6 @@ export class PostsService {
       return {
         success: false,
         error: error.message || "Failed to fetch user posts",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
       };
     }
   }
@@ -524,9 +500,7 @@ export class PostsService {
 
       if (updateError) throw updateError;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -556,9 +530,7 @@ export class PostsService {
 
       if (updateError) throw updateError;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -584,7 +556,6 @@ export class PostsService {
       return {
         success: false,
         error: error.message || "Failed to fetch post likes",
-        data: [],
       };
     }
   }
@@ -697,14 +668,6 @@ export class PostsService {
       return {
         success: false,
         error: error.message || "Failed to fetch following posts",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
       };
     }
   }
@@ -797,14 +760,6 @@ export class PostsService {
       return {
         success: false,
         error: error.message || "Failed to fetch recommended posts",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
       };
     }
   }
@@ -838,7 +793,7 @@ export class PostsService {
         if (error) throw error;
       }
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -863,7 +818,7 @@ export class PostsService {
 
       if (error) throw error;
 
-      return { success: true };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,
@@ -897,7 +852,6 @@ export class PostsService {
       return {
         success: false,
         error: error.message || "Failed to get user reaction",
-        data: false,
       };
     }
   }
@@ -950,9 +904,7 @@ export class PostsService {
 
       if (deleteError) throw deleteError;
 
-      return {
-        success: true,
-      };
+      return { success: true, data: undefined };
     } catch (error: any) {
       return {
         success: false,

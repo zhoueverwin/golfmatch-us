@@ -736,13 +736,6 @@ class SupabaseDataProvider {
       return { 
         success: false, 
         error: "No authenticated user",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          hasMore: false,
-        }
       };
     }
 
@@ -779,13 +772,6 @@ class SupabaseDataProvider {
       return { 
         success: false, 
         error: "No authenticated user",
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          hasMore: false,
-        }
       };
     }
 
@@ -1365,11 +1351,10 @@ class SupabaseDataProvider {
       100,
       sortBy,
     );
-    return {
-      success: result.success,
-      data: result.data as User[] | undefined,
-      error: result.error,
-    };
+    if (result.success) {
+      return { success: true, data: result.data as User[] };
+    }
+    return { success: false, error: result.error };
   }
 
   async getUserById(id: string): Promise<ServiceResponse<User>> {
