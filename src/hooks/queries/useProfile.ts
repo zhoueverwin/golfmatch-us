@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataProvider } from '../../services';
 import { User, UserProfile } from '../../types/dataModels';
+import { queryKeys } from './keys';
 
 export const useProfile = (userId: string | undefined) => {
   const query = useQuery({
-    queryKey: ['profile', userId],
+    queryKey: queryKeys.profile(userId),
     queryFn: async () => {
       if (!userId) {
         throw new Error('User ID is required');
@@ -43,7 +44,7 @@ export const useProfile = (userId: string | undefined) => {
 // Hook for current user profile
 export const useCurrentUserProfile = () => {
   const query = useQuery({
-    queryKey: ['currentUserProfile'],
+    queryKey: queryKeys.currentUserProfile(),
     queryFn: async () => {
       // OPTIMIZED: Removed CacheService clearing that defeated React Query caching
       const response = await DataProvider.getCurrentUser();
@@ -81,10 +82,10 @@ export const useUpdateProfile = () => {
       }
       return response.data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       // Invalidate and refetch profile queries
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.currentUserProfile() });
     },
   });
 };

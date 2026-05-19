@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { DataProvider } from '../../services';
 import { useMemo } from 'react';
+import { queryKeys } from './keys';
 
 // Hook for checking mutual likes for a single user pair
 export const useMutualLikes = (currentUserId: string | undefined, targetUserId: string | undefined) => {
   const query = useQuery({
-    queryKey: ['mutualLikes', currentUserId, targetUserId],
+    queryKey: queryKeys.mutualLikes(currentUserId, targetUserId),
     queryFn: async () => {
       if (!currentUserId || !targetUserId) {
         return false;

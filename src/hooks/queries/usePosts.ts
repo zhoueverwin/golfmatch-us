@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataProvider } from '../../services';
 import { Post } from '../../types/dataModels';
+import { queryKeys } from './keys';
 
 interface UsePostsOptions {
   type: 'recommended' | 'following';
@@ -13,7 +14,7 @@ export const usePosts = ({ type, userId, limit = 10, enabled }: UsePostsOptions)
   const queryClient = useQueryClient();
 
   const query = useInfiniteQuery({
-    queryKey: ['posts', type, userId],
+    queryKey: queryKeys.posts.home(type, userId),
     queryFn: async ({ pageParam = 1 }) => {
       const response = type === 'recommended'
         ? await DataProvider.getRecommendedPosts(pageParam, limit)
@@ -67,7 +68,7 @@ export const useUserPosts = (userId: string, limit: number = 10) => {
   const queryClient = useQueryClient();
 
   const query = useInfiniteQuery({
-    queryKey: ['userPosts', userId],
+    queryKey: queryKeys.posts.user(userId),
     queryFn: async ({ pageParam = 1 }) => {
       const response = await DataProvider.getUserPosts(userId, pageParam, limit);
 
