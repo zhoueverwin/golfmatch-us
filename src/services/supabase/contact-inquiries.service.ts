@@ -4,6 +4,7 @@ import {
   ContactReply,
   ServiceResponse,
 } from "../../types/dataModels";
+import { resolveProfileId } from "../userMappingService";
 
 export class ContactInquiriesService {
   /**
@@ -21,27 +22,9 @@ export class ContactInquiriesService {
     inquiryType?: string,
   ): Promise<ServiceResponse<ContactInquiry>> {
     try {
-      // Resolve legacy IDs if needed
-      let actualUserId = userId;
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       // Create inquiry
@@ -82,27 +65,9 @@ export class ContactInquiriesService {
     userId: string,
   ): Promise<ServiceResponse<ContactInquiry[]>> {
     try {
-      // Resolve legacy IDs if needed
-      let actualUserId = userId;
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       // OPTIMIZED: Single RPC call gets inquiries + replies + unread count

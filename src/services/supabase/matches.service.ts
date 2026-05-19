@@ -5,6 +5,7 @@ import {
   ServiceResponse,
 } from "../../types/dataModels";
 import { getCachedAuthUserId } from "../authCache";
+import { resolveProfileId } from "../userMappingService";
 import { logMatchCreated, logLikeSent } from "../facebookAnalytics";
 import {
   logMatchCreated as firebaseLogMatchCreated,
@@ -37,52 +38,24 @@ export class MatchesService {
         // Ignore; fallback to provided likerUserId
       }
 
-      // Then resolve the user IDs (handle legacy IDs for liked user / fallback cases)
-      // Note: if actualLikerUserId is not a UUID, attempt legacy_id mapping
-      let actualLikedUserId = likedUserId;
-
-      // If actualLikerUserId is not a UUID, try to find it by legacy_id
-      if (
-        !actualLikerUserId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: likerProfile, error: likerError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", actualLikerUserId)
-          .single();
-
-        if (likerError || !likerProfile) {
-          return {
-            success: false,
-            error: `Liker user not found: ${actualLikerUserId}`,
-          };
-        }
-
-        actualLikerUserId = likerProfile.id;
+      // Resolve liker / liked ids through centralized helper (handles
+      // UUID-vs-legacy_id transparently). likeUser previously declared
+      // `actualLikerUserId` mutably above; resolving here overwrites it.
+      const resolvedLiker = await resolveProfileId(actualLikerUserId);
+      if (!resolvedLiker) {
+        return {
+          success: false,
+          error: `Liker user not found: ${actualLikerUserId}`,
+        };
       }
+      actualLikerUserId = resolvedLiker;
 
-      // If likedUserId is not a UUID, try to find it by legacy_id
-      if (
-        !likedUserId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: likedProfile, error: likedError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", likedUserId)
-          .single();
-
-        if (likedError || !likedProfile) {
-          return {
-            success: false,
-            error: `Liked user not found: ${likedUserId}`,
-          };
-        }
-
-        actualLikedUserId = likedProfile.id;
+      const actualLikedUserId = await resolveProfileId(likedUserId);
+      if (!actualLikedUserId) {
+        return {
+          success: false,
+          error: `Liked user not found: ${likedUserId}`,
+        };
       }
 
       console.log("[likeUser] auth-mapped liker:", actualLikerUserId, "liked:", actualLikedUserId, "type:", type);
@@ -167,42 +140,13 @@ export class MatchesService {
     likedUserId: string,
   ): Promise<ServiceResponse<void>> {
     try {
-      // Resolve legacy IDs
-      let actualLikerUserId = likerUserId;
-      let actualLikedUserId = likedUserId;
-      if (
-        !likerUserId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: likerProfile, error: likerError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", likerUserId)
-          .single();
-        if (likerError || !likerProfile)
-          return {
-            success: false,
-            error: `Liker user not found: ${likerUserId}`,
-          };
-        actualLikerUserId = likerProfile.id;
+      const actualLikerUserId = await resolveProfileId(likerUserId);
+      if (!actualLikerUserId) {
+        return { success: false, error: `Liker user not found: ${likerUserId}` };
       }
-      if (
-        !likedUserId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: likedProfile, error: likedError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", likedUserId)
-          .single();
-        if (likedError || !likedProfile)
-          return {
-            success: false,
-            error: `Liked user not found: ${likedUserId}`,
-          };
-        actualLikedUserId = likedProfile.id;
+      const actualLikedUserId = await resolveProfileId(likedUserId);
+      if (!actualLikedUserId) {
+        return { success: false, error: `Liked user not found: ${likedUserId}` };
       }
 
       const { error } = await supabase
@@ -228,29 +172,9 @@ export class MatchesService {
 
   async getUserLikes(userId: string): Promise<ServiceResponse<UserLike[]>> {
     try {
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       const { data, error } = await supabase
@@ -612,29 +536,9 @@ export class MatchesService {
 
   async getLikesReceived(userId: string): Promise<ServiceResponse<UserLike[]>> {
     try {
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       const { data, error } = await supabase
@@ -669,27 +573,9 @@ export class MatchesService {
     userId: string,
   ): Promise<ServiceResponse<any[]>> {
     try {
-      // Resolve legacy IDs
-      let actualUserId = userId;
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       // Query matches where user is participant and hasn't seen the popup
@@ -730,27 +616,9 @@ export class MatchesService {
     userId: string,
   ): Promise<ServiceResponse<void>> {
     try {
-      // Resolve legacy IDs
-      let actualUserId = userId;
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       // Get the match to determine which user field to update

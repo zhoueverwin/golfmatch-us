@@ -4,6 +4,7 @@ import {
   ServiceResponse,
   PaginatedServiceResponse,
 } from "../../types/dataModels";
+import { resolveProfileId } from "../userMappingService";
 
 export class PostsService {
   // Minimal profile fields needed for post display (reduces egress significantly)
@@ -357,29 +358,9 @@ export class PostsService {
       const from = (page - 1) * limit;
       const to = from + limit; // Fetch one extra to accurately detect if more pages exist
 
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       const { data, error } = await supabase

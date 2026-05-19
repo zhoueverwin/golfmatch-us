@@ -1,6 +1,37 @@
 import { supabase } from './supabase';
 import { getCachedAuthUser, clearAuthCache } from './authCache';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolves an arbitrary id-shaped input to a `profiles.id` UUID.
+ *
+ * Replaces the 19+ inline UUID-or-legacy_id blocks that were copy-pasted
+ * across the service layer (JP-fork residue). Behavior matches the
+ * original inline pattern exactly:
+ *   - empty / whitespace input → null
+ *   - UUID-shaped input (case-insensitive) → returned as-is (assumed
+ *     to already be a profiles.id; the inline pattern never re-validated
+ *     these, and we preserve that for behavior parity)
+ *   - non-UUID input → looked up via `profiles.legacy_id`
+ *   - lookup failure or missing row → null
+ *
+ * Pinned by `src/__tests__/legacyIdResolution.behavior.test.ts`. Do not
+ * change the matching rules here without updating that test in the same
+ * PR.
+ */
+export async function resolveProfileId(input: string): Promise<string | null> {
+  if (!input) return null;
+  if (UUID_REGEX.test(input)) return input;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('legacy_id', input)
+    .single();
+  if (error || !data) return null;
+  return data.id;
+}
+
 /**
  * Service to manage user ID mapping between auth.users and profiles table
  * Ensures consistent user ID references across the app

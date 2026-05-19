@@ -27,6 +27,7 @@ import { MessagesService } from "./supabase/messages.service";
 import { AvailabilityService } from "./supabase/availability.service";
 import { ContactInquiriesService } from "./supabase/contact-inquiries.service";
 import { supabase } from "./supabase";
+import { resolveProfileId } from "./userMappingService";
 
 // Create service instances
 const profilesService = new ProfilesService();
@@ -266,24 +267,9 @@ class SupabaseDataProvider {
     videos?: string[],
     aspectRatio?: number,
   ): Promise<ServiceResponse<Post>> {
-    // First, resolve the user ID (handle legacy IDs)
-    let actualUserId = userId;
-    if (
-      !userId.match(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-      )
-    ) {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("legacy_id", userId)
-        .single();
-
-      if (profileError || !profile) {
-        return { success: false, error: `User not found: ${userId}` };
-      }
-
-      actualUserId = profile.id;
+    const actualUserId = await resolveProfileId(userId);
+    if (!actualUserId) {
+      return { success: false, error: `User not found: ${userId}` };
     }
 
     const result = await postsService.createPost(

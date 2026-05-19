@@ -4,6 +4,7 @@ import {
   CalendarData,
   ServiceResponse,
 } from "../../types/dataModels";
+import { resolveProfileId } from "../userMappingService";
 
 export class AvailabilityService {
   async getUserAvailability(
@@ -16,29 +17,9 @@ export class AvailabilityService {
       const startDate = new Date(Date.UTC(year, month - 1, 1));
       const endDate = new Date(Date.UTC(year, month, 0)); // Day 0 of next month = last day of current month
 
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       const { data, error } = await supabase
@@ -76,29 +57,9 @@ export class AvailabilityService {
     notes?: string,
   ): Promise<ServiceResponse<Availability>> {
     try {
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       const { data, error } = await supabase
@@ -132,29 +93,9 @@ export class AvailabilityService {
     date: string,
   ): Promise<ServiceResponse<void>> {
     try {
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       const { error } = await supabase
@@ -180,29 +121,9 @@ export class AvailabilityService {
     availabilityData: Partial<Availability>[],
   ): Promise<ServiceResponse<boolean>> {
     try {
-      // First, try to resolve the user ID (handle legacy IDs)
-      let actualUserId = userId;
-
-      // If userId is not a UUID, try to find it by legacy_id
-      if (
-        !userId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        )
-      ) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("legacy_id", userId)
-          .single();
-
-        if (profileError || !profile) {
-          return {
-            success: false,
-            error: `User not found: ${userId}`,
-          };
-        }
-
-        actualUserId = profile.id;
+      const actualUserId = await resolveProfileId(userId);
+      if (!actualUserId) {
+        return { success: false, error: `User not found: ${userId}` };
       }
 
       // First, delete all existing availability for this month

@@ -110,6 +110,47 @@ describe("legacy_id resolution pattern (ContactInquiriesService.createContactInq
     });
   });
 
+  describe("resolveProfileId helper (Phase 2 replacement)", () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { resolveProfileId } = require("../services/userMappingService");
+
+    it("returns input as-is for a UUID-shaped string (no DB query)", async () => {
+      mockTableCalls.length = 0;
+      const result = await resolveProfileId(UUID);
+      expect(result).toBe(UUID);
+      expect(mockTableCalls).not.toContain("profiles");
+    });
+
+    it("returns input as-is for an uppercase UUID", async () => {
+      mockTableCalls.length = 0;
+      const upper = UUID.toUpperCase();
+      const result = await resolveProfileId(upper);
+      expect(result).toBe(upper);
+      expect(mockTableCalls).not.toContain("profiles");
+    });
+
+    it("looks up via legacy_id for non-UUID input", async () => {
+      mockProfileLookupResult = { data: { id: UUID }, error: null };
+      mockTableCalls.length = 0;
+      const result = await resolveProfileId(NOT_A_UUID);
+      expect(result).toBe(UUID);
+      expect(mockTableCalls).toContain("profiles");
+    });
+
+    it("returns null when the legacy_id lookup fails", async () => {
+      mockProfileLookupResult = { data: null, error: { message: "no rows" } };
+      const result = await resolveProfileId(NOT_A_UUID);
+      expect(result).toBeNull();
+    });
+
+    it("returns null on empty string input", async () => {
+      mockTableCalls.length = 0;
+      const result = await resolveProfileId("");
+      expect(result).toBeNull();
+      expect(mockTableCalls).not.toContain("profiles");
+    });
+  });
+
   describe("regex contract (pinned across 19 inline copies)", () => {
     // These cases document the exact regex behavior the centralized
     // helper in Phase 2 must match. The regex is:
