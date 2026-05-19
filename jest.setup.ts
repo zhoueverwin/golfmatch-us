@@ -37,14 +37,6 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Mock expo-av to avoid native module requirements
-jest.mock('expo-av', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const Video = (props: any) => React.createElement(View, props, props.children);
-  return { Video, ResizeMode: { CONTAIN: 'contain', COVER: 'cover', STRETCH: 'stretch' } };
-});
-
 // Polyfill clearImmediate for StatusBar
 // @ts-ignore
 if (typeof global.clearImmediate === 'undefined') {

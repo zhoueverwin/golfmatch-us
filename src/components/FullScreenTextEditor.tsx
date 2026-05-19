@@ -50,7 +50,6 @@ export const FullScreenTextEditor: React.FC<FullScreenTextEditorProps> = ({
         inputRef.current?.focus();
       }, 100);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]); // Only run when visibility changes, not when value changes
 
   const handleSave = () => {

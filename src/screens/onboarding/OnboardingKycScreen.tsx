@@ -124,7 +124,6 @@ const OnboardingKycScreen: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId]);
 
   // Refresh every cache layer that holds the current user's profile so

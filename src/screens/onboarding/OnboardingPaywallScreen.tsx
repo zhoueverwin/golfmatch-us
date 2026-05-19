@@ -40,7 +40,6 @@ const OnboardingPaywallScreen: React.FC = () => {
     if (isProMember && !advancedRef.current) {
       advanceToMain();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProMember]);
 
   // Clear every cache layer holding the user's profile so Main / MyPage see
