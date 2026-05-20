@@ -436,8 +436,10 @@ const MessagesScreen: React.FC = () => {
         ListEmptyComponent={
           <EmptyState
             icon="chatbubbles-outline"
-            title="No messages yet"
-            subtitle="Start a conversation with someone you've matched with."
+            title="No conversations yet"
+            subtitle="Once you match with someone, you can message them here. A quick opener within 24 hours doubles your reply rate."
+            buttonTitle="Find matches"
+            onButtonPress={() => navigation.navigate("Connections" as any)}
           />
         }
       />
@@ -468,19 +470,17 @@ const styles = StyleSheet.create({
   matchingSectionHeader: {
     marginBottom: Spacing.sm,      // 12px gap before matches scroll
   },
-  // "Matches" title
-  // Font: 16px, Bold, Primary color
+  // "Matches" title — tokenized so it tracks the design system.
   matchingSectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     color: Colors.text.primary,
     marginBottom: 4,               // 4px gap between title and instruction
   },
   // "Message within 24 hours..." instruction text
-  // Font: 12px, Regular, Secondary color
   matchingSectionInstruction: {
-    fontSize: 12,
+    fontSize: Typography.fontSize.xs,
     fontFamily: Typography.fontFamily.regular,
     color: Colors.text.secondary,
     lineHeight: 16,

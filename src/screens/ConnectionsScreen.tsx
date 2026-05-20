@@ -442,16 +442,18 @@ const ConnectionsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <EmptyState
-            icon={activeTab === "like" ? "heart-outline" : "people-outline"}
+            icon={activeTab === "like" ? "heart-outline" : "sparkles-outline"}
             title={
-              activeTab === "like" ? "No Likes yet" : "No matches yet"
+              activeTab === "like"
+                ? "No Likes yet — but that changes fast"
+                : "Your first match is one swipe away"
             }
             subtitle={
               activeTab === "like"
-                ? "Complete your profile to start receiving Likes."
-                : "Send Likes to find your matches."
+                ? "Add a few great photos and a real bio. Profiles that feel personal get the most Likes — usually within the first day."
+                : "Like profiles you're into. When they Like you back, it's a match — and you can start chatting right away."
             }
-            buttonTitle="Discover Profiles"
+            buttonTitle={activeTab === "like" ? "Discover profiles" : "Start swiping"}
             onButtonPress={() => navigation.navigate("Search" as any)}
           />
         }

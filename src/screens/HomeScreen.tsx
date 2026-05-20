@@ -992,9 +992,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   tabText: {
-    fontSize: 16,
-    fontWeight: "500",
-    fontFamily: Typography.getFontFamily("500"),
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.medium,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
     color: Colors.gray[500],
     textAlign: "center",
     lineHeight: 20,
@@ -1003,8 +1003,8 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.white,
-    fontWeight: "600",
-    fontFamily: Typography.getFontFamily("600"),
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
     textAlign: "center",
     lineHeight: 20,
     includeFontPadding: false,
@@ -1032,7 +1032,7 @@ const styles = StyleSheet.create({
     height: 27.728,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.bold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     color: Colors.black,
