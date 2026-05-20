@@ -24,6 +24,10 @@ interface FullScreenTextEditorProps {
   maxLength?: number;
   onSave: (text: string) => void;
   onClose: () => void;
+  /** Defaults to true for backward-compat with the Bio editor. */
+  multiline?: boolean;
+  /** Useful when the field is numeric (e.g. height, score). */
+  keyboardType?: "default" | "number-pad" | "decimal-pad";
 }
 
 export const FullScreenTextEditor: React.FC<FullScreenTextEditorProps> = ({
@@ -34,6 +38,8 @@ export const FullScreenTextEditor: React.FC<FullScreenTextEditorProps> = ({
   maxLength,
   onSave,
   onClose,
+  multiline = true,
+  keyboardType = "default",
 }) => {
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
@@ -94,18 +100,25 @@ export const FullScreenTextEditor: React.FC<FullScreenTextEditorProps> = ({
           >
             <TextInput
               ref={inputRef}
-              style={styles.textInput}
+              style={[styles.textInput, !multiline && styles.textInputSingleLine]}
               placeholder={placeholder}
               placeholderTextColor={Colors.gray[400]}
               value={text}
-              onChangeText={setText}
-              multiline
+              onChangeText={(next) => {
+                // Strip newlines on single-line mode so a "return" press
+                // doesn't break the layout for short fields like Name.
+                setText(multiline ? next : next.replace(/[\r\n]+/g, ""));
+              }}
+              multiline={multiline}
               maxLength={maxLength}
-              textAlignVertical="top"
+              textAlignVertical={multiline ? "top" : "center"}
               autoFocus
-              blurOnSubmit={false}
+              blurOnSubmit={!multiline}
+              returnKeyType={multiline ? undefined : "done"}
+              onSubmitEditing={!multiline ? handleSave : undefined}
               scrollEnabled={false}
               selectionColor={Colors.primary}
+              keyboardType={keyboardType}
             />
           </ScrollView>
 
@@ -175,6 +188,13 @@ const styles = StyleSheet.create({
     minHeight: 300, // Ensure good touch target
     paddingTop: 0, // Remove default iOS padding
     paddingBottom: 20,
+  },
+  // Short single-line fields (Name, Height, etc.) don't need the
+  // multi-paragraph layout — keep it compact and centered.
+  textInputSingleLine: {
+    minHeight: 56,
+    lineHeight: undefined,
+    paddingBottom: 0,
   },
   footer: {
     padding: Spacing.md,

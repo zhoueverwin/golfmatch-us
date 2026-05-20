@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  TextInput,
   Alert,
   ActionSheetIOS,
   Platform,
@@ -39,6 +38,7 @@ import Button from "../components/Button";
 import Loading from "../components/Loading";
 import BirthDatePicker from "../components/BirthDatePicker";
 import FullScreenTextEditor from "../components/FullScreenTextEditor";
+import EditableRow from "../components/EditableRow";
 import { DataProvider } from "../services";
 import { storageService } from "../services/storageService";
 import { calculateAge, formatBirthDateJapanese } from "../utils/formatters";
@@ -68,6 +68,36 @@ interface ProfileFormData {
 
 type EditProfileNavigationProp = StackNavigationProp<RootStackParamList, "EditProfile">;
 
+// Centralized option lists. Used to be inline literals scattered through
+// the JSX of renderSelectField / renderModalSelectField calls; pulled up
+// here so the row-based pattern reads cleanly and the lists are reusable.
+const US_STATES = [
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+  "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+  "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+  "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+  "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+  "New Hampshire", "New Jersey", "New Mexico", "New York",
+  "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+  "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+  "West Virginia", "Wisconsin", "Wyoming", "Washington, D.C.",
+];
+const BLOOD_TYPES = ["A", "B", "O", "AB"];
+const BODY_TYPES = ["Slim", "Average", "Curvy", "Athletic"];
+const SMOKING_OPTIONS = ["Non-smoker", "Smoker", "Occasionally"];
+const FAVORITE_CLUBS = ["Driver", "Fairway Wood", "Hybrid", "Iron", "Wedge", "Putter"];
+const PERSONALITY_TYPES = [
+  "INTJ - Architect", "INTP - Logician", "ENTJ - Commander", "ENTP - Debater",
+  "INFJ - Advocate", "INFP - Mediator", "ENFJ - Protagonist", "ENFP - Campaigner",
+  "ISTJ - Logistician", "ISFJ - Defender", "ESTJ - Executive", "ESFJ - Consul",
+  "ISTP - Virtuoso", "ISFP - Adventurer", "ESTP - Entrepreneur", "ESFP - Entertainer",
+];
+const SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced", "Pro"];
+const TRANSPORTATION_OPTIONS = ["I'll drive myself", "Need a ride", "Either works"];
+const AVAILABLE_DAYS_OPTIONS = ["Weekdays", "Weekends", "Flexible", "Anytime"];
+const GENDER_OPTIONS = ["male", "female"];
+
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<EditProfileNavigationProp>();
   const { profileId } = useAuth(); // Get current user's profile ID
@@ -90,6 +120,18 @@ const EditProfileScreen: React.FC = () => {
   const [birthDatePickerVisible, setBirthDatePickerVisible] = useState(false);
   const [isVerified, setIsVerified] = useState(false); // Track if user is verified
   const [bioEditorVisible, setBioEditorVisible] = useState(false);
+  // Text-editor modal state. Powers the row-based pattern for short text /
+  // numeric fields (Name, Height, Average Score, Years Playing, Best Score).
+  // Bio still uses its dedicated full-screen editor because the Bio
+  // surface area is much larger and benefits from a longer-form layout.
+  const [textEditorField, setTextEditorField] = useState<keyof ProfileFormData | null>(null);
+  const [textEditorConfig, setTextEditorConfig] = useState<{
+    title: string;
+    placeholder: string;
+    multiline?: boolean;
+    keyboardType?: "default" | "number-pad" | "decimal-pad";
+    maxLength?: number;
+  }>({ title: "", placeholder: "" });
   const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
     age: "",
@@ -568,177 +610,77 @@ const EditProfileScreen: React.FC = () => {
     }
   };
 
-  const renderInputField = (
-    label: string,
-    field: keyof ProfileFormData,
-    placeholder: string,
-    multiline = false,
-    required = false,
-  ) => (
-    <View style={styles.inputField}>
-      <View style={styles.labelRow}>
-        <Text style={styles.inputLabel}>{label}</Text>
-        {required && <Text style={styles.requiredIndicator}>*</Text>}
-      </View>
-      <TextInput
-        key={`${field}-${formReady ? 'ready' : 'loading'}`}
-        style={[
-          styles.textInput,
-          multiline && styles.multilineInput,
-          !formReady && styles.disabledInput,
-        ]}
-        value={typeof formData[field] === "string" ? formData[field] : ""}
-        onChangeText={(value) => handleInputChange(field, value)}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.gray[400]}
-        multiline={multiline}
-        numberOfLines={multiline ? 4 : 1}
-        textAlignVertical={multiline ? "top" : "center"}
-        editable={formReady}
-        // IME-friendly settings for Japanese input
-        autoCorrect={false}
-        spellCheck={false}
-      />
-    </View>
-  );
+  // ============================================================
+  // Row-based editing helpers (Tier 1 UX pattern, 2026-05-20).
+  //
+  // Replaces the inline chip-selects / bordered inputs / etc. with a
+  // scannable list of rows; each row's onPress opens a focused editor.
+  // ============================================================
 
-  const renderInputFieldWithSuffix = (
-    label: string,
+  const openTextEditor = (
     field: keyof ProfileFormData,
-    placeholder: string,
-    suffix: string,
-    required = false,
-  ) => (
-    <View style={styles.inputField}>
-      <View style={styles.labelRow}>
-        <Text style={styles.inputLabel}>{label}</Text>
-        {required && <Text style={styles.requiredIndicator}>*</Text>}
-      </View>
-      <View style={styles.inputWithSuffixContainer}>
-        <TextInput
-          key={`${field}-${formReady ? 'ready' : 'loading'}`}
-          style={[
-            styles.textInputWithSuffix,
-            !formReady && styles.disabledInput,
-          ]}
-          value={typeof formData[field] === "string" ? formData[field] : ""}
-          onChangeText={(value) => handleInputChange(field, value.replace(/[^0-9]/g, ''))}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.gray[400]}
-          editable={formReady}
-          keyboardType="number-pad"
-          maxLength={2}
-        />
-        <Text style={styles.inputSuffix}>{suffix}</Text>
-      </View>
-    </View>
-  );
-
-  const renderSelectField = (
-    label: string,
-    field: keyof ProfileFormData,
-    options: string[],
-    required = false,
-    displayLabels?: Record<string, string>,
-    disabled = false,
-  ) => (
-    <View style={styles.inputField}>
-      <View style={styles.labelRow}>
-        <Text style={styles.inputLabel}>{label}</Text>
-        {required && <Text style={styles.requiredIndicator}>*</Text>}
-        {disabled && (
-          <Ionicons name="lock-closed" size={14} color={Colors.gray[400]} style={{ marginLeft: 4 }} />
-        )}
-      </View>
-      <View style={styles.selectContainer}>
-        {options.map((option) => {
-          const displayText = displayLabels ? (displayLabels[option] || option) : option;
-          const isSelected = formData[field] === option;
-          // When the field is KYC-locked, the selected option must still
-          // be visually obvious. Previously disabledOption (gray + low
-          // opacity) was applied AFTER selectedOption in the style array,
-          // so it overrode the teal — and a locked-but-selected gender
-          // chip looked identical to the unselected one. The user
-          // genuinely couldn't tell which gender was on file.
-          //   New rule: disabledOption mutes ONLY unselected chips;
-          //   disabledSelectedOption gives the chosen chip a slightly
-          //   muted teal so it stays the dominant visual.
-          return (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.selectOption,
-                isSelected && styles.selectedOption,
-                disabled && !isSelected && styles.disabledOption,
-                disabled && isSelected && styles.disabledSelectedOption,
-              ]}
-              onPress={() => {
-                if (disabled) return; // Prevent changes when disabled
-                // Double-tap to unselect: if already selected, clear it
-                if (isSelected) {
-                  handleInputChange(field, "");
-                } else {
-                  handleInputChange(field, option);
-                }
-              }}
-              activeOpacity={disabled ? 1 : 0.7}
-            >
-              <Text
-                style={[
-                  styles.selectOptionText,
-                  isSelected && styles.selectedOptionText,
-                  disabled && !isSelected && styles.disabledOptionText,
-                ]}
-              >
-                {displayText}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-      {disabled && (
-        <Text style={styles.lockedFieldHint}>Can't be changed after verification</Text>
-      )}
-    </View>
-  );
-
-  // New: Modal picker for long lists (prefecture, personality type)
-  const renderModalSelectField = (
-    label: string,
-    field: keyof ProfileFormData,
-    options: string[],
-    required = false,
+    config: {
+      title: string;
+      placeholder: string;
+      multiline?: boolean;
+      keyboardType?: "default" | "number-pad" | "decimal-pad";
+      maxLength?: number;
+    },
   ) => {
-    // For gender modal, show display labels
-    const displayValue = field === "gender" && formData[field]
-      ? getGenderDisplayLabel(formData[field])
-      : formData[field];
-    
-    return (
-      <View style={styles.inputField}>
-        <View style={styles.labelRow}>
-          <Text style={styles.inputLabel}>{label}</Text>
-          {required && <Text style={styles.requiredIndicator}>*</Text>}
-        </View>
-        <TouchableOpacity
-          style={styles.modalSelectButton}
-          onPress={() => {
-            setModalTitle(label);
-            setModalOptions(options);
-            setModalField(field);
-            setModalVisible(true);
-          }}
-        >
-          <Text style={[
-            styles.modalSelectText,
-            !formData[field] && styles.modalSelectPlaceholder
-          ]}>
-            {displayValue || `Select ${label}`}
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
-        </TouchableOpacity>
-      </View>
-    );
+    setTextEditorConfig(config);
+    setTextEditorField(field);
+  };
+
+  const openListPicker = (
+    field: keyof ProfileFormData,
+    label: string,
+    options: string[],
+  ) => {
+    setModalTitle(label);
+    setModalOptions(options);
+    setModalField(field);
+    setModalVisible(true);
+  };
+
+  const openMultiSelectPicker = (
+    field: keyof ProfileFormData,
+    label: string,
+    options: string[],
+    max: number = 3,
+  ) => {
+    setMultiSelectTitle(label);
+    setMultiSelectOptions(options);
+    setMultiSelectField(field);
+    setMultiSelectMax(max);
+    setMultiSelectModalVisible(true);
+  };
+
+  /**
+   * Returns the user-facing display string for a row's `value` prop.
+   * Empty string means "no value yet" (row shows the placeholder).
+   * Knows about per-field formatting: gender label, birth date format,
+   * multi-select join, numeric suffixes like "cm" / "yrs".
+   */
+  const getRowDisplayValue = (field: keyof ProfileFormData): string => {
+    const raw = formData[field];
+    if (field === "gender" && typeof raw === "string" && raw) {
+      return getGenderDisplayLabel(raw);
+    }
+    if (field === "birth_date" && typeof raw === "string" && raw) {
+      return formatBirthDateJapanese(raw);
+    }
+    if (field === "play_prefecture") {
+      const arr = Array.isArray(raw) ? raw : raw ? [raw as string] : [];
+      return arr.length === 0 ? "" : arr.join(", ");
+    }
+    if (field === "height" && typeof raw === "string" && raw) {
+      return `${raw} cm`;
+    }
+    if (field === "golf_experience" && typeof raw === "string" && raw) {
+      return `${raw} yrs`;
+    }
+    if (typeof raw === "string") return raw;
+    return "";
   };
 
   const handleModalSelect = (value: string) => {
@@ -751,68 +693,6 @@ const EditProfileScreen: React.FC = () => {
       }
     }
     setModalVisible(false);
-  };
-
-  // Multi-select modal field (for play_prefecture - max 3 selections)
-  const renderMultiSelectModalField = (
-    label: string,
-    field: keyof ProfileFormData,
-    options: string[],
-    maxSelections: number = 3,
-  ) => {
-    // Ensure selectedValues is always an array (handle null, undefined, or string from old data)
-    const rawValue = formData[field];
-    const selectedValues: string[] = Array.isArray(rawValue)
-      ? rawValue
-      : (rawValue ? [rawValue as string] : []);
-    const displayText = selectedValues.length > 0
-      ? selectedValues.join(", ")
-      : `Select ${label} (up to ${maxSelections})`;
-
-    return (
-      <View style={styles.inputField}>
-        <View style={styles.labelRow}>
-          <Text style={styles.inputLabel}>{label}</Text>
-          <Text style={styles.optionalHint}>(up to {maxSelections})</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.modalSelectButton}
-          onPress={() => {
-            setMultiSelectTitle(label);
-            setMultiSelectOptions(options);
-            setMultiSelectField(field);
-            setMultiSelectMax(maxSelections);
-            setMultiSelectModalVisible(true);
-          }}
-        >
-          <Text style={[
-            styles.modalSelectText,
-            selectedValues.length === 0 && styles.modalSelectPlaceholder
-          ]}>
-            {displayText}
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
-        </TouchableOpacity>
-        {selectedValues.length > 0 && (
-          <View style={styles.selectedChipsContainer}>
-            {selectedValues.map((value) => (
-              <View key={value} style={styles.selectedChip}>
-                <Text style={styles.selectedChipText}>{value}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    const newValues = selectedValues.filter(v => v !== value);
-                    handleInputChange(field, newValues);
-                  }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="close-circle" size={18} color={Colors.gray[500]} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    );
   };
 
   const handleMultiSelect = (value: string) => {
@@ -1001,251 +881,172 @@ const EditProfileScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Basic Information */}
+          {/* Basic Information — row-based: each field is a single line
+              showing label + value, tap opens a focused editor. */}
           <Card style={styles.sectionCard} shadow="small">
             <Text style={styles.sectionTitle}>Basic Info</Text>
 
-            {renderInputField("Name", "name", "Enter your name", false, true)}
+            <EditableRow
+              label="Name"
+              value={formData.name}
+              placeholder="Add your name"
+              required
+              onPress={() => openTextEditor("name", {
+                title: "Name",
+                placeholder: "Your name",
+                multiline: false,
+                maxLength: 60,
+              })}
+            />
 
-            {/* Birth Date Picker Field */}
-            <View style={styles.inputField}>
-              <View style={styles.labelRow}>
-                <Text style={styles.inputLabel}>Date of Birth</Text>
-                <Text style={styles.requiredIndicator}>*</Text>
-                {isVerified && (
-                  <Ionicons name="lock-closed" size={14} color={Colors.gray[400]} style={{ marginLeft: 4 }} />
-                )}
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.modalSelectButton,
-                  isVerified && styles.disabledModalSelectButton,
-                ]}
-                onPress={() => {
-                  if (!isVerified) {
-                    setBirthDatePickerVisible(true);
-                  }
-                }}
-                activeOpacity={isVerified ? 1 : 0.7}
-              >
-                <Text style={[
-                  styles.modalSelectText,
-                  !formData.birth_date && styles.modalSelectPlaceholder,
-                  isVerified && styles.disabledOptionText,
-                ]}>
-                  {formData.birth_date
-                    ? formatBirthDateJapanese(formData.birth_date)
-                    : "Select your date of birth"}
-                </Text>
-                <Ionicons name="calendar-outline" size={20} color={isVerified ? Colors.gray[300] : Colors.gray[500]} />
-              </TouchableOpacity>
-              {isVerified && (
-                <Text style={styles.lockedFieldHint}>Can't be changed after verification</Text>
-              )}
-            </View>
+            <EditableRow
+              label="Date of Birth"
+              value={getRowDisplayValue("birth_date")}
+              placeholder="Select your birthday"
+              required
+              locked={isVerified}
+              hint={isVerified ? "Can't be changed after verification" : undefined}
+              onPress={() => setBirthDatePickerVisible(true)}
+            />
 
-            {/* Calculated Age Display (read-only) */}
+            {/* Calculated Age (computed from birth_date, not editable) */}
             {formData.birth_date && (
-              <View style={styles.inputField}>
-                <Text style={styles.inputLabel}>Age</Text>
-                <View style={styles.readOnlyField}>
-                  <Text style={styles.readOnlyText}>
-                    {calculateAge(formData.birth_date)} years old
-                  </Text>
-                </View>
-              </View>
+              <EditableRow
+                label="Age"
+                value={`${calculateAge(formData.birth_date)} years old`}
+                locked
+                showCompleted={false}
+              />
             )}
 
-            {renderSelectField("Gender", "gender", [
-              "male",
-              "female",
-            ], true, genderLabels, isVerified)}
+            <EditableRow
+              label="Gender"
+              value={getRowDisplayValue("gender")}
+              placeholder="Select gender"
+              required
+              locked={isVerified}
+              hint={isVerified ? "Can't be changed after verification" : undefined}
+              onPress={() => openListPicker("gender", "Gender", GENDER_OPTIONS)}
+            />
 
-            {renderModalSelectField("State", "prefecture", [
-              "Alabama",
-              "Alaska",
-              "Arizona",
-              "Arkansas",
-              "California",
-              "Colorado",
-              "Connecticut",
-              "Delaware",
-              "Florida",
-              "Georgia",
-              "Hawaii",
-              "Idaho",
-              "Illinois",
-              "Indiana",
-              "Iowa",
-              "Kansas",
-              "Kentucky",
-              "Louisiana",
-              "Maine",
-              "Maryland",
-              "Massachusetts",
-              "Michigan",
-              "Minnesota",
-              "Mississippi",
-              "Missouri",
-              "Montana",
-              "Nebraska",
-              "Nevada",
-              "New Hampshire",
-              "New Jersey",
-              "New Mexico",
-              "New York",
-              "North Carolina",
-              "North Dakota",
-              "Ohio",
-              "Oklahoma",
-              "Oregon",
-              "Pennsylvania",
-              "Rhode Island",
-              "South Carolina",
-              "South Dakota",
-              "Tennessee",
-              "Texas",
-              "Utah",
-              "Vermont",
-              "Virginia",
-              "Washington",
-              "West Virginia",
-              "Wisconsin",
-              "Wyoming",
-              "Washington, D.C.",
-            ], true)}
+            <EditableRow
+              label="State"
+              value={getRowDisplayValue("prefecture")}
+              placeholder="Select your state"
+              required
+              onPress={() => openListPicker("prefecture", "State", US_STATES)}
+            />
 
-            {renderSelectField("Blood Type", "blood_type", [
-              "A",
-              "B",
-              "O",
-              "AB",
-            ])}
-            {renderInputField("Height (cm)", "height", "Enter your height")}
+            <EditableRow
+              label="Blood Type"
+              value={getRowDisplayValue("blood_type")}
+              onPress={() => openListPicker("blood_type", "Blood Type", BLOOD_TYPES)}
+            />
 
-            {renderSelectField("Body Type", "body_type", [
-              "Slim",
-              "Average",
-              "Curvy",
-              "Athletic",
-            ])}
-            {renderSelectField("Smoking", "smoking", [
-              "Non-smoker",
-              "Smoker",
-              "Occasionally",
-            ])}
+            <EditableRow
+              label="Height"
+              value={getRowDisplayValue("height")}
+              placeholder="Add your height"
+              onPress={() => openTextEditor("height", {
+                title: "Height (cm)",
+                placeholder: "e.g. 175",
+                multiline: false,
+                keyboardType: "number-pad",
+                maxLength: 3,
+              })}
+            />
 
-            {renderSelectField("Favorite Club", "favorite_club", [
-              "Driver",
-              "Fairway Wood",
-              "Hybrid",
-              "Iron",
-              "Wedge",
-              "Putter",
-            ])}
+            <EditableRow
+              label="Body Type"
+              value={getRowDisplayValue("body_type")}
+              onPress={() => openListPicker("body_type", "Body Type", BODY_TYPES)}
+            />
 
-            {renderModalSelectField("16 Personalities", "personality_type", [
-              "INTJ - Architect",
-              "INTP - Logician",
-              "ENTJ - Commander",
-              "ENTP - Debater",
-              "INFJ - Advocate",
-              "INFP - Mediator",
-              "ENFJ - Protagonist",
-              "ENFP - Campaigner",
-              "ISTJ - Logistician",
-              "ISFJ - Defender",
-              "ESTJ - Executive",
-              "ESFJ - Consul",
-              "ISTP - Virtuoso",
-              "ISFP - Adventurer",
-              "ESTP - Entrepreneur",
-              "ESFP - Entertainer",
-            ])}
+            <EditableRow
+              label="Smoking"
+              value={getRowDisplayValue("smoking")}
+              onPress={() => openListPicker("smoking", "Smoking", SMOKING_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Favorite Club"
+              value={getRowDisplayValue("favorite_club")}
+              onPress={() => openListPicker("favorite_club", "Favorite Club", FAVORITE_CLUBS)}
+            />
+
+            <EditableRow
+              label="Personality"
+              value={getRowDisplayValue("personality_type")}
+              onPress={() => openListPicker("personality_type", "16 Personalities", PERSONALITY_TYPES)}
+            />
           </Card>
 
-          {/* Golf Profile */}
+          {/* Golf Profile — same row pattern. */}
           <Card style={styles.sectionCard} shadow="small">
             <Text style={styles.sectionTitle}>Golf Profile</Text>
 
-            {renderInputFieldWithSuffix("Years Playing", "golf_experience", "e.g. 2", "yrs")}
+            <EditableRow
+              label="Years Playing"
+              value={getRowDisplayValue("golf_experience")}
+              placeholder="Add years"
+              onPress={() => openTextEditor("golf_experience", {
+                title: "Years Playing",
+                placeholder: "e.g. 5",
+                multiline: false,
+                keyboardType: "number-pad",
+                maxLength: 2,
+              })}
+            />
 
-            {renderSelectField("Skill Level", "golf_skill_level", [
-              "Beginner",
-              "Intermediate",
-              "Advanced",
-              "Pro",
-            ])}
+            <EditableRow
+              label="Skill Level"
+              value={getRowDisplayValue("golf_skill_level")}
+              onPress={() => openListPicker("golf_skill_level", "Skill Level", SKILL_LEVELS)}
+            />
 
-            {renderInputField("Average Score", "average_score", "e.g. 120-130")}
-            {renderInputField("Best Score", "best_score", "e.g. 88")}
+            <EditableRow
+              label="Average Score"
+              value={getRowDisplayValue("average_score")}
+              placeholder="e.g. 120-130"
+              onPress={() => openTextEditor("average_score", {
+                title: "Average Score",
+                placeholder: "e.g. 120-130",
+                multiline: false,
+                maxLength: 10,
+              })}
+            />
 
-            {renderSelectField("Transportation", "transportation", [
-              "I'll drive myself",
-              "Need a ride",
-              "Either works",
-            ])}
+            <EditableRow
+              label="Best Score"
+              value={getRowDisplayValue("best_score")}
+              placeholder="e.g. 88"
+              onPress={() => openTextEditor("best_score", {
+                title: "Best Score",
+                placeholder: "e.g. 88",
+                multiline: false,
+                keyboardType: "number-pad",
+                maxLength: 3,
+              })}
+            />
 
-            {renderSelectField("Available Days", "available_days", [
-              "Weekdays",
-              "Weekends",
-              "Flexible",
-              "Anytime",
-            ])}
+            <EditableRow
+              label="Transportation"
+              value={getRowDisplayValue("transportation")}
+              onPress={() => openListPicker("transportation", "Transportation", TRANSPORTATION_OPTIONS)}
+            />
 
-            {renderMultiSelectModalField("Where I Play", "play_prefecture", [
-              "Alabama",
-              "Alaska",
-              "Arizona",
-              "Arkansas",
-              "California",
-              "Colorado",
-              "Connecticut",
-              "Delaware",
-              "Florida",
-              "Georgia",
-              "Hawaii",
-              "Idaho",
-              "Illinois",
-              "Indiana",
-              "Iowa",
-              "Kansas",
-              "Kentucky",
-              "Louisiana",
-              "Maine",
-              "Maryland",
-              "Massachusetts",
-              "Michigan",
-              "Minnesota",
-              "Mississippi",
-              "Missouri",
-              "Montana",
-              "Nebraska",
-              "Nevada",
-              "New Hampshire",
-              "New Jersey",
-              "New Mexico",
-              "New York",
-              "North Carolina",
-              "North Dakota",
-              "Ohio",
-              "Oklahoma",
-              "Oregon",
-              "Pennsylvania",
-              "Rhode Island",
-              "South Carolina",
-              "South Dakota",
-              "Tennessee",
-              "Texas",
-              "Utah",
-              "Vermont",
-              "Virginia",
-              "Washington",
-              "West Virginia",
-              "Wisconsin",
-              "Wyoming",
-              "Washington, D.C.",
-            ], 3)}
+            <EditableRow
+              label="Available Days"
+              value={getRowDisplayValue("available_days")}
+              onPress={() => openListPicker("available_days", "Available Days", AVAILABLE_DAYS_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Where I Play"
+              value={getRowDisplayValue("play_prefecture")}
+              placeholder="Pick up to 3 states"
+              onPress={() => openMultiSelectPicker("play_prefecture", "Where I Play", US_STATES, 3)}
+            />
           </Card>
 
           {/* Bio Section */}
@@ -1451,6 +1252,34 @@ const EditProfileScreen: React.FC = () => {
           maxLength={1000}
           onSave={(text) => handleInputChange("bio", text)}
           onClose={() => setBioEditorVisible(false)}
+        />
+
+        {/* Generic Text Editor — drives Name / Height / Score rows.
+            One instance reads its config from `textEditorConfig` state so
+            we don't need a separate modal per field. */}
+        <FullScreenTextEditor
+          visible={textEditorField !== null}
+          title={textEditorConfig.title}
+          placeholder={textEditorConfig.placeholder}
+          value={
+            textEditorField && typeof formData[textEditorField] === "string"
+              ? (formData[textEditorField] as string)
+              : ""
+          }
+          maxLength={textEditorConfig.maxLength}
+          multiline={textEditorConfig.multiline}
+          keyboardType={textEditorConfig.keyboardType}
+          onSave={(text) => {
+            if (textEditorField) {
+              // For number-pad fields, strip any non-digits the keyboard
+              // somehow let through (paste, autofill).
+              const clean = textEditorConfig.keyboardType === "number-pad"
+                ? text.replace(/[^0-9]/g, "")
+                : text;
+              handleInputChange(textEditorField, clean);
+            }
+          }}
+          onClose={() => setTextEditorField(null)}
         />
       </SafeAreaView>
   );
