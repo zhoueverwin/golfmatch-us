@@ -98,6 +98,65 @@ const TRANSPORTATION_OPTIONS = ["I'll drive myself", "Need a ride", "Either work
 const AVAILABLE_DAYS_OPTIONS = ["Weekdays", "Weekends", "Flexible", "Anytime"];
 const GENDER_OPTIONS = ["male", "female"];
 
+// Fields tracked by the completeness progress bar. Equal weighting —
+// profile pictures, basic info, golf info, and bio all count the same.
+// Each entry has a key (used to read formData) and a user-facing label
+// (used in the "Add your X" hint when the field is unfilled).
+const COMPLETENESS_FIELDS: { key: keyof ProfileFormData; label: string }[] = [
+  { key: "profile_pictures", label: "photos" },
+  { key: "name", label: "name" },
+  { key: "birth_date", label: "birthday" },
+  { key: "gender", label: "gender" },
+  { key: "prefecture", label: "state" },
+  { key: "bio", label: "bio" },
+  { key: "height", label: "height" },
+  { key: "body_type", label: "body type" },
+  { key: "smoking", label: "smoking preference" },
+  { key: "blood_type", label: "blood type" },
+  { key: "favorite_club", label: "favorite club" },
+  { key: "personality_type", label: "personality type" },
+  { key: "golf_skill_level", label: "skill level" },
+  { key: "golf_experience", label: "years playing" },
+  { key: "average_score", label: "average score" },
+  { key: "best_score", label: "best score" },
+  { key: "transportation", label: "transportation preference" },
+  { key: "available_days", label: "available days" },
+  { key: "play_prefecture", label: "states where you play" },
+];
+
+interface Completeness {
+  percent: number;
+  filled: number;
+  total: number;
+  nextHint: string | null;
+}
+
+const computeCompleteness = (data: ProfileFormData): Completeness => {
+  let filled = 0;
+  let nextHint: string | null = null;
+  for (const field of COMPLETENESS_FIELDS) {
+    const value = data[field.key];
+    const isFilled =
+      field.key === "profile_pictures"
+        ? Array.isArray(value) && value.some((v) => typeof v === "string" && v !== "")
+        : field.key === "play_prefecture"
+          ? Array.isArray(value) && value.length > 0
+          : typeof value === "string" && value.trim().length > 0;
+    if (isFilled) {
+      filled += 1;
+    } else if (nextHint === null) {
+      nextHint = field.label;
+    }
+  }
+  const total = COMPLETENESS_FIELDS.length;
+  return {
+    percent: Math.round((filled / total) * 100),
+    filled,
+    total,
+    nextHint,
+  };
+};
+
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<EditProfileNavigationProp>();
   const { profileId } = useAuth(); // Get current user's profile ID
@@ -765,7 +824,36 @@ const EditProfileScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView 
+      {/* Profile completeness banner — persistent feedback. Filled fields
+          drive engagement (the row pattern already shows per-field status;
+          this gives the at-a-glance overview). Hint disappears at 100% and
+          when percent >= 80 to avoid nagging users who are mostly done. */}
+      {(() => {
+        const c = computeCompleteness(formData);
+        const showHint = c.nextHint !== null && c.percent < 80;
+        return (
+          <View style={styles.progressBanner}>
+            <View style={styles.progressLabelRow}>
+              <Text style={styles.progressLabel}>
+                {c.percent === 100 ? "Profile complete" : `Profile ${c.percent}%`}
+              </Text>
+              {showHint && (
+                <Text style={styles.progressHint} numberOfLines={1}>
+                  Add your {c.nextHint}
+                </Text>
+              )}
+              {c.percent === 100 && (
+                <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+              )}
+            </View>
+            <View style={styles.progressBarTrack}>
+              <View style={[styles.progressBarFill, { width: `${c.percent}%` }]} />
+            </View>
+          </View>
+        );
+      })()}
+
+      <KeyboardAvoidingView
         style={{ flex: 1 }} 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
@@ -1297,8 +1385,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     backgroundColor: Colors.white,
+  },
+  // Profile completeness banner sits under the header. Thin progress bar
+  // + label + (optional) hint. Border-bottom replaces the header's own
+  // border so the two read as one unit.
+  progressBanner: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.sm,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+  },
+  progressLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+    gap: Spacing.sm,
+  },
+  progressLabel: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.text.primary,
+  },
+  progressHint: {
+    flexShrink: 1,
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.primary,
+    textAlign: "right",
+  },
+  progressBarTrack: {
+    height: 4,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
   },
   headerButton: {
     paddingVertical: Spacing.sm,
