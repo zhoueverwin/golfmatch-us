@@ -64,7 +64,13 @@ const MyPageScreen: React.FC = () => {
   const { profileId } = useAuth(); // Get profileId from AuthContext
   const { unreadCount, unreadFootprintCount } = useNotifications(); // Get unread notification count from NotificationContext
   const { isProMember } = useRevenueCat();
-  const [profileCompletion, setProfileCompletion] = useState(0);
+  // Tracks both the % filled and the first unfilled field's label so
+  // the completion CTA can show a specific next-action hint
+  // ("Add your bio") instead of a generic slogan.
+  const [completion, setCompletion] = useState<{
+    percent: number;
+    nextHint: string | null;
+  }>({ percent: 0, nextHint: null });
   const [userName, setUserName] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -88,39 +94,85 @@ const MyPageScreen: React.FC = () => {
   // Activity data states (for menu badges)
   const [pastLikesCount, setPastLikesCount] = useState(0);
 
-  // Calculate profile completion percentage
-  const calculateProfileCompletion = (profile: UserProfile | null) => {
-    if (!profile) return 0;
-    
-    const fields = [
-      // Basic info (40% weight)
-      profile.basic?.name,
-      profile.basic?.age,
-      profile.basic?.gender,
-      profile.basic?.prefecture,
-      profile.basic?.blood_type,
-      profile.basic?.height,
-      profile.basic?.body_type,
-      profile.basic?.smoking,
-      
-      // Golf info (40% weight)
-      profile.golf?.skill_level,
-      profile.golf?.experience,
-      profile.golf?.average_score,
-      profile.golf?.transportation,
-      profile.golf?.available_days,
-      
-      // Bio and photos (20% weight)
-      profile.bio,
-      profile.profile_pictures?.length > 0,
+  /**
+   * Returns the profile completion percentage AND the user-facing label
+   * of the first unfilled (or partly filled) field.
+   *
+   * Tracks the SAME field set and ORDER as EditProfileScreen's
+   * `computeCompleteness` so the two screens always show the same
+   * number. If you add/remove a field here, mirror the change there.
+   * Both should eventually share one helper, but until the User /
+   * UserProfile shapes are unified that helper would need two
+   * variants — keeping them in parallel for now.
+   *
+   * Photos weighted fractionally (1/6 per slot), play_prefecture and
+   * languages as arrays (filled if non-empty). Deprecated fields
+   * (blood_type, favorite_club, personality_type) are NOT tracked.
+   */
+  const calculateProfileCompletion = (
+    profile: UserProfile | null,
+  ): { percent: number; nextHint: string | null } => {
+    if (!profile) return { percent: 0, nextHint: "first photo" };
+
+    const isStr = (v: unknown): boolean => {
+      if (v === null || v === undefined) return false;
+      const s = String(v).trim();
+      return s !== "" && s !== "0";
+    };
+    const isArr = (v: unknown): boolean =>
+      Array.isArray(v) && v.length > 0;
+
+    const photoCount = (profile.profile_pictures ?? []).filter(
+      (p) => typeof p === "string" && p !== "",
+    ).length;
+    const photoFill = Math.min(1, photoCount / 6);
+    const photoLabel = photoCount === 0 ? "first photo" : "more photos";
+
+    const checks: { label: string; fill: number }[] = [
+      // High-impact fields first — drive the "next field" hint.
+      { label: photoLabel, fill: photoFill },
+      { label: "name", fill: isStr(profile.basic?.name) ? 1 : 0 },
+      { label: "bio", fill: isStr(profile.bio) ? 1 : 0 },
+      { label: "what you're looking for", fill: isStr(profile.relationship?.looking_for) ? 1 : 0 },
+      // Golf identity
+      { label: "handicap", fill: isStr(profile.golf?.handicap) ? 1 : 0 },
+      { label: "home course", fill: isStr(profile.golf?.home_course) ? 1 : 0 },
+      { label: "skill level", fill: isStr(profile.golf?.skill_level) ? 1 : 0 },
+      { label: "years playing", fill: isStr(profile.golf?.experience) ? 1 : 0 },
+      { label: "playing frequency", fill: isStr(profile.golf?.playing_frequency) ? 1 : 0 },
+      { label: "average score", fill: isStr(profile.golf?.average_score) ? 1 : 0 },
+      { label: "best score", fill: isStr(profile.golf?.best_score) ? 1 : 0 },
+      { label: "walking vs riding", fill: isStr(profile.golf?.walking_or_riding) ? 1 : 0 },
+      { label: "dominant hand", fill: isStr(profile.golf?.dominant_hand) ? 1 : 0 },
+      { label: "transportation preference", fill: isStr(profile.golf?.transportation) ? 1 : 0 },
+      { label: "available days", fill: isStr(profile.golf?.available_days) ? 1 : 0 },
+      { label: "states where you play", fill: isArr(profile.play_prefecture) ? 1 : 0 },
+      // Lifestyle
+      { label: "drinking preference", fill: isStr(profile.lifestyle?.drinking) ? 1 : 0 },
+      { label: "kids status", fill: isStr(profile.relationship?.has_kids) ? 1 : 0 },
+      { label: "wants kids", fill: isStr(profile.relationship?.wants_kids) ? 1 : 0 },
+      { label: "occupation", fill: isStr(profile.lifestyle?.occupation) ? 1 : 0 },
+      { label: "education", fill: isStr(profile.lifestyle?.education) ? 1 : 0 },
+      { label: "pets", fill: isStr(profile.lifestyle?.pets) ? 1 : 0 },
+      { label: "languages", fill: isArr(profile.lifestyle?.languages) ? 1 : 0 },
+      // Required basics — last so they're not the first hint a user sees.
+      { label: "birthday", fill: isStr(profile.basic?.age) ? 1 : 0 },
+      { label: "gender", fill: isStr(profile.basic?.gender) ? 1 : 0 },
+      { label: "state", fill: isStr(profile.basic?.prefecture) ? 1 : 0 },
+      { label: "height", fill: isStr(profile.basic?.height) ? 1 : 0 },
+      { label: "body type", fill: isStr(profile.basic?.body_type) ? 1 : 0 },
+      { label: "smoking preference", fill: isStr(profile.basic?.smoking) ? 1 : 0 },
+      // Lowest-priority optionals
+      { label: "religion", fill: isStr(profile.lifestyle?.religion) ? 1 : 0 },
+      { label: "political leaning", fill: isStr(profile.lifestyle?.politics) ? 1 : 0 },
     ];
-    
-    const filledFields = fields.filter(field => {
-      if (typeof field === 'boolean') return field;
-      return field && field.toString().trim() !== '' && field !== '0';
-    }).length;
-    
-    return Math.round((filledFields / fields.length) * 100);
+
+    const filledSum = checks.reduce((sum, c) => sum + c.fill, 0);
+    const next = checks.find((c) => c.fill < 1);
+    return {
+      percent: Math.round((filledSum / checks.length) * 100),
+      nextHint: next ? next.label : null,
+    };
   };
 
   // Load user profile data. Shows spinner only on initial load;
@@ -147,7 +199,12 @@ const MyPageScreen: React.FC = () => {
         const newCompletion = calculateProfileCompletion(response.data);
         setUserName(prev => prev === newName ? prev : newName);
         setProfileImage(prev => prev === newImage ? prev : newImage);
-        setProfileCompletion(prev => prev === newCompletion ? prev : newCompletion);
+        // Compare both fields so we only re-render when something actually changed.
+        setCompletion(prev =>
+          prev.percent === newCompletion.percent && prev.nextHint === newCompletion.nextHint
+            ? prev
+            : newCompletion,
+        );
       }
     } catch (_error) {
       console.error("Error loading user profile:", _error);
@@ -277,21 +334,56 @@ const MyPageScreen: React.FC = () => {
 
             <Text style={styles.profileName}>{userName || "User"}</Text>
 
-            <Text style={styles.completionText}>
-              Profile completion: {profileCompletion}%
-            </Text>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${profileCompletion}%` },
-                ]}
-              />
-            </View>
-
-            <Text style={styles.completionMessage}>
-              A complete profile gets more matches!
-            </Text>
+            {/* Profile completion CTA — entire card is tappable and goes
+                to EditProfile. Below 100% it shows a specific next-step
+                ("Add your bio") so the encouragement is actionable, not
+                a slogan. At 100% it collapses to a small celebratory
+                badge so the screen doesn't pester users who are done. */}
+            {completion.percent < 100 ? (
+              <TouchableOpacity
+                style={styles.completionCard}
+                onPress={() => navigation.navigate("EditProfile")}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`Profile ${completion.percent} percent complete. Tap to edit.`}
+              >
+                <View style={styles.completionTopRow}>
+                  <Text style={styles.completionPercent}>
+                    Profile {completion.percent}% complete
+                  </Text>
+                  <View style={styles.completionEditPill}>
+                    <Text style={styles.completionEditPillText}>Edit</Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={14}
+                      color={Colors.primary}
+                    />
+                  </View>
+                </View>
+                <View style={styles.completionTrack}>
+                  <View
+                    style={[
+                      styles.completionFill,
+                      { width: `${completion.percent}%` },
+                    ]}
+                  />
+                </View>
+                {completion.nextHint ? (
+                  <Text style={styles.completionHint}>
+                    Add your {completion.nextHint} →
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.completionDoneBadge}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={Colors.success}
+                />
+                <Text style={styles.completionDoneText}>Profile complete</Text>
+              </View>
+            )}
           </LinearGradient>
 
           {/* Tab Bar */}
@@ -831,33 +923,82 @@ const styles = StyleSheet.create({
     color: "#131313",
     marginBottom: 6,
   },
-  completionText: {
-    fontSize: 14,
-    color: Colors.gray[500],
-    marginBottom: 4,
-    fontWeight: Typography.fontWeight.normal,
+  // New completion CTA — card-style, tappable, specific next-action hint.
+  completionCard: {
+    width: "88%",
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    // Soft elevation so the CTA reads as a distinct, tappable card
+    // sitting on top of the gradient profile section.
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  progressBar: {
-    height: 10,
-    backgroundColor: Colors.gray[100],
+  completionTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  completionPercent: {
+    flex: 1,
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.text.primary,
+  },
+  completionEditPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: Colors.primary + "15",
     borderRadius: BorderRadius.full,
-    overflow: "hidden",
-    width: "80%",
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    gap: 2,
   },
-  progressFill: {
+  completionEditPillText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.primary,
+  },
+  completionTrack: {
+    height: 6,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  completionFill: {
     height: "100%",
     backgroundColor: Colors.primary,
+    borderRadius: 3,
   },
-  completionMessage: {
-    fontSize: 14,
-    color: Colors.primary,
-    textAlign: "center",
-    fontWeight: "700",
-    marginTop: 8,
-    fontFamily: Typography.getFontFamily("700"),
+  completionHint: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+  },
+  completionDoneBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: Spacing.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.success + "15",
+    borderRadius: BorderRadius.full,
+  },
+  completionDoneText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.success,
   },
   // ── Quick Stats (Tab 1) ──────────────────────
   quickStats: {

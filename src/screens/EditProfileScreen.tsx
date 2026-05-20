@@ -39,31 +39,58 @@ import Loading from "../components/Loading";
 import BirthDatePicker from "../components/BirthDatePicker";
 import FullScreenTextEditor from "../components/FullScreenTextEditor";
 import EditableRow from "../components/EditableRow";
+import NumberWheelPicker from "../components/NumberWheelPicker";
+import CompactInputSheet from "../components/CompactInputSheet";
 import { DataProvider } from "../services";
 import { storageService } from "../services/storageService";
+import CacheService from "../services/cacheService";
 import { calculateAge, formatBirthDateJapanese } from "../utils/formatters";
 
 interface ProfileFormData {
+  // Identity
   name: string;
   age: string;
   birth_date: string; // ISO date string (YYYY-MM-DD)
   gender: string;
   prefecture: string;
   play_prefecture: string[]; // Prefectures where user typically plays golf (max 3)
+  // Bio + physical
+  bio: string;
+  height: string;
+  body_type: string;
+  smoking: string;
+  // Relationship / lifestyle (added 2026-05-20 PM expansion)
+  looking_for: string;
+  has_kids: string;
+  wants_kids: string;
+  drinking: string;
+  occupation: string;
+  education: string;
+  pets: string;
+  languages: string[];
+  religion: string;
+  politics: string;
+  // Golf identity (added 2026-05-20 PM expansion)
+  handicap: string; // stored as numeric string e.g. "12.3" or "-2.4"
+  home_course: string;
+  dominant_hand: string;
+  walking_or_riding: string;
+  playing_frequency: string;
+  // Golf preferences
   golf_skill_level: string;
   average_score: string;
-  bio: string;
   golf_experience: string;
   best_score: string;
   transportation: string;
   available_days: string;
+  // Photos
+  profile_pictures: string[];
+  // Deprecated — kept in shape for in-flight backwards-compat with rows
+  // loaded from the DB. No UI references these anymore; will be dropped
+  // from DB + type once a TestFlight cycle confirms safety.
   blood_type: string;
-  height: string;
-  body_type: string;
-  smoking: string;
   favorite_club: string;
   personality_type: string;
-  profile_pictures: string[];
 }
 
 type EditProfileNavigationProp = StackNavigationProp<RootStackParamList, "EditProfile">;
@@ -83,45 +110,92 @@ const US_STATES = [
   "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
   "West Virginia", "Wisconsin", "Wyoming", "Washington, D.C.",
 ];
-const BLOOD_TYPES = ["A", "B", "O", "AB"];
 const BODY_TYPES = ["Slim", "Average", "Curvy", "Athletic"];
 const SMOKING_OPTIONS = ["Non-smoker", "Smoker", "Occasionally"];
-const FAVORITE_CLUBS = ["Driver", "Fairway Wood", "Hybrid", "Iron", "Wedge", "Putter"];
-const PERSONALITY_TYPES = [
-  "INTJ - Architect", "INTP - Logician", "ENTJ - Commander", "ENTP - Debater",
-  "INFJ - Advocate", "INFP - Mediator", "ENFJ - Protagonist", "ENFP - Campaigner",
-  "ISTJ - Logistician", "ISFJ - Defender", "ESTJ - Executive", "ESFJ - Consul",
-  "ISTP - Virtuoso", "ISFP - Adventurer", "ESTP - Entrepreneur", "ESFP - Entertainer",
-];
 const SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced", "Pro"];
 const TRANSPORTATION_OPTIONS = ["I'll drive myself", "Need a ride", "Either works"];
 const AVAILABLE_DAYS_OPTIONS = ["Weekdays", "Weekends", "Flexible", "Anytime"];
 const GENDER_OPTIONS = ["male", "female"];
+
+// PM expansion (2026-05-20) — new option lists for relationship /
+// lifestyle / golf-identity fields. The UI is the source of truth for
+// these option sets; no DB CHECK constraint, so adding/renaming options
+// here is a one-file change.
+const LOOKING_FOR_OPTIONS = [
+  "Long-term relationship",
+  "Short-term, open to long-term",
+  "Casual dating",
+  "Golf buddies / friends",
+  "Figuring it out",
+];
+const HAS_KIDS_OPTIONS = ["No", "Yes — at home", "Yes — grown", "Prefer not to say"];
+const WANTS_KIDS_OPTIONS = ["Yes", "Maybe", "No", "Prefer not to say"];
+const DRINKING_OPTIONS = ["Never", "Socially", "Regularly", "Prefer not to say"];
+const PETS_OPTIONS = ["Dog", "Cat", "Other", "None", "Prefer not to say"];
+const RELIGION_OPTIONS = [
+  "Christian", "Catholic", "Jewish", "Muslim", "Hindu", "Buddhist",
+  "Spiritual", "Agnostic", "Atheist", "Other", "Prefer not to say",
+];
+const POLITICS_OPTIONS = [
+  "Liberal", "Moderate", "Conservative", "Not political", "Other", "Prefer not to say",
+];
+const EDUCATION_OPTIONS = [
+  "High school", "Some college", "Associate's", "Bachelor's", "Master's",
+  "PhD", "Trade / vocational", "Other",
+];
+const LANGUAGES_OPTIONS = [
+  "English", "Spanish", "French", "German", "Italian", "Portuguese",
+  "Mandarin", "Cantonese", "Japanese", "Korean", "Vietnamese", "Tagalog",
+  "Hindi", "Arabic", "Russian", "Other",
+];
+const DOMINANT_HAND_OPTIONS = ["Right-handed", "Left-handed"];
+const WALKING_OR_RIDING_OPTIONS = ["I walk", "I ride", "Either"];
+const PLAYING_FREQUENCY_OPTIONS = [
+  "Weekly", "A few times a month", "Monthly", "Occasionally",
+];
 
 // Fields tracked by the completeness progress bar. Equal weighting —
 // profile pictures, basic info, golf info, and bio all count the same.
 // Each entry has a key (used to read formData) and a user-facing label
 // (used in the "Add your X" hint when the field is unfilled).
 const COMPLETENESS_FIELDS: { key: keyof ProfileFormData; label: string }[] = [
+  // High-impact fields first — drive the "next field" hint.
   { key: "profile_pictures", label: "photos" },
   { key: "name", label: "name" },
-  { key: "birth_date", label: "birthday" },
-  { key: "gender", label: "gender" },
-  { key: "prefecture", label: "state" },
   { key: "bio", label: "bio" },
-  { key: "height", label: "height" },
-  { key: "body_type", label: "body type" },
-  { key: "smoking", label: "smoking preference" },
-  { key: "blood_type", label: "blood type" },
-  { key: "favorite_club", label: "favorite club" },
-  { key: "personality_type", label: "personality type" },
+  // Relationship intent — the single biggest match-quality field.
+  { key: "looking_for", label: "what you're looking for" },
+  // Golf identity
+  { key: "handicap", label: "handicap" },
+  { key: "home_course", label: "home course" },
   { key: "golf_skill_level", label: "skill level" },
   { key: "golf_experience", label: "years playing" },
+  { key: "playing_frequency", label: "playing frequency" },
   { key: "average_score", label: "average score" },
   { key: "best_score", label: "best score" },
+  { key: "walking_or_riding", label: "walking vs riding" },
+  { key: "dominant_hand", label: "dominant hand" },
   { key: "transportation", label: "transportation preference" },
   { key: "available_days", label: "available days" },
   { key: "play_prefecture", label: "states where you play" },
+  // Lifestyle
+  { key: "drinking", label: "drinking preference" },
+  { key: "has_kids", label: "kids status" },
+  { key: "wants_kids", label: "wants kids" },
+  { key: "occupation", label: "occupation" },
+  { key: "education", label: "education" },
+  { key: "pets", label: "pets" },
+  { key: "languages", label: "languages" },
+  // Physical / required basics — usually filled at onboarding
+  { key: "birth_date", label: "birthday" },
+  { key: "gender", label: "gender" },
+  { key: "prefecture", label: "state" },
+  { key: "height", label: "height" },
+  { key: "body_type", label: "body type" },
+  { key: "smoking", label: "smoking preference" },
+  // Optional lower-priority
+  { key: "religion", label: "religion" },
+  { key: "politics", label: "political leaning" },
 ];
 
 interface Completeness {
@@ -132,26 +206,39 @@ interface Completeness {
 }
 
 const computeCompleteness = (data: ProfileFormData): Completeness => {
-  let filled = 0;
+  // Photos contribute FRACTIONALLY (each of 6 slots = 1/6 of the
+  // photos point). A user with one photo and every text field filled
+  // therefore lands ~93%, not a false 100%. This mirrors the MyPage
+  // completion calc — keep the two in sync so users don't see two
+  // different "complete" numbers across the app.
+  let filledSum = 0;
   let nextHint: string | null = null;
   for (const field of COMPLETENESS_FIELDS) {
     const value = data[field.key];
-    const isFilled =
-      field.key === "profile_pictures"
-        ? Array.isArray(value) && value.some((v) => typeof v === "string" && v !== "")
-        : field.key === "play_prefecture"
-          ? Array.isArray(value) && value.length > 0
-          : typeof value === "string" && value.trim().length > 0;
-    if (isFilled) {
-      filled += 1;
-    } else if (nextHint === null) {
-      nextHint = field.label;
+    let fill: number;
+    let hintLabel = field.label;
+    if (field.key === "profile_pictures") {
+      const count = Array.isArray(value)
+        ? value.filter((v) => typeof v === "string" && v !== "").length
+        : 0;
+      fill = Math.min(1, count / 6);
+      hintLabel = count === 0 ? "first photo" : "more photos";
+    } else if (Array.isArray(value)) {
+      // Any other string[] field (play_prefecture, languages, ...) —
+      // filled if non-empty.
+      fill = value.length > 0 ? 1 : 0;
+    } else {
+      fill = typeof value === "string" && value.trim().length > 0 ? 1 : 0;
+    }
+    filledSum += fill;
+    if (fill < 1 && nextHint === null) {
+      nextHint = hintLabel;
     }
   }
   const total = COMPLETENESS_FIELDS.length;
   return {
-    percent: Math.round((filled / total) * 100),
-    filled,
+    percent: Math.round((filledSum / total) * 100),
+    filled: Math.round(filledSum),
     total,
     nextHint,
   };
@@ -191,6 +278,19 @@ const EditProfileScreen: React.FC = () => {
     keyboardType?: "default" | "number-pad" | "decimal-pad";
     maxLength?: number;
   }>({ title: "", placeholder: "" });
+  // Wheel picker state — replaces the number-pad text editor for fields
+  // where a tactile scroll over a fixed range feels right (height,
+  // years playing, best score). Matches the wheel UX of BirthDatePicker.
+  const [wheelField, setWheelField] = useState<keyof ProfileFormData | null>(null);
+  const [wheelConfig, setWheelConfig] = useState<{
+    title: string;
+    min: number;
+    max: number;
+    step?: number;
+    unit?: string;
+    formatValue?: (n: number) => string;
+    defaultValue?: number;
+  }>({ title: "", min: 0, max: 100 });
   const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
     age: "",
@@ -198,20 +298,37 @@ const EditProfileScreen: React.FC = () => {
     gender: "",
     prefecture: "",
     play_prefecture: [],
+    bio: "",
+    height: "",
+    body_type: "",
+    smoking: "",
+    // PM expansion (2026-05-20)
+    looking_for: "",
+    has_kids: "",
+    wants_kids: "",
+    drinking: "",
+    occupation: "",
+    education: "",
+    pets: "",
+    languages: [],
+    religion: "",
+    politics: "",
+    handicap: "",
+    home_course: "",
+    dominant_hand: "",
+    walking_or_riding: "",
+    playing_frequency: "",
     golf_skill_level: "",
     average_score: "",
-    bio: "",
     golf_experience: "",
     best_score: "",
     transportation: "",
     available_days: "",
+    profile_pictures: [],
+    // Deprecated
     blood_type: "",
-    height: "",
-    body_type: "",
-    smoking: "",
     favorite_club: "",
     personality_type: "",
-    profile_pictures: [],
   });
 
   useEffect(() => {
@@ -251,6 +368,18 @@ const EditProfileScreen: React.FC = () => {
         return;
       }
 
+      // Belt-and-suspenders: invalidate both cache layers for this user
+      // before fetching. The 2026-05-20 PM expansion added new mapper
+      // sections (relationship, lifestyle, extended golf) — a pre-expansion
+      // cached object would otherwise hydrate the form with empty strings
+      // and a subsequent save would clobber the DB values the user didn't
+      // touch this round. App.tsx has a version-keyed global wipe; this is
+      // the per-load safety net in case the migration didn't fire.
+      await Promise.all([
+        CacheService.remove(`user_profile_${currentUserId}`),
+        CacheService.remove(`user_${currentUserId}`),
+      ]);
+
       // Load current user profile from centralized data provider
       const response = await DataProvider.getUserProfile(currentUserId);
 
@@ -273,20 +402,38 @@ const EditProfileScreen: React.FC = () => {
         gender: profile.basic?.gender?.trim() || "",
         prefecture: profile.basic?.prefecture?.trim() || "",
         play_prefecture: (profile as any).play_prefecture || [], // Where the user typically plays (max 3)
+        bio: profile.bio || "",
+        height: profile.basic?.height || "",
+        body_type: profile.basic?.body_type || "",
+        smoking: profile.basic?.smoking || "",
+        // PM expansion (2026-05-20) — read new nested sections
+        looking_for: profile.relationship?.looking_for || "",
+        has_kids: profile.relationship?.has_kids || "",
+        wants_kids: profile.relationship?.wants_kids || "",
+        drinking: profile.lifestyle?.drinking || "",
+        occupation: profile.lifestyle?.occupation || "",
+        education: profile.lifestyle?.education || "",
+        pets: profile.lifestyle?.pets || "",
+        languages: profile.lifestyle?.languages || [],
+        religion: profile.lifestyle?.religion || "",
+        politics: profile.lifestyle?.politics || "",
+        handicap: profile.golf?.handicap || "",
+        home_course: profile.golf?.home_course || "",
+        dominant_hand: profile.golf?.dominant_hand || "",
+        walking_or_riding: profile.golf?.walking_or_riding || "",
+        playing_frequency: profile.golf?.playing_frequency || "",
         golf_skill_level: profile.golf?.skill_level || "",
         average_score: profile.golf?.average_score || "",
-        bio: profile.bio || "",
         golf_experience: profile.golf?.experience || "",
         best_score: profile.golf?.best_score || "",
         transportation: profile.golf?.transportation || "",
         available_days: profile.golf?.available_days || "",
+        profile_pictures: profile.profile_pictures || [],
+        // Deprecated — still read so they don't show as "unset" in the
+        // form state, but no UI references them anymore.
         blood_type: profile.basic?.blood_type || "",
-        height: profile.basic?.height || "",
-        body_type: profile.basic?.body_type || "",
-        smoking: profile.basic?.smoking || "",
         favorite_club: profile.basic?.favorite_club || "",
         personality_type: profile.basic?.personality_type || "",
-        profile_pictures: profile.profile_pictures || [],
       };
 
       setFormData(currentProfile);
@@ -576,10 +723,13 @@ const EditProfileScreen: React.FC = () => {
           birth_date: formData.birth_date,
           gender: formData.gender,
           prefecture: formData.prefecture,
-          blood_type: formData.blood_type,
           height: formData.height,
           body_type: formData.body_type,
           smoking: formData.smoking,
+          // Deprecated fields preserved on write so existing rows aren't
+          // nulled out during the transition. Once the migration to drop
+          // these columns lands, remove these lines.
+          blood_type: formData.blood_type,
           favorite_club: formData.favorite_club,
           personality_type: formData.personality_type,
         },
@@ -590,6 +740,26 @@ const EditProfileScreen: React.FC = () => {
           best_score: formData.best_score,
           transportation: formData.transportation,
           available_days: formData.available_days,
+          // PM expansion (2026-05-20)
+          handicap: formData.handicap,
+          home_course: formData.home_course,
+          dominant_hand: formData.dominant_hand,
+          walking_or_riding: formData.walking_or_riding,
+          playing_frequency: formData.playing_frequency,
+        },
+        relationship: {
+          looking_for: formData.looking_for,
+          has_kids: formData.has_kids,
+          wants_kids: formData.wants_kids,
+        },
+        lifestyle: {
+          drinking: formData.drinking,
+          occupation: formData.occupation,
+          education: formData.education,
+          pets: formData.pets,
+          languages: formData.languages,
+          religion: formData.religion,
+          politics: formData.politics,
         },
         bio: formData.bio,
         profile_pictures: uploadedProfilePictures, // Use uploaded URLs instead of local paths
@@ -701,6 +871,34 @@ const EditProfileScreen: React.FC = () => {
     setModalVisible(true);
   };
 
+  const openWheelPicker = (
+    field: keyof ProfileFormData,
+    config: {
+      title: string;
+      min: number;
+      max: number;
+      step?: number;
+      unit?: string;
+      formatValue?: (n: number) => string;
+      defaultValue?: number;
+    },
+  ) => {
+    setWheelConfig(config);
+    setWheelField(field);
+  };
+
+  /**
+   * Format an inch count as feet'inches" — `70` becomes `5' 10"`.
+   * Used by the Height wheel and the Height row display value so the
+   * stored unit (inches as integer string) renders consistently
+   * everywhere as the US-customary feet/inches notation.
+   */
+  const formatHeightInches = (inches: number): string => {
+    const feet = Math.floor(inches / 12);
+    const rem = inches % 12;
+    return `${feet}' ${rem}"`;
+  };
+
   const openMultiSelectPicker = (
     field: keyof ProfileFormData,
     label: string,
@@ -728,15 +926,33 @@ const EditProfileScreen: React.FC = () => {
     if (field === "birth_date" && typeof raw === "string" && raw) {
       return formatBirthDateJapanese(raw);
     }
-    if (field === "play_prefecture") {
+    if (field === "play_prefecture" || field === "languages") {
       const arr = Array.isArray(raw) ? raw : raw ? [raw as string] : [];
       return arr.length === 0 ? "" : arr.join(", ");
     }
     if (field === "height" && typeof raw === "string" && raw) {
-      return `${raw} cm`;
+      // Height stored as integer-string of inches; render feet/inches.
+      // Legacy cm data (outside plausible inch range) is converted on read.
+      const parsed = parseInt(raw, 10);
+      if (!Number.isNaN(parsed)) {
+        const asInches =
+          parsed >= 36 && parsed <= 96 ? parsed : Math.round(parsed / 2.54);
+        const feet = Math.floor(asInches / 12);
+        const rem = asInches % 12;
+        return `${feet}' ${rem}"`;
+      }
+      return raw;
     }
     if (field === "golf_experience" && typeof raw === "string" && raw) {
       return `${raw} yrs`;
+    }
+    if (field === "handicap" && typeof raw === "string" && raw) {
+      // Handicap convention: plus-handicaps (better than scratch) are
+      // shown with a + prefix. Negative storage = plus handicap.
+      const n = Number(raw);
+      if (Number.isNaN(n)) return raw;
+      if (n < 0) return `+${Math.abs(n).toFixed(1)}`;
+      return n.toFixed(1);
     }
     if (typeof raw === "string") return raw;
     return "";
@@ -969,8 +1185,7 @@ const EditProfileScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Basic Information — row-based: each field is a single line
-              showing label + value, tap opens a focused editor. */}
+          {/* Basic Info — identity + physical. */}
           <Card style={styles.sectionCard} shadow="small">
             <Text style={styles.sectionTitle}>Basic Info</Text>
 
@@ -997,7 +1212,6 @@ const EditProfileScreen: React.FC = () => {
               onPress={() => setBirthDatePickerVisible(true)}
             />
 
-            {/* Calculated Age (computed from birth_date, not editable) */}
             {formData.birth_date && (
               <EditableRow
                 label="Age"
@@ -1026,21 +1240,15 @@ const EditProfileScreen: React.FC = () => {
             />
 
             <EditableRow
-              label="Blood Type"
-              value={getRowDisplayValue("blood_type")}
-              onPress={() => openListPicker("blood_type", "Blood Type", BLOOD_TYPES)}
-            />
-
-            <EditableRow
               label="Height"
               value={getRowDisplayValue("height")}
               placeholder="Add your height"
-              onPress={() => openTextEditor("height", {
-                title: "Height (cm)",
-                placeholder: "e.g. 175",
-                multiline: false,
-                keyboardType: "number-pad",
-                maxLength: 3,
+              onPress={() => openWheelPicker("height", {
+                title: "Height",
+                min: 48,
+                max: 86,
+                formatValue: formatHeightInches,
+                defaultValue: 68,
               })}
             />
 
@@ -1055,34 +1263,66 @@ const EditProfileScreen: React.FC = () => {
               value={getRowDisplayValue("smoking")}
               onPress={() => openListPicker("smoking", "Smoking", SMOKING_OPTIONS)}
             />
+          </Card>
+
+          {/* Relationship — looking-for + family. Drives match quality. */}
+          <Card style={styles.sectionCard} shadow="small">
+            <Text style={styles.sectionTitle}>Relationship</Text>
 
             <EditableRow
-              label="Favorite Club"
-              value={getRowDisplayValue("favorite_club")}
-              onPress={() => openListPicker("favorite_club", "Favorite Club", FAVORITE_CLUBS)}
+              label="Looking For"
+              value={getRowDisplayValue("looking_for")}
+              placeholder="What you're looking for"
+              onPress={() => openListPicker("looking_for", "Looking For", LOOKING_FOR_OPTIONS)}
             />
 
             <EditableRow
-              label="Personality"
-              value={getRowDisplayValue("personality_type")}
-              onPress={() => openListPicker("personality_type", "16 Personalities", PERSONALITY_TYPES)}
+              label="Have Kids"
+              value={getRowDisplayValue("has_kids")}
+              placeholder="Do you have kids?"
+              onPress={() => openListPicker("has_kids", "Have Kids", HAS_KIDS_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Want Kids"
+              value={getRowDisplayValue("wants_kids")}
+              placeholder="Do you want kids?"
+              onPress={() => openListPicker("wants_kids", "Want Kids", WANTS_KIDS_OPTIONS)}
             />
           </Card>
 
-          {/* Golf Profile — same row pattern. */}
+          {/* Golf Profile — golf-credibility fields up top (handicap,
+              home course), then preferences, then logistics. */}
           <Card style={styles.sectionCard} shadow="small">
             <Text style={styles.sectionTitle}>Golf Profile</Text>
 
             <EditableRow
-              label="Years Playing"
-              value={getRowDisplayValue("golf_experience")}
-              placeholder="Add years"
-              onPress={() => openTextEditor("golf_experience", {
-                title: "Years Playing",
-                placeholder: "e.g. 5",
+              label="Handicap"
+              value={getRowDisplayValue("handicap")}
+              placeholder="USGA index"
+              onPress={() => openWheelPicker("handicap", {
+                title: "Handicap",
+                // -5.0 to 54.0 with 0.1 precision. Negative values are
+                // plus-handicaps (better than scratch); the display
+                // formatter renders them as "+2.4".
+                min: -5,
+                max: 54,
+                step: 0.1,
+                formatValue: (n) =>
+                  n < 0 ? `+${Math.abs(n).toFixed(1)}` : n.toFixed(1),
+                defaultValue: 20.0, // typical recreational handicap
+              })}
+            />
+
+            <EditableRow
+              label="Home Course"
+              value={getRowDisplayValue("home_course")}
+              placeholder="Your favorite course"
+              onPress={() => openTextEditor("home_course", {
+                title: "Home Course",
+                placeholder: "e.g. Pebble Beach Golf Links",
                 multiline: false,
-                keyboardType: "number-pad",
-                maxLength: 2,
+                maxLength: 80,
               })}
             />
 
@@ -1093,28 +1333,61 @@ const EditProfileScreen: React.FC = () => {
             />
 
             <EditableRow
+              label="Years Playing"
+              value={getRowDisplayValue("golf_experience")}
+              placeholder="Add years"
+              onPress={() => openWheelPicker("golf_experience", {
+                title: "Years Playing",
+                min: 0,
+                max: 60,
+                unit: "yrs",
+                defaultValue: 5,
+              })}
+            />
+
+            <EditableRow
+              label="Playing Frequency"
+              value={getRowDisplayValue("playing_frequency")}
+              placeholder="How often do you play?"
+              onPress={() => openListPicker("playing_frequency", "Playing Frequency", PLAYING_FREQUENCY_OPTIONS)}
+            />
+
+            <EditableRow
               label="Average Score"
               value={getRowDisplayValue("average_score")}
-              placeholder="e.g. 120-130"
-              onPress={() => openTextEditor("average_score", {
+              placeholder="Add your average score"
+              onPress={() => openWheelPicker("average_score", {
                 title: "Average Score",
-                placeholder: "e.g. 120-130",
-                multiline: false,
-                maxLength: 10,
+                min: 70,
+                max: 200,
+                defaultValue: 100,
               })}
             />
 
             <EditableRow
               label="Best Score"
               value={getRowDisplayValue("best_score")}
-              placeholder="e.g. 88"
-              onPress={() => openTextEditor("best_score", {
+              placeholder="Add your best score"
+              onPress={() => openWheelPicker("best_score", {
                 title: "Best Score",
-                placeholder: "e.g. 88",
-                multiline: false,
-                keyboardType: "number-pad",
-                maxLength: 3,
+                min: 60,
+                max: 180,
+                defaultValue: 95,
               })}
+            />
+
+            <EditableRow
+              label="Dominant Hand"
+              value={getRowDisplayValue("dominant_hand")}
+              placeholder="Right or left-handed?"
+              onPress={() => openListPicker("dominant_hand", "Dominant Hand", DOMINANT_HAND_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Walking vs Riding"
+              value={getRowDisplayValue("walking_or_riding")}
+              placeholder="How you play the course"
+              onPress={() => openListPicker("walking_or_riding", "Walking vs Riding", WALKING_OR_RIDING_OPTIONS)}
             />
 
             <EditableRow
@@ -1134,6 +1407,65 @@ const EditProfileScreen: React.FC = () => {
               value={getRowDisplayValue("play_prefecture")}
               placeholder="Pick up to 3 states"
               onPress={() => openMultiSelectPicker("play_prefecture", "Where I Play", US_STATES, 3)}
+            />
+          </Card>
+
+          {/* Lifestyle — drinking, work, optional cultural fields. */}
+          <Card style={styles.sectionCard} shadow="small">
+            <Text style={styles.sectionTitle}>Lifestyle</Text>
+
+            <EditableRow
+              label="Drinking"
+              value={getRowDisplayValue("drinking")}
+              placeholder="Your drinking preference"
+              onPress={() => openListPicker("drinking", "Drinking", DRINKING_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Occupation"
+              value={getRowDisplayValue("occupation")}
+              placeholder="What you do"
+              onPress={() => openTextEditor("occupation", {
+                title: "Occupation",
+                placeholder: "e.g. Software Engineer",
+                multiline: false,
+                maxLength: 60,
+              })}
+            />
+
+            <EditableRow
+              label="Education"
+              value={getRowDisplayValue("education")}
+              placeholder="Highest level"
+              onPress={() => openListPicker("education", "Education", EDUCATION_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Pets"
+              value={getRowDisplayValue("pets")}
+              placeholder="Pet ownership"
+              onPress={() => openListPicker("pets", "Pets", PETS_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Languages"
+              value={getRowDisplayValue("languages")}
+              placeholder="Languages you speak"
+              onPress={() => openMultiSelectPicker("languages", "Languages", LANGUAGES_OPTIONS, 5)}
+            />
+
+            <EditableRow
+              label="Religion"
+              value={getRowDisplayValue("religion")}
+              placeholder="Optional"
+              onPress={() => openListPicker("religion", "Religion", RELIGION_OPTIONS)}
+            />
+
+            <EditableRow
+              label="Politics"
+              value={getRowDisplayValue("politics")}
+              placeholder="Optional"
+              onPress={() => openListPicker("politics", "Politics", POLITICS_OPTIONS)}
             />
           </Card>
 
@@ -1342,33 +1674,77 @@ const EditProfileScreen: React.FC = () => {
           onClose={() => setBioEditorVisible(false)}
         />
 
-        {/* Generic Text Editor — drives Name / Height / Score rows.
-            One instance reads its config from `textEditorConfig` state so
-            we don't need a separate modal per field. */}
-        <FullScreenTextEditor
-          visible={textEditorField !== null}
-          title={textEditorConfig.title}
-          placeholder={textEditorConfig.placeholder}
+        {/* Number Wheel — drives Height, Years Playing, Best Score. */}
+        <NumberWheelPicker
+          visible={wheelField !== null}
+          title={wheelConfig.title}
           value={
-            textEditorField && typeof formData[textEditorField] === "string"
-              ? (formData[textEditorField] as string)
+            wheelField && typeof formData[wheelField] === "string"
+              ? (formData[wheelField] as string)
               : ""
           }
-          maxLength={textEditorConfig.maxLength}
-          multiline={textEditorConfig.multiline}
-          keyboardType={textEditorConfig.keyboardType}
-          onSave={(text) => {
-            if (textEditorField) {
-              // For number-pad fields, strip any non-digits the keyboard
-              // somehow let through (paste, autofill).
-              const clean = textEditorConfig.keyboardType === "number-pad"
-                ? text.replace(/[^0-9]/g, "")
-                : text;
-              handleInputChange(textEditorField, clean);
+          min={wheelConfig.min}
+          max={wheelConfig.max}
+          step={wheelConfig.step}
+          unit={wheelConfig.unit}
+          formatValue={wheelConfig.formatValue}
+          defaultValue={wheelConfig.defaultValue}
+          onSave={(next) => {
+            if (wheelField) {
+              handleInputChange(wheelField, next);
             }
           }}
-          onClose={() => setTextEditorField(null)}
+          onClose={() => setWheelField(null)}
         />
+
+        {/* Text editor — picks the right modal based on `multiline`.
+            Single-line fields (Name, Average Score range) get the small
+            CompactInputSheet so they don't take over the screen for one
+            line of text. Multiline (none today, but reserved for future
+            free-form fields) would get the full-screen layout. */}
+        {textEditorConfig.multiline === false ? (
+          <CompactInputSheet
+            visible={textEditorField !== null}
+            title={textEditorConfig.title}
+            placeholder={textEditorConfig.placeholder}
+            value={
+              textEditorField && typeof formData[textEditorField] === "string"
+                ? (formData[textEditorField] as string)
+                : ""
+            }
+            maxLength={textEditorConfig.maxLength}
+            keyboardType={textEditorConfig.keyboardType}
+            onSave={(text) => {
+              if (textEditorField) {
+                const clean = textEditorConfig.keyboardType === "number-pad"
+                  ? text.replace(/[^0-9]/g, "")
+                  : text;
+                handleInputChange(textEditorField, clean);
+              }
+            }}
+            onClose={() => setTextEditorField(null)}
+          />
+        ) : (
+          <FullScreenTextEditor
+            visible={textEditorField !== null}
+            title={textEditorConfig.title}
+            placeholder={textEditorConfig.placeholder}
+            value={
+              textEditorField && typeof formData[textEditorField] === "string"
+                ? (formData[textEditorField] as string)
+                : ""
+            }
+            maxLength={textEditorConfig.maxLength}
+            multiline={textEditorConfig.multiline}
+            keyboardType={textEditorConfig.keyboardType}
+            onSave={(text) => {
+              if (textEditorField) {
+                handleInputChange(textEditorField, text);
+              }
+            }}
+            onClose={() => setTextEditorField(null)}
+          />
+        )}
       </SafeAreaView>
   );
 };

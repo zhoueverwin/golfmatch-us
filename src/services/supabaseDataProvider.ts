@@ -1103,6 +1103,28 @@ class SupabaseDataProvider {
         best_score: user.best_score || "",
         transportation: user.transportation || "",
         available_days: user.available_days || "",
+        // PM expansion (2026-05-20)
+        handicap: user.handicap !== undefined && user.handicap !== null
+          ? String(user.handicap)
+          : "",
+        home_course: user.home_course || "",
+        dominant_hand: user.dominant_hand || "",
+        walking_or_riding: user.walking_or_riding || "",
+        playing_frequency: user.playing_frequency || "",
+      },
+      relationship: {
+        looking_for: user.looking_for || "",
+        has_kids: user.has_kids || "",
+        wants_kids: user.wants_kids || "",
+      },
+      lifestyle: {
+        drinking: user.drinking || "",
+        occupation: user.occupation || "",
+        education: user.education || "",
+        pets: user.pets || "",
+        languages: user.languages || [],
+        religion: user.religion || "",
+        politics: user.politics || "",
       },
       bio: user.bio || "",
       profile_pictures: user.profile_pictures,
@@ -1195,6 +1217,41 @@ class SupabaseDataProvider {
       if (profile.golf.best_score !== undefined && profile.golf.best_score !== null) updates.best_score = profile.golf.best_score;
       if (profile.golf.transportation !== undefined && profile.golf.transportation !== '') updates.transportation = profile.golf.transportation;
       if (profile.golf.available_days !== undefined) updates.available_days = profile.golf.available_days;
+      // PM expansion (2026-05-20) — golf identity fields.
+      // Guard against empty strings — matches the behavior of every
+      // pre-existing field on this object. Without this, an unchanged
+      // (empty in formData) field would clobber a previously-saved DB
+      // value back to empty whenever the user saved any OTHER field.
+      if (profile.golf.handicap !== undefined && profile.golf.handicap !== '') {
+        const h = Number(profile.golf.handicap);
+        if (!Number.isNaN(h)) updates.handicap = h;
+      }
+      if (profile.golf.home_course !== undefined && profile.golf.home_course !== '') updates.home_course = profile.golf.home_course;
+      if (profile.golf.dominant_hand !== undefined && profile.golf.dominant_hand !== '') updates.dominant_hand = profile.golf.dominant_hand;
+      if (profile.golf.walking_or_riding !== undefined && profile.golf.walking_or_riding !== '') updates.walking_or_riding = profile.golf.walking_or_riding;
+      if (profile.golf.playing_frequency !== undefined && profile.golf.playing_frequency !== '') updates.playing_frequency = profile.golf.playing_frequency;
+    }
+
+    // PM expansion (2026-05-20) — relationship / lifestyle sections.
+    // Same empty-string guard as above to prevent unrelated-field saves
+    // from clobbering previously-set values back to empty.
+    if (profile.relationship) {
+      if (profile.relationship.looking_for !== undefined && profile.relationship.looking_for !== '') updates.looking_for = profile.relationship.looking_for;
+      if (profile.relationship.has_kids !== undefined && profile.relationship.has_kids !== '') updates.has_kids = profile.relationship.has_kids;
+      if (profile.relationship.wants_kids !== undefined && profile.relationship.wants_kids !== '') updates.wants_kids = profile.relationship.wants_kids;
+    }
+    if (profile.lifestyle) {
+      if (profile.lifestyle.drinking !== undefined && profile.lifestyle.drinking !== '') updates.drinking = profile.lifestyle.drinking;
+      if (profile.lifestyle.occupation !== undefined && profile.lifestyle.occupation !== '') updates.occupation = profile.lifestyle.occupation;
+      if (profile.lifestyle.education !== undefined && profile.lifestyle.education !== '') updates.education = profile.lifestyle.education;
+      if (profile.lifestyle.pets !== undefined && profile.lifestyle.pets !== '') updates.pets = profile.lifestyle.pets;
+      // Languages is an array — guard against empty array overwriting a
+      // previously-saved language list.
+      if (profile.lifestyle.languages !== undefined && Array.isArray(profile.lifestyle.languages) && profile.lifestyle.languages.length > 0) {
+        updates.languages = profile.lifestyle.languages;
+      }
+      if (profile.lifestyle.religion !== undefined && profile.lifestyle.religion !== '') updates.religion = profile.lifestyle.religion;
+      if (profile.lifestyle.politics !== undefined && profile.lifestyle.politics !== '') updates.politics = profile.lifestyle.politics;
     }
 
     if (typeof profile.bio === "string") {

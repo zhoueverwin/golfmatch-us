@@ -12,8 +12,19 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { EnvironmentBanner } from './src/components/EnvironmentBanner';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeFacebookSDK } from './src/services/facebookAnalytics';
 import { initializeFirebaseAnalytics } from './src/services/firebaseAnalytics';
+import CacheService from './src/services/cacheService';
+
+// Cache version: bump this whenever the cached UserProfile / User shape
+// changes so that stale entries from older app versions are wiped on next
+// launch. Without this, AsyncStorage-persisted caches return UserProfile
+// objects missing newly-added sections (e.g. the 2026-05-20 PM expansion
+// added `relationship` and `lifestyle` sections that the old cache shape
+// doesn't have).
+const CACHE_VERSION = '2026-05-20-profile-expansion';
+const CACHE_VERSION_KEY = '@golfmatch_cache_version';
 
 // Configure React Query client with optimal settings
 const queryClient = new QueryClient({
@@ -86,6 +97,21 @@ export default function App() {
         if (fontsLoaded || fontError) {
           if (fontError) {
             console.error('Font loading error:', fontError);
+          }
+
+          // One-time cache migration: wipe stale CacheService entries when
+          // the cached profile shape has changed since last launch. Cheap
+          // (one AsyncStorage read + conditional multiRemove) and runs at
+          // most once per app version.
+          try {
+            const stored = await AsyncStorage.getItem(CACHE_VERSION_KEY);
+            if (stored !== CACHE_VERSION) {
+              await CacheService.clear();
+              await AsyncStorage.setItem(CACHE_VERSION_KEY, CACHE_VERSION);
+              console.log(`[CacheMigration] Cleared cache (was: ${stored || 'unset'}, now: ${CACHE_VERSION})`);
+            }
+          } catch (cacheError) {
+            console.warn('Cache version migration warning:', cacheError);
           }
 
           // Initialize Facebook SDK and request ATT permission

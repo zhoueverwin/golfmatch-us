@@ -34,6 +34,24 @@ export interface User {
   best_score?: string;
   transportation?: string;
   available_days?: string;
+  // PM expansion (2026-05-20) — see PM audit + migration
+  // 00000000000007_profile_field_expansion.sql for the full rationale.
+  // All optional so existing rows continue to deserialize unchanged.
+  looking_for?: string;
+  handicap?: number;
+  home_course?: string;
+  walking_or_riding?: string;
+  dominant_hand?: string;
+  drinking?: string;
+  has_kids?: string;
+  wants_kids?: string;
+  playing_frequency?: string;
+  occupation?: string;
+  education?: string;
+  pets?: string;
+  languages?: string[];
+  religion?: string;
+  politics?: string;
   created_at: string;
   updated_at: string;
   // Interaction state (for UI)
@@ -169,6 +187,28 @@ export interface UserProfile {
     best_score?: string;
     transportation: string;
     available_days: string;
+    // PM expansion (2026-05-20) — golf-credibility fields
+    handicap?: string; // numeric string, may be empty
+    home_course?: string;
+    dominant_hand?: string;
+    walking_or_riding?: string;
+    playing_frequency?: string;
+  };
+  // PM expansion (2026-05-20) — relationship intent + family
+  relationship?: {
+    looking_for?: string;
+    has_kids?: string;
+    wants_kids?: string;
+  };
+  // PM expansion (2026-05-20) — lifestyle / background
+  lifestyle?: {
+    drinking?: string;
+    occupation?: string;
+    education?: string;
+    pets?: string;
+    languages?: string[];
+    religion?: string;
+    politics?: string;
   };
   bio: string;
   profile_pictures: string[];

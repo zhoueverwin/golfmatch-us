@@ -11,7 +11,7 @@ import { getCachedAuthUserId } from "../authCache";
 export class ProfilesService {
   // Explicit column list — excludes internal fields (push_token, push_token_updated_at,
   // premium_source, premium_granted_at, last_footprints_viewed_at, last_likes_viewed_at)
-  static readonly PROFILE_COLUMNS = "id, user_id, legacy_id, name, age, gender, prefecture, location, golf_skill_level, average_score, bio, profile_pictures, is_verified, is_premium, current_streak_days, longest_streak_days, last_login, last_active_at, blood_type, height, body_type, smoking, favorite_club, personality_type, golf_experience, best_score, transportation, available_days, created_at, updated_at, kyc_status, birth_date, play_prefecture, received_likes_count";
+  static readonly PROFILE_COLUMNS = "id, user_id, legacy_id, name, age, gender, prefecture, location, golf_skill_level, average_score, bio, profile_pictures, is_verified, is_premium, current_streak_days, longest_streak_days, last_login, last_active_at, blood_type, height, body_type, smoking, favorite_club, personality_type, golf_experience, best_score, transportation, available_days, created_at, updated_at, kyc_status, birth_date, play_prefecture, received_likes_count, looking_for, has_kids, wants_kids, drinking, occupation, education, pets, languages, religion, politics, handicap, home_course, dominant_hand, walking_or_riding, playing_frequency";
 
   async getProfile(userId: string): Promise<ServiceResponse<User>> {
     try {

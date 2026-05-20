@@ -858,6 +858,34 @@ const UserProfileScreen: React.FC = () => {
     </View>
   );
 
+  /**
+   * Render height as US-customary feet/inches. Storage is integer-string
+   * inches (the wheel writes this); legacy data stored in cm is detected
+   * by being outside the plausible inch range (36-96) and converted on
+   * read so existing rows display correctly during the cm->inches
+   * transition. Mirrors the same helper in EditProfileScreen — keep in
+   * sync if either is changed.
+   */
+  const formatHeightForDisplay = (raw: string): string => {
+    const parsed = parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return raw;
+    const asInches = parsed >= 36 && parsed <= 96 ? parsed : Math.round(parsed / 2.54);
+    const feet = Math.floor(asInches / 12);
+    const rem = asInches % 12;
+    return `${feet}' ${rem}"`;
+  };
+
+  /**
+   * Render handicap with USGA convention: plus-handicaps (better than
+   * scratch) prefix +; otherwise one-decimal index.
+   */
+  const formatHandicapForDisplay = (raw: string): string => {
+    const n = Number(raw);
+    if (Number.isNaN(n)) return raw;
+    if (n < 0) return `+${Math.abs(n).toFixed(1)}`;
+    return n.toFixed(1);
+  };
+
   if (profileLoading && !profile) {
     return (
       <SafeAreaView style={styles.container}>
@@ -1122,16 +1150,24 @@ const UserProfileScreen: React.FC = () => {
             {profile.basic.age && profile.basic.age !== "0" && profile.basic.age !== "" && renderProfileItem("Age", profile.basic.age)}
             {profile.basic.gender && profile.basic.gender !== "" && renderProfileItem("Gender", genderLabels[profile.basic.gender] || profile.basic.gender)}
             {profile.basic.prefecture && profile.basic.prefecture !== "" && renderProfileItem("Location", profile.basic.prefecture)}
-            {profile.basic.blood_type && profile.basic.blood_type !== "" && renderProfileItem("Blood Type", profile.basic.blood_type)}
-            {profile.basic.favorite_club && profile.basic.favorite_club !== "" && renderProfileItem("Favorite Club", profile.basic.favorite_club)}
-            {profile.basic.height && profile.basic.height !== "" && renderProfileItem("Height", profile.basic.height + " cm")}
+            {profile.basic.height && profile.basic.height !== "" && renderProfileItem("Height", formatHeightForDisplay(profile.basic.height))}
             {profile.basic.body_type && profile.basic.body_type !== "" && renderProfileItem("Body Type", profile.basic.body_type)}
             {profile.basic.smoking && profile.basic.smoking !== "" && renderProfileItem("Smoking", profile.basic.smoking)}
-            {profile.basic.personality_type && profile.basic.personality_type !== "" &&
-              renderProfileItem(
-                "16 Personalities",
-                profile.basic.personality_type,
-              )}
+          </View>,
+        )}
+
+        {/* Relationship Section — looking_for + family. Hidden if no
+            value is set so we don't render an empty section card. */}
+        {profile.relationship && (
+          profile.relationship.looking_for ||
+          profile.relationship.has_kids ||
+          profile.relationship.wants_kids
+        ) && renderProfileSection(
+          "Relationship",
+          <View style={styles.profileGrid}>
+            {profile.relationship.looking_for && profile.relationship.looking_for !== "" && renderProfileItem("Looking For", profile.relationship.looking_for)}
+            {profile.relationship.has_kids && profile.relationship.has_kids !== "" && renderProfileItem("Has Kids", profile.relationship.has_kids)}
+            {profile.relationship.wants_kids && profile.relationship.wants_kids !== "" && renderProfileItem("Wants Kids", profile.relationship.wants_kids)}
           </View>,
         )}
 
@@ -1139,13 +1175,41 @@ const UserProfileScreen: React.FC = () => {
         {profile.golf && renderProfileSection(
           "Golf Profile",
           <View style={styles.profileGrid}>
+            {profile.golf.handicap && profile.golf.handicap !== "" && renderProfileItem("Handicap", formatHandicapForDisplay(profile.golf.handicap))}
+            {profile.golf.home_course && profile.golf.home_course !== "" && renderProfileItem("Home Course", profile.golf.home_course)}
             {profile.golf.skill_level && profile.golf.skill_level !== "" && renderProfileItem("Skill Level", profile.golf.skill_level)}
-            {profile.golf.experience && profile.golf.experience !== "" && renderProfileItem("Years Playing", profile.golf.experience)}
+            {profile.golf.experience && profile.golf.experience !== "" && renderProfileItem("Years Playing", `${profile.golf.experience} yrs`)}
+            {profile.golf.playing_frequency && profile.golf.playing_frequency !== "" && renderProfileItem("Plays", profile.golf.playing_frequency)}
             {profile.golf.average_score && profile.golf.average_score !== "0" && profile.golf.average_score !== "" && renderProfileItem("Average Score", profile.golf.average_score)}
             {profile.golf.best_score && profile.golf.best_score !== "" && renderProfileItem("Best Score", profile.golf.best_score)}
+            {profile.golf.dominant_hand && profile.golf.dominant_hand !== "" && renderProfileItem("Dominant Hand", profile.golf.dominant_hand)}
+            {profile.golf.walking_or_riding && profile.golf.walking_or_riding !== "" && renderProfileItem("Walking / Riding", profile.golf.walking_or_riding)}
             {profile.golf.transportation && profile.golf.transportation !== "" && renderProfileItem("Transportation", profile.golf.transportation)}
             {profile.golf.available_days && profile.golf.available_days !== "" && renderProfileItem("Available Days", profile.golf.available_days)}
             {profile.play_prefecture && profile.play_prefecture.length > 0 && renderProfileItem("Where I Play", Array.isArray(profile.play_prefecture) ? profile.play_prefecture.join("\n") : profile.play_prefecture)}
+          </View>,
+        )}
+
+        {/* Lifestyle Section — drinking, work, optional cultural fields.
+            Section hidden when nothing is set. */}
+        {profile.lifestyle && (
+          profile.lifestyle.drinking ||
+          profile.lifestyle.occupation ||
+          profile.lifestyle.education ||
+          profile.lifestyle.pets ||
+          (profile.lifestyle.languages && profile.lifestyle.languages.length > 0) ||
+          profile.lifestyle.religion ||
+          profile.lifestyle.politics
+        ) && renderProfileSection(
+          "Lifestyle",
+          <View style={styles.profileGrid}>
+            {profile.lifestyle.drinking && profile.lifestyle.drinking !== "" && renderProfileItem("Drinking", profile.lifestyle.drinking)}
+            {profile.lifestyle.occupation && profile.lifestyle.occupation !== "" && renderProfileItem("Occupation", profile.lifestyle.occupation)}
+            {profile.lifestyle.education && profile.lifestyle.education !== "" && renderProfileItem("Education", profile.lifestyle.education)}
+            {profile.lifestyle.pets && profile.lifestyle.pets !== "" && renderProfileItem("Pets", profile.lifestyle.pets)}
+            {profile.lifestyle.languages && profile.lifestyle.languages.length > 0 && renderProfileItem("Languages", profile.lifestyle.languages.join(", "))}
+            {profile.lifestyle.religion && profile.lifestyle.religion !== "" && renderProfileItem("Religion", profile.lifestyle.religion)}
+            {profile.lifestyle.politics && profile.lifestyle.politics !== "" && renderProfileItem("Politics", profile.lifestyle.politics)}
           </View>,
         )}
 
