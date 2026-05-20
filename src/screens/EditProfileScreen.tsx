@@ -585,7 +585,6 @@ const EditProfileScreen: React.FC = () => {
         style={[
           styles.textInput,
           multiline && styles.multilineInput,
-          required && !formData[field] && styles.requiredInput,
           !formReady && styles.disabledInput,
         ]}
         value={typeof formData[field] === "string" ? formData[field] : ""}
@@ -620,7 +619,6 @@ const EditProfileScreen: React.FC = () => {
           key={`${field}-${formReady ? 'ready' : 'loading'}`}
           style={[
             styles.textInputWithSuffix,
-            required && !formData[field] && styles.requiredInput,
             !formReady && styles.disabledInput,
           ]}
           value={typeof formData[field] === "string" ? formData[field] : ""}
@@ -655,19 +653,29 @@ const EditProfileScreen: React.FC = () => {
       <View style={styles.selectContainer}>
         {options.map((option) => {
           const displayText = displayLabels ? (displayLabels[option] || option) : option;
+          const isSelected = formData[field] === option;
+          // When the field is KYC-locked, the selected option must still
+          // be visually obvious. Previously disabledOption (gray + low
+          // opacity) was applied AFTER selectedOption in the style array,
+          // so it overrode the teal — and a locked-but-selected gender
+          // chip looked identical to the unselected one. The user
+          // genuinely couldn't tell which gender was on file.
+          //   New rule: disabledOption mutes ONLY unselected chips;
+          //   disabledSelectedOption gives the chosen chip a slightly
+          //   muted teal so it stays the dominant visual.
           return (
             <TouchableOpacity
               key={option}
               style={[
                 styles.selectOption,
-                formData[field] === option && styles.selectedOption,
-                required && !formData[field] && styles.requiredSelectOption,
-                disabled && styles.disabledOption,
+                isSelected && styles.selectedOption,
+                disabled && !isSelected && styles.disabledOption,
+                disabled && isSelected && styles.disabledSelectedOption,
               ]}
               onPress={() => {
                 if (disabled) return; // Prevent changes when disabled
                 // Double-tap to unselect: if already selected, clear it
-                if (formData[field] === option) {
+                if (isSelected) {
                   handleInputChange(field, "");
                 } else {
                   handleInputChange(field, option);
@@ -678,8 +686,8 @@ const EditProfileScreen: React.FC = () => {
               <Text
                 style={[
                   styles.selectOptionText,
-                  formData[field] === option && styles.selectedOptionText,
-                  disabled && styles.disabledOptionText,
+                  isSelected && styles.selectedOptionText,
+                  disabled && !isSelected && styles.disabledOptionText,
                 ]}
               >
                 {displayText}
@@ -690,9 +698,6 @@ const EditProfileScreen: React.FC = () => {
       </View>
       {disabled && (
         <Text style={styles.lockedFieldHint}>Can't be changed after verification</Text>
-      )}
-      {required && !formData[field] && (
-        <Text style={styles.requiredHint}>This field is required</Text>
       )}
     </View>
   );
@@ -716,10 +721,7 @@ const EditProfileScreen: React.FC = () => {
           {required && <Text style={styles.requiredIndicator}>*</Text>}
         </View>
         <TouchableOpacity
-          style={[
-            styles.modalSelectButton,
-            required && !formData[field] && styles.requiredSelectButton,
-          ]}
+          style={styles.modalSelectButton}
           onPress={() => {
             setModalTitle(label);
             setModalOptions(options);
@@ -733,11 +735,8 @@ const EditProfileScreen: React.FC = () => {
           ]}>
             {displayValue || `Select ${label}`}
           </Text>
-          <Ionicons name="chevron-down" size={20} color={Colors.gray[500]} />
+          <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
         </TouchableOpacity>
-        {required && !formData[field] && (
-          <Text style={styles.requiredHint}>This field is required</Text>
-        )}
       </View>
     );
   };
@@ -792,7 +791,7 @@ const EditProfileScreen: React.FC = () => {
           ]}>
             {displayText}
           </Text>
-          <Ionicons name="chevron-down" size={20} color={Colors.gray[500]} />
+          <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
         </TouchableOpacity>
         {selectedValues.length > 0 && (
           <View style={styles.selectedChipsContainer}>
@@ -1020,7 +1019,6 @@ const EditProfileScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.modalSelectButton,
-                  !formData.birth_date && styles.requiredSelectButton,
                   isVerified && styles.disabledModalSelectButton,
                 ]}
                 onPress={() => {
@@ -1043,9 +1041,6 @@ const EditProfileScreen: React.FC = () => {
               </TouchableOpacity>
               {isVerified && (
                 <Text style={styles.lockedFieldHint}>Can't be changed after verification</Text>
-              )}
-              {!isVerified && !formData.birth_date && (
-                <Text style={styles.requiredHint}>This field is required</Text>
               )}
             </View>
 
@@ -1632,30 +1627,37 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.semibold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
     color: Colors.text.primary,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   inputField: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   inputLabel: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.medium,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
-    color: Colors.text.primary,
-    marginBottom: Spacing.sm,
+    // Smaller, semibold, slightly muted — labels announce the field without
+    // shouting. Matches modern dating-app field-list density (Hinge / Bumble).
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    color: Colors.gray[700],
+    marginBottom: Spacing.xs,
+    letterSpacing: 0.1,
   },
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   requiredIndicator: {
-    fontSize: Typography.fontSize.base,
+    fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.bold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     color: Colors.error,
     marginLeft: Spacing.xs,
   },
+  // Inline required hint kept in styles for compatibility but no longer
+  // rendered by renderXxx helpers — the asterisk + save-time alert give
+  // unambiguous feedback without firing red text the moment the screen
+  // opens (which framed pristine fields as "errored").
   requiredHint: {
     fontSize: Typography.fontSize.xs,
     fontFamily: Typography.fontFamily.regular,
@@ -1667,38 +1669,45 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamily.regular,
     color: Colors.gray[500],
     marginTop: Spacing.xs,
+    marginLeft: Spacing.xs,
   },
   disabledOption: {
     backgroundColor: Colors.gray[100],
-    borderColor: Colors.gray[200],
-    opacity: 0.7,
+    opacity: 0.6,
+  },
+  // Locked-and-selected: kept clearly visible (it's the user's actual
+  // chosen value, just not editable). Muted teal communicates "selected
+  // but locked" without making the chip disappear.
+  disabledSelectedOption: {
+    backgroundColor: Colors.primaryDark,
+    opacity: 0.85,
   },
   disabledOptionText: {
     color: Colors.gray[400],
   },
   disabledModalSelectButton: {
     backgroundColor: Colors.gray[100],
-    borderColor: Colors.gray[200],
   },
-  requiredInput: {
-    borderColor: Colors.error,
-  },
-  requiredSelectOption: {
-    borderColor: Colors.error,
-  },
-  requiredSelectButton: {
-    borderColor: Colors.error,
-  },
+  // requiredInput / requiredSelectOption / requiredSelectButton removed:
+  // they fired red borders on every pristine required field at screen
+  // open, which framed the form as already-broken. Validation now lives
+  // in the save handler (handleSave alert at line ~409) where it belongs.
   textInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
+    // Filled style — no border by default. Matches the soft, photo-grid
+    // feel of the top of this screen and reads as one continuous design
+    // language instead of "photo grid + 1990s form fields".
+    backgroundColor: Colors.gray[50],
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 14,
     fontSize: Typography.fontSize.base,
     fontFamily: Typography.fontFamily.regular,
     color: Colors.text.primary,
-    backgroundColor: Colors.white,
+    // Transparent border placeholder keeps height stable if a focus
+    // border ever gets added (currently RN's TextInput doesn't support
+    // :focus styling directly without state).
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   inputWithSuffixContainer: {
     flexDirection: "row",
@@ -1706,39 +1715,40 @@ const styles = StyleSheet.create({
   },
   textInputWithSuffix: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.gray[50],
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 14,
     fontSize: Typography.fontSize.base,
     fontFamily: Typography.fontFamily.regular,
     color: Colors.text.primary,
-    backgroundColor: Colors.white,
     maxWidth: 100,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   inputSuffix: {
     fontSize: Typography.fontSize.base,
     fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.primary,
+    color: Colors.text.secondary,
     marginLeft: Spacing.sm,
   },
   disabledInput: {
-    backgroundColor: Colors.gray[50],
+    backgroundColor: Colors.gray[100],
     color: Colors.gray[400],
   },
   multilineInput: {
-    height: 100,
-    paddingTop: Spacing.sm,
+    minHeight: 120,
+    paddingTop: 14,
+    textAlignVertical: "top",
   },
   bioPreview: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     backgroundColor: Colors.gray[50],
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    minHeight: 100,
+    minHeight: 120,
   },
   bioPreviewText: {
     flex: 1,
@@ -1758,25 +1768,26 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   selectOption: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
+    // Filled gray pill by default; brand color when selected. No outer
+    // border — matches the soft filled-input language. Bigger horizontal
+    // padding for easier tap (was 16/8, now 18/10).
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.gray[100],
   },
   selectedOption: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   selectOptionText: {
     fontSize: Typography.fontSize.sm,
-    fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.primary,
-  },
-  selectedOptionText: {
     fontWeight: Typography.fontWeight.medium,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
+    color: Colors.gray[700],
+  },
+  selectedOptionText: {
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
     color: Colors.white,
   },
   actionButtons: {
@@ -1802,17 +1813,18 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.md,
   },
-  // Modal select field styles
+  // Modal select field styles — filled "settings-row" feel; reads as
+  // tappable native list item rather than a faux-input rectangle.
   modalSelectButton: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
+    paddingVertical: 14,
+    backgroundColor: Colors.gray[50],
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   modalSelectText: {
     fontSize: Typography.fontSize.base,
