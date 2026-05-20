@@ -459,9 +459,18 @@ const HomeScreen: React.FC = () => {
         }
 
         if (response.data) {
-          // Refetch posts to show new post
-          await refetch();
-          // Invalidate userPosts cache so profile page shows updated data with correct aspect_ratio
+          // Switch to Following so the user can actually see their post.
+          // For You is algorithmic and doesn't include the author's own
+          // posts, so staying on For You after creation looked broken
+          // ("I just posted but nothing shows up"). Following includes
+          // own posts and is the right surface to land on. No-op if the
+          // user was already on Following.
+          if (activeTab !== "following") {
+            setActiveTab("following");
+          }
+          // Invalidate both home feeds + user posts so they refetch fresh
+          // data (React Query handles the actual refetch in the background).
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
           queryClient.invalidateQueries({ queryKey: ['userPosts'] });
           console.log('Post created successfully:', response.data.id);
         }
