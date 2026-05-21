@@ -30,6 +30,28 @@ import { StreakBadge } from "./StreakBadge";
 
 const PinOutlineIcon = require("../../assets/images/Icons/Pin-Outline.png");
 
+/**
+ * Compute the distance chip label for a candidate card. Honors the same
+ * <5mi privacy bucket as the server RPC — even when we derived the meters
+ * from score_breakdown (which contains raw meters for observability), we
+ * still bucket on the client to keep behavior consistent across surfaces.
+ */
+function getDistanceLabel(user: User): string | null {
+  // Search results carry distance_miles directly from the RPC.
+  if (typeof user.distance_miles === "number") {
+    if (user.distance_miles < 5) return "<5 mi";
+    return `${user.distance_miles} mi`;
+  }
+  // Recommendation results carry distance_meters in score_breakdown.
+  const meters = user.score_breakdown?.distance_meters;
+  if (meters != null) {
+    const miles = meters / 1609.34;
+    if (miles < 5) return "<5 mi";
+    return `${Math.round(miles)} mi`;
+  }
+  return null;
+}
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
   Dimensions.get("window");
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
@@ -346,6 +368,9 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
                 <Image source={PinOutlineIcon} style={styles.pinIcon} />
                 <Text style={styles.locationText}>
                   {user.prefecture || "Not set"}
+                  {getDistanceLabel(user)
+                    ? ` · ${getDistanceLabel(user)}`
+                    : ""}
                 </Text>
               </View>
               {(user.golf_skill_level || user.average_score) && (
@@ -703,6 +728,9 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
                   <Image source={PinOutlineIcon} style={styles.pinIcon} />
                   <Text style={styles.locationText}>
                     {user.prefecture || "Not set"}
+                    {getDistanceLabel(user)
+                      ? ` · ${getDistanceLabel(user)}`
+                      : ""}
                   </Text>
                 </View>
                 {(user.golf_skill_level || user.average_score) && (

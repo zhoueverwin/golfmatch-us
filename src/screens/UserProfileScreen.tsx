@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useRoute,
@@ -29,7 +30,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 
 import { Colors } from "../constants/colors";
-import { Spacing, BorderRadius } from "../constants/spacing";
+import { Spacing, BorderRadius, Shadows } from "../constants/spacing";
 import { Typography } from "../constants/typography";
 import { UserProfile, CalendarData, Post } from "../types/dataModels";
 import Loading from "../components/Loading";
@@ -842,21 +843,49 @@ const UserProfileScreen: React.FC = () => {
     );
   };
 
-  const renderProfileSection = (title: string, children: React.ReactNode, useCardStyle: boolean = true) => (
+  const renderProfileSection = (
+    title: string,
+    children: React.ReactNode,
+    useCardStyle: boolean = true,
+    iconName?: keyof typeof Ionicons.glyphMap,
+    accent?: string,
+  ) => (
     <View style={[styles.section, useCardStyle && styles.sectionCard]}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        {iconName && (
+          <View style={[styles.sectionIconBadge, accent ? { backgroundColor: accent + "1A" } : null]}>
+            <Ionicons name={iconName} size={16} color={accent || Colors.primary} />
+          </View>
+        )}
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
       <View style={styles.sectionContent}>
         {children}
       </View>
     </View>
   );
 
-  const renderProfileItem = (label: string, value: string) => (
-    <View style={styles.profileItem}>
+  const renderProfileItem = (label: string, value: string, isLast: boolean = false) => (
+    <View style={[styles.profileItem, isLast && styles.profileItemLast]}>
       <Text style={styles.profileLabel}>{label}</Text>
       <Text style={styles.profileValue}>{value}</Text>
     </View>
   );
+
+  // Build a grid of profile items, automatically marking the last visible row
+  // so we can drop its bottom border for a cleaner card edge.
+  const renderProfileGrid = (rows: Array<[string, string | undefined | null | false]>) => {
+    const visible = rows.filter(([, v]) => v !== undefined && v !== null && v !== false && v !== "" && v !== "0");
+    return (
+      <View style={styles.profileGrid}>
+        {visible.map(([label, value], idx) => (
+          <React.Fragment key={label}>
+            {renderProfileItem(label, String(value), idx === visible.length - 1)}
+          </React.Fragment>
+        ))}
+      </View>
+    );
+  };
 
   /**
    * Render height as US-customary feet/inches. Storage is integer-string
@@ -925,31 +954,31 @@ const UserProfileScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      {/* Floating overlay header — pill-shaped blurred buttons over the hero */}
+      <View style={[styles.floatingHeader, { top: insets.top + 8 }]} pointerEvents="box-none">
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={styles.floatingHeaderButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
-          <Image
-            source={require("../../assets/images/Icons/Arrow-LeftGrey.png")}
-            style={styles.backIconImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.backLabel}>Back</Text>
+          <BlurView intensity={40} tint="dark" style={styles.floatingHeaderBlur}>
+            <Ionicons name="chevron-back" size={22} color={Colors.white} />
+          </BlurView>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
         {profileId !== userId ? (
           <TouchableOpacity
-            style={styles.headerMenuButton}
+            style={styles.floatingHeaderButton}
             onPress={() => setShowUserMenu(true)}
             accessibilityRole="button"
             accessibilityLabel="User menu"
           >
-            <Ionicons name="ellipsis-horizontal" size={22} color={Colors.gray[600]} />
+            <BlurView intensity={40} tint="dark" style={styles.floatingHeaderBlur}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={Colors.white} />
+            </BlurView>
           </TouchableOpacity>
         ) : (
-          <View style={styles.headerSpacer} />
+          <View style={styles.floatingHeaderButton} />
         )}
       </View>
 
@@ -1021,9 +1050,12 @@ const UserProfileScreen: React.FC = () => {
                   </TouchableOpacity>
                 )}
 
-                {/* Photo indicator bars */}
+                {/* Photo indicator bars — positioned below floating header */}
                 {hasMultiplePhotos && (
-                  <View style={styles.photoIndicatorContainer} pointerEvents="none">
+                  <View
+                    style={[styles.photoIndicatorContainer, { top: insets.top + 56 }]}
+                    pointerEvents="none"
+                  >
                     {photos.map((_, idx) => {
                       const inputRange = [
                         (idx - 1) * width,
@@ -1048,6 +1080,20 @@ const UserProfileScreen: React.FC = () => {
                   </View>
                 )}
 
+                {/* Page counter pill — Hinge/Tinder convention */}
+                {hasMultiplePhotos && (
+                  <View
+                    style={[styles.photoCounterPill, { top: insets.top + 8 }]}
+                    pointerEvents="none"
+                  >
+                    <BlurView intensity={30} tint="dark" style={styles.photoCounterBlur}>
+                      <Text style={styles.photoCounterText}>
+                        {photoIndex + 1} / {photos.length}
+                      </Text>
+                    </BlurView>
+                  </View>
+                )}
+
                 {/* Gradient Overlay at bottom - fades to white with smooth easing */}
                 <LinearGradient
                   colors={[
@@ -1066,74 +1112,71 @@ const UserProfileScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Thumbnail strip below hero */}
-              {hasMultiplePhotos && (
-                <View style={styles.profileThumbnailStrip}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.profileThumbnailContent}>
-                    {photos.map((photo, idx) => (
-                      <TouchableOpacity
-                        key={idx}
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          setPhotoIndex(idx);
-                          heroScrollRef.current?.scrollTo({ x: idx * width, animated: true });
-                        }}
-                      >
-                        <ExpoImage
-                          source={{ uri: photo }}
-                          style={[
-                            styles.profileThumbnailImage,
-                            idx === photoIndex && styles.profileThumbnailImageActive,
-                          ]}
-                          contentFit="cover"
-                          cachePolicy="memory-disk"
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
             </>
           );
         })()}
 
-        {/* Basic Info Section */}
+        {/* Identity hero block — name + age inline, online state, stat chips */}
         <View style={styles.basicInfoSection}>
           <View style={styles.userNameRow}>
-            <Text style={styles.userName}>{profile.basic?.name || 'User'}</Text>
+            <Text style={styles.userName} numberOfLines={1}>
+              {profile.basic?.name || 'User'}
+              {profile.basic?.age && profile.basic.age !== "0" && profile.basic.age !== "" && (
+                <Text style={styles.userAge}>, {profile.basic.age}</Text>
+              )}
+            </Text>
             <StreakBadge days={profile.status?.current_streak_days} />
+            {profileId !== userId && isOnline === true && (
+              <View style={styles.onlinePill}>
+                <View style={styles.onlineStatusDot} />
+                <Text style={styles.onlinePillText}>Online</Text>
+              </View>
+            )}
           </View>
 
-          {/* Online Status / Last Active */}
-          {profileId !== userId && (
-            <View style={styles.statusRow}>
-              {isOnline === true && (
-                <View style={styles.onlineStatusContainer}>
-                  <View style={styles.onlineStatusDot} />
-                  <Text style={styles.onlineStatusText}>Online</Text>
+          {/* Location + last-active meta row */}
+          <View style={styles.metaRow}>
+            <Ionicons name="location" size={14} color={Colors.gray[500]} />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {profile.location?.prefecture || profile.basic?.prefecture || 'Location not set'}
+            </Text>
+            {profileId !== userId && isOnline === false && lastActiveAt && (
+              <>
+                <Text style={styles.metaDot}>·</Text>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  Active {formatLastActive(lastActiveAt)}
+                </Text>
+              </>
+            )}
+          </View>
+
+          {/* Stat chips — handicap, skill, years playing (only when set) */}
+          {profile.golf && (
+            profile.golf.handicap ||
+            profile.golf.skill_level ||
+            profile.golf.experience
+          ) && (
+            <View style={styles.statChipsRow}>
+              {profile.golf.handicap && profile.golf.handicap !== "" && (
+                <View style={[styles.statChip, styles.statChipPrimary]}>
+                  <Ionicons name="golf" size={14} color={Colors.primary} />
+                  <Text style={styles.statChipLabel}>HCP</Text>
+                  <Text style={styles.statChipValue}>{formatHandicapForDisplay(profile.golf.handicap)}</Text>
                 </View>
               )}
-              {isOnline === false && lastActiveAt && (
-                <Text style={styles.lastActiveText}>
-                  Last active: <Text style={styles.lastActiveHighlight}>{formatLastActive(lastActiveAt)}</Text>
-                </Text>
+              {profile.golf.skill_level && profile.golf.skill_level !== "" && (
+                <View style={styles.statChip}>
+                  <Ionicons name="trophy-outline" size={14} color="#F59E0B" />
+                  <Text style={styles.statChipValue}>{profile.golf.skill_level}</Text>
+                </View>
+              )}
+              {profile.golf.experience && profile.golf.experience !== "" && (
+                <View style={styles.statChip}>
+                  <Ionicons name="time-outline" size={14} color={Colors.gray[600]} />
+                  <Text style={styles.statChipValue}>{profile.golf.experience} yrs</Text>
+                </View>
               )}
             </View>
-          )}
-
-          <View style={styles.locationRow}>
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color={Colors.gray[500]}
-            />
-            <Text style={styles.locationText}>
-              {profile.location?.prefecture || profile.basic?.prefecture || 'Not set'}
-            </Text>
-          </View>
-          {/* Show prefecture again if different from location */}
-          {profile.basic?.prefecture && profile.basic.prefecture !== profile.location?.prefecture && (
-            <Text style={styles.subLocationText}>{profile.basic.prefecture}</Text>
           )}
         </View>
 
@@ -1141,19 +1184,48 @@ const UserProfileScreen: React.FC = () => {
         {profile.bio && profile.bio.trim() && renderProfileSection(
           "About",
           <Text style={styles.bioText}>{profile.bio}</Text>,
+          true,
+          "person-circle-outline",
+        )}
+
+        {/* Golf Profile — promoted ahead of Basic; this is the headline content */}
+        {profile.golf && renderProfileSection(
+          "Golf Profile",
+          renderProfileGrid([
+            ["Handicap", profile.golf.handicap && formatHandicapForDisplay(profile.golf.handicap)],
+            ["Home Course", profile.golf.home_course],
+            ["Skill Level", profile.golf.skill_level],
+            ["Years Playing", profile.golf.experience && `${profile.golf.experience} yrs`],
+            ["Plays", profile.golf.playing_frequency],
+            ["Average Score", profile.golf.average_score !== "0" && profile.golf.average_score],
+            ["Best Score", profile.golf.best_score],
+            ["Dominant Hand", profile.golf.dominant_hand],
+            ["Walking / Riding", profile.golf.walking_or_riding],
+            ["Transportation", profile.golf.transportation],
+            ["Available Days", profile.golf.available_days],
+            ["Where I Play", profile.play_prefecture && profile.play_prefecture.length > 0
+              ? (Array.isArray(profile.play_prefecture) ? profile.play_prefecture.join("\n") : profile.play_prefecture)
+              : ""],
+          ]),
+          true,
+          "golf-outline",
+          Colors.primary,
         )}
 
         {/* Basic Profile Section */}
         {profile.basic && renderProfileSection(
           "Basic Profile",
-          <View style={styles.profileGrid}>
-            {profile.basic.age && profile.basic.age !== "0" && profile.basic.age !== "" && renderProfileItem("Age", profile.basic.age)}
-            {profile.basic.gender && profile.basic.gender !== "" && renderProfileItem("Gender", genderLabels[profile.basic.gender] || profile.basic.gender)}
-            {profile.basic.prefecture && profile.basic.prefecture !== "" && renderProfileItem("Location", profile.basic.prefecture)}
-            {profile.basic.height && profile.basic.height !== "" && renderProfileItem("Height", formatHeightForDisplay(profile.basic.height))}
-            {profile.basic.body_type && profile.basic.body_type !== "" && renderProfileItem("Body Type", profile.basic.body_type)}
-            {profile.basic.smoking && profile.basic.smoking !== "" && renderProfileItem("Smoking", profile.basic.smoking)}
-          </View>,
+          renderProfileGrid([
+            ["Age", profile.basic.age && profile.basic.age !== "0" ? profile.basic.age : ""],
+            ["Gender", profile.basic.gender ? (genderLabels[profile.basic.gender] || profile.basic.gender) : ""],
+            ["Location", profile.basic.prefecture],
+            ["Height", profile.basic.height && formatHeightForDisplay(profile.basic.height)],
+            ["Body Type", profile.basic.body_type],
+            ["Smoking", profile.basic.smoking],
+          ]),
+          true,
+          "person-outline",
+          "#6366F1",
         )}
 
         {/* Relationship Section — looking_for + family. Hidden if no
@@ -1164,30 +1236,14 @@ const UserProfileScreen: React.FC = () => {
           profile.relationship.wants_kids
         ) && renderProfileSection(
           "Relationship",
-          <View style={styles.profileGrid}>
-            {profile.relationship.looking_for && profile.relationship.looking_for !== "" && renderProfileItem("Looking For", profile.relationship.looking_for)}
-            {profile.relationship.has_kids && profile.relationship.has_kids !== "" && renderProfileItem("Has Kids", profile.relationship.has_kids)}
-            {profile.relationship.wants_kids && profile.relationship.wants_kids !== "" && renderProfileItem("Wants Kids", profile.relationship.wants_kids)}
-          </View>,
-        )}
-
-        {/* Golf Profile Section */}
-        {profile.golf && renderProfileSection(
-          "Golf Profile",
-          <View style={styles.profileGrid}>
-            {profile.golf.handicap && profile.golf.handicap !== "" && renderProfileItem("Handicap", formatHandicapForDisplay(profile.golf.handicap))}
-            {profile.golf.home_course && profile.golf.home_course !== "" && renderProfileItem("Home Course", profile.golf.home_course)}
-            {profile.golf.skill_level && profile.golf.skill_level !== "" && renderProfileItem("Skill Level", profile.golf.skill_level)}
-            {profile.golf.experience && profile.golf.experience !== "" && renderProfileItem("Years Playing", `${profile.golf.experience} yrs`)}
-            {profile.golf.playing_frequency && profile.golf.playing_frequency !== "" && renderProfileItem("Plays", profile.golf.playing_frequency)}
-            {profile.golf.average_score && profile.golf.average_score !== "0" && profile.golf.average_score !== "" && renderProfileItem("Average Score", profile.golf.average_score)}
-            {profile.golf.best_score && profile.golf.best_score !== "" && renderProfileItem("Best Score", profile.golf.best_score)}
-            {profile.golf.dominant_hand && profile.golf.dominant_hand !== "" && renderProfileItem("Dominant Hand", profile.golf.dominant_hand)}
-            {profile.golf.walking_or_riding && profile.golf.walking_or_riding !== "" && renderProfileItem("Walking / Riding", profile.golf.walking_or_riding)}
-            {profile.golf.transportation && profile.golf.transportation !== "" && renderProfileItem("Transportation", profile.golf.transportation)}
-            {profile.golf.available_days && profile.golf.available_days !== "" && renderProfileItem("Available Days", profile.golf.available_days)}
-            {profile.play_prefecture && profile.play_prefecture.length > 0 && renderProfileItem("Where I Play", Array.isArray(profile.play_prefecture) ? profile.play_prefecture.join("\n") : profile.play_prefecture)}
-          </View>,
+          renderProfileGrid([
+            ["Looking For", profile.relationship.looking_for],
+            ["Has Kids", profile.relationship.has_kids],
+            ["Wants Kids", profile.relationship.wants_kids],
+          ]),
+          true,
+          "heart-outline",
+          "#EC4899",
         )}
 
         {/* Lifestyle Section — drinking, work, optional cultural fields.
@@ -1202,15 +1258,18 @@ const UserProfileScreen: React.FC = () => {
           profile.lifestyle.politics
         ) && renderProfileSection(
           "Lifestyle",
-          <View style={styles.profileGrid}>
-            {profile.lifestyle.drinking && profile.lifestyle.drinking !== "" && renderProfileItem("Drinking", profile.lifestyle.drinking)}
-            {profile.lifestyle.occupation && profile.lifestyle.occupation !== "" && renderProfileItem("Occupation", profile.lifestyle.occupation)}
-            {profile.lifestyle.education && profile.lifestyle.education !== "" && renderProfileItem("Education", profile.lifestyle.education)}
-            {profile.lifestyle.pets && profile.lifestyle.pets !== "" && renderProfileItem("Pets", profile.lifestyle.pets)}
-            {profile.lifestyle.languages && profile.lifestyle.languages.length > 0 && renderProfileItem("Languages", profile.lifestyle.languages.join(", "))}
-            {profile.lifestyle.religion && profile.lifestyle.religion !== "" && renderProfileItem("Religion", profile.lifestyle.religion)}
-            {profile.lifestyle.politics && profile.lifestyle.politics !== "" && renderProfileItem("Politics", profile.lifestyle.politics)}
-          </View>,
+          renderProfileGrid([
+            ["Drinking", profile.lifestyle.drinking],
+            ["Occupation", profile.lifestyle.occupation],
+            ["Education", profile.lifestyle.education],
+            ["Pets", profile.lifestyle.pets],
+            ["Languages", profile.lifestyle.languages && profile.lifestyle.languages.length > 0 ? profile.lifestyle.languages.join(", ") : ""],
+            ["Religion", profile.lifestyle.religion],
+            ["Politics", profile.lifestyle.politics],
+          ]),
+          true,
+          "sparkles-outline",
+          "#F59E0B",
         )}
 
         {/* Golf Availability Calendar */}
@@ -1224,11 +1283,19 @@ const UserProfileScreen: React.FC = () => {
               currentYear={currentYear}
               currentMonth={currentMonth}
             />,
+            true,
+            "calendar-outline",
+            "#10B981",
           )}
 
         {/* Posts Section */}
         <View style={styles.postsSection}>
-          <Text style={styles.sectionTitle}>Posts</Text>
+          <View style={styles.postsSectionHeader}>
+            <View style={[styles.sectionIconBadge, { backgroundColor: "#8B5CF6" + "1A" }]}>
+              <Ionicons name="albums-outline" size={16} color="#8B5CF6" />
+            </View>
+            <Text style={styles.sectionTitle}>Posts</Text>
+          </View>
           {posts.length > 0 ? (
             <View>
               <FlatList
@@ -1268,29 +1335,36 @@ const UserProfileScreen: React.FC = () => {
 
       {/* Like Button - Fixed at Bottom (only for other users, after like status is loaded) */}
       {profileId !== userId && isLiked !== null && (
-        <View style={styles.likeButtonContainer}>
+        <View style={[styles.likeButtonContainer, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
           <TouchableOpacity
-            style={[
-              styles.likeButton,
-              isLiked && styles.likeButtonLiked,
-              isLoadingLike && styles.likeButtonLoading,
-            ]}
+            activeOpacity={isLiked || isLoadingLike ? 1 : 0.85}
             onPress={handleLike}
             disabled={isLoadingLike || isLiked}
             accessibilityRole="button"
             accessibilityLabel={isLiked ? "Liked" : "Like"}
+            style={styles.likeButtonShadow}
           >
-            {isLoadingLike ? (
-              <Text style={styles.likeButtonText}>Loading...</Text>
+            {isLiked || isLoadingLike ? (
+              <View style={[styles.likeButton, styles.likeButtonLiked]}>
+                {isLoadingLike ? (
+                  <Text style={styles.likeButtonText}>Loading…</Text>
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={20} color={Colors.primary} style={styles.likeButtonIcon} />
+                    <Text style={[styles.likeButtonText, styles.likeButtonTextLiked]}>Liked</Text>
+                  </>
+                )}
+              </View>
             ) : (
-              <Text
-                style={[
-                  styles.likeButtonText,
-                  isLiked && styles.likeButtonTextLiked,
-                ]}
+              <LinearGradient
+                colors={[Colors.primaryLight, Colors.primary, Colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.likeButton}
               >
-                {isLiked ? "Liked" : "Like"}
-              </Text>
+                <Ionicons name="heart" size={20} color={Colors.white} style={styles.likeButtonIcon} />
+                <Text style={styles.likeButtonText}>Like</Text>
+              </LinearGradient>
             )}
           </TouchableOpacity>
         </View>
@@ -1344,45 +1418,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
-  header: {
+  floatingHeader: {
+    position: "absolute",
+    left: Spacing.md,
+    right: Spacing.md,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.sm,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  backButton: {
-    flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.xs,
-    gap: 4,
+    zIndex: 20,
   },
-  backIconImage: {
-    width: 18,
-    height: 18,
+  floatingHeaderButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    overflow: "hidden",
+    ...Shadows.small,
   },
-  backLabel: {
-    fontSize: Typography.fontSize.base,
-    fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.primary,
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.semibold,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
-    color: Colors.text.primary,
-  },
-  headerSpacer: {
-    width: 32,
-  },
-  headerMenuButton: {
-    padding: Spacing.xs,
-    width: 32,
+  floatingHeaderBlur: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
   scrollView: {
     flex: 1,
@@ -1410,9 +1467,8 @@ const styles = StyleSheet.create({
   },
   photoIndicatorContainer: {
     position: "absolute",
-    top: 12,
-    left: 12,
-    right: 12,
+    left: 16,
+    right: 16,
     flexDirection: "row",
     zIndex: 10,
     gap: 4,
@@ -1423,119 +1479,165 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     backgroundColor: "rgba(255,255,255,0.95)",
   },
-  profileThumbnailStrip: {
-    backgroundColor: Colors.white,
-    paddingVertical: Spacing.sm,
+  photoCounterPill: {
+    position: "absolute",
+    right: Spacing.md,
+    zIndex: 15,
+    borderRadius: BorderRadius.full,
+    overflow: "hidden",
   },
-  profileThumbnailContent: {
-    paddingHorizontal: Spacing.md,
-    gap: 8,
+  photoCounterBlur: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
-  profileThumbnailImage: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 2,
-    borderColor: "transparent",
-    opacity: 0.5,
-  },
-  profileThumbnailImageActive: {
-    opacity: 1,
-    borderColor: Colors.primary,
+  photoCounterText: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.white,
+    letterSpacing: 0.2,
   },
   basicInfoSection: {
     backgroundColor: Colors.white,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
   },
   userNameRow: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: Spacing.xs,
+    gap: 10,
+    marginBottom: 6,
   },
   userName: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: Typography.fontWeight.bold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
     color: Colors.text.primary,
+    letterSpacing: -0.5,
   },
-  statusRow: {
-    marginBottom: Spacing.sm,
+  userAge: {
+    fontSize: 26,
+    fontWeight: Typography.fontWeight.normal,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.gray[500],
+    letterSpacing: -0.3,
   },
-  onlineStatusContainer: {
+  onlinePill: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.success + "1A",
   },
   onlineStatusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: Colors.success,
-    marginRight: Spacing.xs,
+    marginRight: 6,
   },
-  onlineStatusText: {
-    fontSize: Typography.fontSize.sm,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
+  onlinePillText: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    fontWeight: Typography.fontWeight.semibold,
     color: Colors.success,
-    fontWeight: Typography.fontWeight.medium,
+    letterSpacing: 0.2,
   },
-  lastActiveText: {
-    fontSize: Typography.fontSize.sm,
-    fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.secondary,
-  },
-  lastActiveHighlight: {
-    color: Colors.primary,
-    fontWeight: Typography.fontWeight.medium,
-  },
-  locationRow: {
+  metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    gap: 6,
+    marginBottom: Spacing.sm,
   },
-  locationText: {
-    fontSize: Typography.fontSize.base,
+  metaText: {
+    fontSize: Typography.fontSize.sm,
     fontFamily: Typography.fontFamily.regular,
-    color: Colors.gray[500],
-    marginLeft: Spacing.xs,
+    color: Colors.gray[600],
   },
-  subLocationText: {
-    fontSize: Typography.fontSize.base,
-    fontFamily: Typography.fontFamily.regular,
+  metaDot: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.gray[400],
+  },
+  statChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: Spacing.xs,
+  },
+  statChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.gray[100],
+    borderRadius: BorderRadius.full,
+  },
+  statChipPrimary: {
+    backgroundColor: Colors.primary + "14",
+  },
+  statChipLabel: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
+    fontWeight: Typography.fontWeight.medium,
     color: Colors.gray[500],
-    marginLeft: 20,
-    marginBottom: Spacing.xs,
+    letterSpacing: 0.4,
+  },
+  statChipValue: {
+    fontSize: Typography.fontSize.sm,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.primary,
   },
   section: {
     marginTop: Spacing.md,
     marginHorizontal: Spacing.md,
   },
   sectionCard: {
-    backgroundColor: Colors.lightGreen + "40",
-    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: Colors.gray[100],
+    ...Shadows.small,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  sectionIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.primary + "1A",
   },
   sectionTitle: {
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.semibold,
     fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
     color: Colors.text.primary,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
+    letterSpacing: -0.2,
   },
   sectionContent: {
     paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
   bioText: {
     fontSize: Typography.fontSize.base,
     fontFamily: Typography.fontFamily.regular,
     color: Colors.text.primary,
     lineHeight: Typography.lineHeight.normal * Typography.fontSize.base,
+    paddingBottom: Spacing.sm,
   },
   profileGrid: {
     gap: 0,
@@ -1544,8 +1646,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.5)",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.gray[200],
+  },
+  profileItemLast: {
+    borderBottomWidth: 0,
   },
   profileLabel: {
     width: "45%",
@@ -1713,10 +1818,22 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   postsSection: {
-    marginTop: Spacing.md,
-    // No horizontal margins - allow media to be full-width like home page
-    backgroundColor: Colors.lightGreen + "40",
+    marginTop: Spacing.lg,
+    // No horizontal margins on the wrapper so post media can stay edge-to-edge
+    // like the home feed. The title gets its own padded header below.
+    backgroundColor: Colors.gray[50],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.gray[200],
     overflow: "hidden",
+  },
+  postsSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
   emptyPostsContainer: {
     padding: Spacing.lg,
@@ -1750,29 +1867,43 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: Colors.white,
-    padding: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.gray[200],
+  },
+  likeButtonShadow: {
+    borderRadius: BorderRadius.full,
+    ...Shadows.medium,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
   },
   likeButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: BorderRadius.full,
+    gap: 8,
   },
   likeButtonLiked: {
-    backgroundColor: Colors.gray[300],
+    backgroundColor: Colors.primary + "12",
+    borderWidth: 1.5,
+    borderColor: Colors.primary + "40",
   },
-  likeButtonLoading: {
-    backgroundColor: Colors.gray[400],
+  likeButtonIcon: {
+    marginRight: 2,
   },
   likeButtonText: {
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
     color: Colors.white,
+    letterSpacing: 0.3,
   },
   likeButtonTextLiked: {
-    color: Colors.gray[600],
+    color: Colors.primary,
   },
 });
 

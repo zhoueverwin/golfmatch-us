@@ -46,7 +46,11 @@ const OnboardingStateScreen: React.FC = () => {
         .update({ prefecture: selected, updated_at: new Date().toISOString() })
         .eq("id", profileId);
       if (error) throw error;
-      navigation.navigate("OnboardingPhoto");
+      // The state-centroid backfill at the DB layer ensures
+      // home_location is populated immediately on this update — see
+      // migration 00000000000011_state_centroid_backfill. The next
+      // screen (Location) then offers GPS as an upgrade.
+      navigation.navigate("OnboardingLocation");
     } catch (err: any) {
       Alert.alert("Couldn't save", err?.message ?? "Please try again.");
     } finally {

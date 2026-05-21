@@ -69,7 +69,16 @@ export interface User {
     activity_score: number;
     profile_quality_score: number;
     shared_days_count: number;
+    distance_meters?: number | null;
   };
+  // Populated by search_profiles_within_radius — whole miles from the
+  // viewing user. Privacy-bucketed display is done in the UI layer via
+  // locationService.formatDistanceLabel (never round trips raw coords).
+  distance_miles?: number | null;
+  // Provenance of home_location. Drives the "did this user grant GPS or
+  // just provide a state?" UI hint and the prompt cooldown logic.
+  location_source?: "gps" | "state_centroid" | "manual" | "denied" | null;
+  location_updated_at?: string | null;
 }
 
 export interface Post {
@@ -163,6 +172,10 @@ export interface SearchFilters {
   average_score_max?: number;
   // Last login within X days
   last_login_days?: number | null;
+  // Distance-based search: when set, the search routes through the
+  // ST_DWithin RPC and orders by proximity. `null` means "Anywhere"
+  // (no distance constraint, falls back to PostgREST search).
+  distance_miles?: number | null;
 }
 
 export interface UserProfile {

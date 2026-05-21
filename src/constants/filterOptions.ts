@@ -190,6 +190,33 @@ export const LAST_LOGIN_OPTIONS = [
 ] as const;
 
 // ============================================================================
+// DISTANCE OPTIONS (Radius filter, in miles)
+//
+// Bands chosen to match both jobs a golfer has for distance matching:
+//   - "Regular play" jobs (10–25 mi): drive to a familiar course
+//   - "Course exploration" jobs (50–200 mi): travel for a destination round
+// "Anywhere" (null) bypasses the ST_DWithin filter and falls back to the
+// recommendation engine's soft distance scoring instead.
+// ============================================================================
+export const DISTANCE_OPTIONS = [
+  { value: 10, label: "Within 10 miles" },
+  { value: 25, label: "Within 25 miles" },
+  { value: 50, label: "Within 50 miles" },
+  { value: 100, label: "Within 100 miles" },
+  { value: 200, label: "Within 200 miles" },
+  { value: null, label: "Anywhere" },
+] as const;
+
+/**
+ * Get label for selected distance.
+ */
+export function getDistanceLabel(miles: number | null | undefined): string {
+  if (miles === null || miles === undefined) return "Any";
+  const option = DISTANCE_OPTIONS.find((opt) => opt.value === miles);
+  return option ? option.label : `Within ${miles} miles`;
+}
+
+// ============================================================================
 // FILTER LABELS (for display)
 // ============================================================================
 export const FILTER_LABELS = {

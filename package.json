@@ -58,6 +58,7 @@
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "^31.0.10",
     "expo-status-bar": "~3.0.8",
+    "expo-store-review": "~9.0.0",
     "expo-tracking-transparency": "~6.0.8",
     "expo-video": "~3.0.12",
     "expo-video-thumbnails": "^10.0.7",

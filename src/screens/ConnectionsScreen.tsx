@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ import { userInteractionService } from "../services/userInteractionService";
 import { UserActivityService } from "../services/userActivityService";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
+import { supabase } from "../services/supabase";
 
 
 interface ConnectionItem {
@@ -38,13 +39,33 @@ interface ConnectionItem {
   timestamp: string;
   isNew?: boolean;
   hasLikedBack?: boolean;
+  // Match-only fields populated by merging in message previews
+  chatId?: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount?: number;
 }
+
+// Compact relative time: "2m", "1h", "1d", "Mar 4"
+const formatRelativeTime = (iso: string): string => {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const diffSec = Math.max(0, (Date.now() - then) / 1000);
+  if (diffSec < 60) return "now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d`;
+  return new Date(then).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
 
 type ConnectionsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ConnectionsScreen: React.FC = () => {
   const navigation = useNavigation<ConnectionsScreenNavigationProp>();
-  const { user } = useAuth();
+  const { user, profileId } = useAuth();
   const { clearConnectionNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<"like" | "match">("like");
   const [connections, setConnections] = useState<ConnectionItem[]>([]);
@@ -100,31 +121,69 @@ const ConnectionsScreen: React.FC = () => {
     }
   };
 
-  // Load matches
+  // Load matches and merge in the latest message + unread count per chat so
+  // the Matches tab reflects in-flight conversations (Option A live-state UX).
   const loadMatches = async (): Promise<ConnectionItem[]> => {
     try {
       const currentUserId = user?.id || process.env.EXPO_PUBLIC_TEST_USER_ID;
       if (!currentUserId) return [];
 
-      const response = await matchesService.getMatches(currentUserId);
-      
-      if (response.success && response.data) {
-        const matchesData = response.data.map((match: any) => {
-          const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
-          const otherUserData = match.user1_id === currentUserId ? match.user2 : match.user1;
-          
-          return {
-            id: match.id,
-            type: "match" as const,
-            profile: { ...otherUserData, id: otherUserId }, // Force UUID
-            timestamp: new Date(match.matched_at).toLocaleDateString('ja-JP'),
-            isNew: false,
-          };
-        });
-        
-        return matchesData;
+      const [matchesResp, previewsResp] = await Promise.all([
+        matchesService.getMatches(currentUserId),
+        messagesService.getMessagePreviews(currentUserId),
+      ]);
+
+      if (!matchesResp.success || !matchesResp.data) return [];
+
+      // Index previews by the other user's profile id for O(1) lookup
+      const previewByUser = new Map<string, {
+        chatId: string;
+        lastMessage: string;
+        lastMessageAt: string;
+        unreadCount: number;
+      }>();
+      if (previewsResp.success && previewsResp.data) {
+        for (const p of previewsResp.data) {
+          previewByUser.set(p.userId, {
+            chatId: p.id,
+            lastMessage: p.lastMessage,
+            lastMessageAt: p.timestamp,
+            unreadCount: p.unreadCount,
+          });
+        }
       }
-      return [];
+
+      const matchesData: ConnectionItem[] = matchesResp.data.map((match: any) => {
+        const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id;
+        const otherUserData = match.user1_id === currentUserId ? match.user2 : match.user1;
+        const preview = previewByUser.get(otherUserId);
+
+        return {
+          id: match.id,
+          type: "match" as const,
+          profile: { ...otherUserData, id: otherUserId },
+          timestamp: new Date(match.matched_at).toLocaleDateString('ja-JP'),
+          isNew: false,
+          chatId: preview?.chatId,
+          lastMessage: preview?.lastMessage,
+          lastMessageAt: preview?.lastMessageAt,
+          unreadCount: preview?.unreadCount ?? 0,
+        };
+      });
+
+      // Sort: unread first (most unread on top), then by last message time
+      // desc, then by match recency desc. Keeps the freshest action surface up.
+      matchesData.sort((a, b) => {
+        const aUnread = a.unreadCount ?? 0;
+        const bUnread = b.unreadCount ?? 0;
+        if (aUnread !== bUnread) return bUnread - aUnread;
+        const aMsg = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const bMsg = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        if (aMsg !== bMsg) return bMsg - aMsg;
+        return 0;
+      });
+
+      return matchesData;
     } catch (error) {
       console.error('[ConnectionsScreen] Error loading matches:', error);
       return [];
@@ -162,6 +221,42 @@ const ConnectionsScreen: React.FC = () => {
       loadData();
     }, [clearConnectionNotification, user?.id])
   );
+
+  // Live updates: when a new message lands for this user, or an existing
+  // message is marked read, refetch so the Matches tab reflects the change
+  // immediately even if the user is staring at this screen. Without this,
+  // useFocusEffect alone leaves the list stale until the user re-navigates.
+  useEffect(() => {
+    if (!profileId) return;
+
+    const channel = supabase
+      .channel(`connections-messages:${profileId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${profileId}`,
+        },
+        () => loadData(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${profileId}`,
+        },
+        () => loadData(),
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [profileId]);
 
   const getAgeRange = (age: number): string => {
     if (age < 30) return "20s";
@@ -267,6 +362,16 @@ const ConnectionsScreen: React.FC = () => {
 
       if (chatResponse.success && chatResponse.data) {
         skipNextReload.current = true;
+        // Optimistically clear unread so the dot/bold name disappears the
+        // instant the user taps Reply — the realtime UPDATE event will
+        // reconcile after the Chat screen marks messages read.
+        setConnections((prev) =>
+          prev.map((c) =>
+            c.type === "match" && c.profile.id === profileId
+              ? { ...c, unreadCount: 0 }
+              : c,
+          ),
+        );
         navigation.navigate("Chat", {
           chatId: chatResponse.data,
           userId: profileId,
@@ -327,64 +432,99 @@ const ConnectionsScreen: React.FC = () => {
     );
   }
 
-  const renderConnectionItem = ({ item }: { item: ConnectionItem }) => (
-    <Card style={styles.connectionItem} shadow="small">
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={styles.profileSection}
-          onPress={() => handleViewProfile(item.profile.id)}
-          activeOpacity={0.7}
-        >
-          <Image
-            source={{ uri: item.profile.profile_pictures[0] }}
-            style={styles.profileImage}
-            accessibilityLabel={`${item.profile.name}'s profile photo`}
-          />
-          <View style={styles.profileInfo}>
-            <View style={styles.nameRow}>
-              <Text style={styles.profileName} numberOfLines={1} ellipsizeMode="tail">
-                {item.profile.name}
-              </Text>
-              {item.isNew && (
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>NEW</Text>
-                </View>
+  const renderConnectionItem = ({ item }: { item: ConnectionItem }) => {
+    const isMatch = item.type === "match";
+    const hasUnread = isMatch && (item.unreadCount ?? 0) > 0;
+    const hasConversation = isMatch && !!item.lastMessage;
+    const messageButtonTitle = hasUnread
+      ? "Reply"
+      : hasConversation
+        ? "Continue Chat"
+        : "Send Message";
+
+    return (
+      <Card style={styles.connectionItem} shadow="small">
+        <View style={styles.row}>
+          <TouchableOpacity
+            style={styles.profileSection}
+            onPress={() => handleViewProfile(item.profile.id)}
+            activeOpacity={0.7}
+          >
+            <View>
+              <Image
+                source={{ uri: item.profile.profile_pictures[0] }}
+                style={styles.profileImage}
+                accessibilityLabel={`${item.profile.name}'s profile photo`}
+              />
+              {hasUnread && <View style={styles.unreadAvatarDot} />}
+            </View>
+            <View style={styles.profileInfo}>
+              <View style={styles.nameRow}>
+                <Text
+                  style={[styles.profileName, hasUnread && styles.profileNameUnread]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {item.profile.name}
+                </Text>
+                {item.isNew && (
+                  <View style={styles.newBadge}>
+                    <Text style={styles.newBadgeText}>NEW</Text>
+                  </View>
+                )}
+                {hasConversation && item.lastMessageAt && (
+                  <Text
+                    style={[styles.relativeTime, hasUnread && styles.relativeTimeUnread]}
+                  >
+                    {formatRelativeTime(item.lastMessageAt)}
+                  </Text>
+                )}
+              </View>
+              {hasConversation ? (
+                <Text
+                  style={[styles.messagePreview, hasUnread && styles.messagePreviewUnread]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {item.lastMessage}
+                </Text>
+              ) : (
+                <Text style={styles.ageLocation} numberOfLines={2}>
+                  {item.profile.prefecture} · {getAgeRange(item.profile.birth_date ? calculateAge(item.profile.birth_date) : item.profile.age)} {item.timestamp}
+                </Text>
               )}
             </View>
-            <Text style={styles.ageLocation} numberOfLines={2}>
-              {item.profile.prefecture} · {getAgeRange(item.profile.birth_date ? calculateAge(item.profile.birth_date) : item.profile.age)} {item.timestamp}
-            </Text>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        {item.type === "like" ? (
-          <Button
-            title={
-              item.hasLikedBack || likedBackUsers.has(item.profile.id)
-                ? "Liked"
-                : "Like Back"
-            }
-            onPress={() => handleLikeBack(item.profile.id)}
-            variant={
-              item.hasLikedBack || likedBackUsers.has(item.profile.id) ? "secondary" : "primary"
-            }
-            size="small"
-            style={styles.actionPill}
-            disabled={item.hasLikedBack || likedBackUsers.has(item.profile.id)}
-            loading={likedBackUsers.has(item.profile.id)}
-          />
-        ) : (
-          <Button
-            title="Send Message"
-            onPress={() => handleStartChat(item.profile.id)}
-            variant="primary"
-            size="small"
-            style={styles.actionPill}
-          />
-        )}
-      </View>
-    </Card>
-  );
+          {item.type === "like" ? (
+            <Button
+              title={
+                item.hasLikedBack || likedBackUsers.has(item.profile.id)
+                  ? "Liked"
+                  : "Like Back"
+              }
+              onPress={() => handleLikeBack(item.profile.id)}
+              variant={
+                item.hasLikedBack || likedBackUsers.has(item.profile.id) ? "secondary" : "primary"
+              }
+              size="small"
+              style={styles.actionPill}
+              disabled={item.hasLikedBack || likedBackUsers.has(item.profile.id)}
+              loading={likedBackUsers.has(item.profile.id)}
+            />
+          ) : (
+            <Button
+              title={messageButtonTitle}
+              onPress={() => handleStartChat(item.profile.id)}
+              variant="primary"
+              size="small"
+              style={styles.actionPill}
+            />
+          )}
+        </View>
+      </Card>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -551,6 +691,47 @@ const styles = StyleSheet.create({
     marginRight: Spacing.xs,
     flex: 1,
     flexShrink: 1,
+  },
+  profileNameUnread: {
+    fontWeight: Typography.fontWeight.bold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
+    color: Colors.text.primary,
+  },
+  // Dot anchored to the bottom-right of the avatar — high-affordance unread
+  // marker. White ring separates it from the photo regardless of skin tone.
+  unreadAvatarDot: {
+    position: "absolute",
+    right: Spacing.md - 2,
+    bottom: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.primary,
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  relativeTime: {
+    fontSize: Typography.fontSize.xs,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    marginLeft: Spacing.xs,
+  },
+  relativeTimeUnread: {
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+  },
+  messagePreview: {
+    fontSize: Typography.fontSize.sm,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.secondary,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  messagePreviewUnread: {
+    color: Colors.text.primary,
+    fontWeight: Typography.fontWeight.semibold,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
   },
   verificationPill: {
     marginRight: Spacing.xs,

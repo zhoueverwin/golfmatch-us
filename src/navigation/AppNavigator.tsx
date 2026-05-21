@@ -42,10 +42,12 @@ import OnboardingNameScreen from "../screens/onboarding/OnboardingNameScreen";
 import OnboardingGenderScreen from "../screens/onboarding/OnboardingGenderScreen";
 import OnboardingBirthdateScreen from "../screens/onboarding/OnboardingBirthdateScreen";
 import OnboardingStateScreen from "../screens/onboarding/OnboardingStateScreen";
+import OnboardingLocationScreen from "../screens/onboarding/OnboardingLocationScreen";
 import OnboardingPhotoScreen from "../screens/onboarding/OnboardingPhotoScreen";
 import OnboardingKycScreen from "../screens/onboarding/OnboardingKycScreen";
 import OnboardingPaywallScreen from "../screens/onboarding/OnboardingPaywallScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import LocationSettingsScreen from "../screens/LocationSettingsScreen";
 import NotificationSettingsScreen from "../screens/NotificationSettingsScreen";
 import NotificationHistoryScreen from "../screens/NotificationHistoryScreen";
 import CalendarEditScreen from "../screens/CalendarEditScreen";
@@ -592,7 +594,24 @@ const AppNavigatorContent = () => {
         // Redirect to EditProfile if essential fields are missing
         // This ensures users always complete onboarding even if previous checks failed
         if (!hasEssentialFields) {
-          setIsNewUser(true);
+          // BUT: if a Didit session is already in flight (kyc_status set to
+          // anything past 'not_started'), the user has already passed the
+          // Name/State/Photo screens — resume them at the KYC gate instead
+          // of throwing them back to the start of onboarding. The
+          // `needsKycGate` branch mounts OnboardingKycScreen, which
+          // auto-snaps to the "waiting" phase for pending_review.
+          // Gender/age may still be unset because Didit's verdict writes
+          // those fields, and the webhook hasn't fired yet.
+          const kycInFlight =
+            !!cachedProfile?.kyc_status &&
+            cachedProfile.kyc_status !== 'not_started' &&
+            cachedProfile.kyc_status !== 'approved';
+          if (kycInFlight) {
+            profileCheckPassed.current = true;
+            setIsNewUser(false);
+          } else {
+            setIsNewUser(true);
+          }
         } else {
           // Mark profile check as passed to prevent other redirects
           profileCheckPassed.current = true;
@@ -705,6 +724,7 @@ const AppNavigatorContent = () => {
                   */}
                   <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingLocation" component={OnboardingLocationScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPhoto" component={OnboardingPhotoScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
@@ -758,6 +778,13 @@ const AppNavigatorContent = () => {
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
+              options={{
+                headerShown: false, // Custom header in component
+              }}
+            />
+            <Stack.Screen
+              name="LocationSettings"
+              component={LocationSettingsScreen}
               options={{
                 headerShown: false, // Custom header in component
               }}

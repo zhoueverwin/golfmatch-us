@@ -94,6 +94,18 @@ export class ProfilesService {
     sortBy: "registration" | "recommended" | "login" | "likes" = "recommended",
     excludeUserIds?: string[],
   ): Promise<PaginatedServiceResponse<User[]>> {
+    // Distance filter routes through the server-side ST_DWithin RPC. We
+    // can't use PostgREST for this — geography filtering is server-only.
+    // When `distance_miles` is set (and not "Anywhere" = null/undefined),
+    // we delegate to searchProfilesWithinRadius which hits the GIST index.
+    if (filters.distance_miles != null && filters.distance_miles > 0) {
+      return this.searchProfilesWithinRadius(
+        filters.distance_miles,
+        page,
+        limit,
+        excludeUserIds,
+      );
+    }
     try {
       let query = supabase.from("profiles").select(ProfilesService.PROFILE_COLUMNS, { count: "exact" });
 
@@ -207,6 +219,79 @@ export class ProfilesService {
       return {
         success: false,
         error: error.message || "Failed to search profiles",
+      };
+    }
+  }
+
+  /**
+   * Search within a radius (miles) of the current user's home_location.
+   *
+   * Backed by the search_profiles_within_radius SECURITY DEFINER RPC.
+   * The RPC handles:
+   *   - ST_DWithin filter against the GIST index (fast at 100k+ profiles)
+   *   - opposite-gender enforcement (matches the existing search invariant)
+   *   - banned-user exclusion (same hard filter as everywhere else)
+   *   - distance_miles populated on each row, ready for the card chip
+   *
+   * Falls back to an error response if the current user has no
+   * home_location yet — callers should surface "Update your location
+   * to see distance-based results" UX in that case.
+   */
+  async searchProfilesWithinRadius(
+    radiusMiles: number,
+    page: number = 1,
+    limit: number = 20,
+    excludeUserIds?: string[],
+  ): Promise<PaginatedServiceResponse<User[]>> {
+    try {
+      const authUserId = await getCachedAuthUserId();
+      if (!authUserId) {
+        return {
+          success: false,
+          error: "No authenticated user",
+        };
+      }
+
+      const offset = (page - 1) * limit;
+      const { data, error } = await supabase.rpc(
+        "search_profiles_within_radius",
+        {
+          p_current_user_id: authUserId,
+          p_radius_miles: radiusMiles,
+          p_limit: limit,
+          p_offset: offset,
+        },
+      );
+
+      if (error) throw error;
+
+      let users: User[] = (data || []) as User[];
+
+      // Client-side exclusion of already-liked/passed users. The RPC could
+      // do this too but the existing pattern keeps exclusion lists on the
+      // client to avoid argument-count blowup; few enough rows that the
+      // post-filter is fine.
+      if (excludeUserIds && excludeUserIds.length > 0) {
+        const exclude = new Set(excludeUserIds);
+        users = users.filter((u) => !exclude.has(u.id));
+      }
+
+      return {
+        success: true,
+        data: users,
+        pagination: {
+          page,
+          limit,
+          total: users.length,
+          totalPages: users.length === limit ? page + 1 : page,
+          hasMore: users.length === limit,
+        },
+      };
+    } catch (error: any) {
+      console.error("❌ searchProfilesWithinRadius error:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to search nearby profiles",
       };
     }
   }

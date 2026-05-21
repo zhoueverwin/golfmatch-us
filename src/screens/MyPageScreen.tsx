@@ -258,6 +258,29 @@ const MyPageScreen: React.FC = () => {
     }, [profileId]),
   );
 
+  // Scroll-position restoration.
+  //
+  // The existing scrollOffsetRef captured the user's last scroll Y on every
+  // onScroll, but nothing ever wrote it back. Returning from a child screen
+  // (Settings, EditProfile, Help, etc.) caused the visible scroll to jump
+  // back to top — a side effect of either a brief unmount or a layout pass
+  // that resets the native scroll view's internal offset.
+  //
+  // Restoring on focus, deferred by one animation frame to let the
+  // ScrollView complete its layout, brings the user back to exactly where
+  // they were. `animated: false` so the restoration is invisible — feels
+  // like the scroll never moved at all.
+  useFocusEffect(
+    useCallback(() => {
+      const target = scrollOffsetRef.current;
+      if (target <= 0) return;
+      const raf = requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollTo({ y: target, animated: false });
+      });
+      return () => cancelAnimationFrame(raf);
+    }, []),
+  );
+
   // Handlers
   const handleFootprintPress = () => {
     navigation.navigate("Footprints");
@@ -616,15 +639,15 @@ const MyPageScreen: React.FC = () => {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate("Settings")}
+            onPress={() => navigation.navigate("Help")}
           >
             <View style={styles.menuItemLeft}>
-              <Image 
-                source={require("../../assets/images/Icons/Settings.png")} 
+              <Image
+                source={require("../../assets/images/Icons/Help.png")}
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>Settings</Text>
+              <Text style={styles.menuItemText}>Help</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons
@@ -637,15 +660,40 @@ const MyPageScreen: React.FC = () => {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate("Help")}
+            onPress={() => navigation.navigate("LocationSettings")}
           >
             <View style={styles.menuItemLeft}>
-              <Image 
-                source={require("../../assets/images/Icons/Help.png")} 
+              {/* Pin-Outline shares the menuIcon style with every other
+                  row — that style sets tintColor: Colors.primary so the
+                  PNG renders in the brand green, matching Help, Settings,
+                  and the rest of the menu. */}
+              <Image
+                source={require("../../assets/images/Icons/Pin-Outline.png")}
                 style={styles.menuIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.menuItemText}>Help</Text>
+              <Text style={styles.menuItemText}>Location</Text>
+            </View>
+            <View style={styles.menuItemRight}>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={Colors.gray[400]}
+              />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("Settings")}
+          >
+            <View style={styles.menuItemLeft}>
+              <Image
+                source={require("../../assets/images/Icons/Settings.png")}
+                style={styles.menuIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.menuItemText}>Settings</Text>
             </View>
             <View style={styles.menuItemRight}>
               <Ionicons

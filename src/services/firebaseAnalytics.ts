@@ -199,6 +199,23 @@ export async function logMessageSent(): Promise<void> {
 }
 
 /**
+ * Generic event logger. Use the typed helpers above when one exists for the
+ * event; reserve this for low-volume bespoke events (e.g. review-prompt
+ * impressions) where a dedicated helper would be overkill.
+ */
+export async function logEvent(
+  name: string,
+  params?: Record<string, string | number | boolean>,
+): Promise<void> {
+  try {
+    await analytics().logEvent(name, params);
+    console.log(`[Firebase] Logged ${name}`, params ?? '');
+  } catch (error) {
+    console.error(`[Firebase] Error logging ${name}:`, error);
+  }
+}
+
+/**
  * Log when a user creates a post.
  */
 export async function logPostCreated(params?: {
@@ -258,4 +275,81 @@ export async function setUserProperty(
   } catch (error) {
     console.error('[Firebase] Error setting user property:', error);
   }
+}
+
+// ============================================================================
+// Distance / Location Events (added with distance-based matching)
+// ============================================================================
+// These power the success metrics for the distance feature:
+//   - GPS adoption rate           ← granted / requested
+//   - Cohort distance segmentation ← distance_bucket on cards / matches
+//   - Filter engagement            ← distance_filter_changed
+//
+// Source values are constrained to a small enum so analytics queries stay
+// trivial (no string normalization needed in BigQuery).
+
+type LocationPromptSource = "onboarding" | "settings" | "discover";
+
+export async function logLocationPermissionRequested(
+  source: LocationPromptSource,
+): Promise<void> {
+  try {
+    await analytics().logEvent("location_permission_requested", { source });
+  } catch (error) {
+    console.error("[Firebase] Error logging location_permission_requested:", error);
+  }
+}
+
+export async function logLocationPermissionGranted(
+  source: LocationPromptSource,
+): Promise<void> {
+  try {
+    await analytics().logEvent("location_permission_granted", { source });
+  } catch (error) {
+    console.error("[Firebase] Error logging location_permission_granted:", error);
+  }
+}
+
+export async function logLocationPermissionDenied(
+  source: LocationPromptSource,
+): Promise<void> {
+  try {
+    await analytics().logEvent("location_permission_denied", { source });
+  } catch (error) {
+    console.error("[Firebase] Error logging location_permission_denied:", error);
+  }
+}
+
+/**
+ * Fired when the user changes the distance radius in the search filter.
+ * `to_miles = null` means "Anywhere" was selected.
+ */
+export async function logDistanceFilterChanged(params: {
+  fromMiles: number | null;
+  toMiles: number | null;
+}): Promise<void> {
+  try {
+    await analytics().logEvent("distance_filter_changed", {
+      from_miles: params.fromMiles ?? -1, // -1 sentinel for null in BigQuery
+      to_miles: params.toMiles ?? -1,
+    });
+  } catch (error) {
+    console.error("[Firebase] Error logging distance_filter_changed:", error);
+  }
+}
+
+/**
+ * Bucket helper for distance-segmented events. Keep buckets in sync with
+ * the privacy buckets in get_user_distance_miles. The "unknown" bucket
+ * means at least one side has no location (state name shown instead).
+ */
+export function distanceBucket(miles: number | null | undefined): string {
+  if (miles == null) return "unknown";
+  if (miles < 5) return "under_5";
+  if (miles <= 10) return "5_10";
+  if (miles <= 25) return "10_25";
+  if (miles <= 50) return "25_50";
+  if (miles <= 100) return "50_100";
+  if (miles <= 200) return "100_200";
+  return "over_200";
 }

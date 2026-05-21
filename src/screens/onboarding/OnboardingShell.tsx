@@ -29,9 +29,10 @@ import { Spacing, BorderRadius, Shadows } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { RootStackParamList } from "../../types";
 
-// Effective onboarding length after the Name screen skips Gender + Birthdate
-// (Didit's KYC pulls those off the ID). Flow is: Name → State → KYC → Photo.
-const TOTAL_STEPS = 4;
+// Effective onboarding length. Flow:
+//   Name (1) → State (2) → Location (3) → Photo (4) → KYC (5)
+// Gender + Birthdate are derived from Didit's ID verdict, not asked again.
+const TOTAL_STEPS = 5;
 
 type Nav = StackNavigationProp<RootStackParamList>;
 
@@ -155,7 +156,14 @@ const OnboardingShell: React.FC<Props> = ({
                   accessibilityLabel="Sign out"
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.signOutText}>Sign out</Text>
+                  {/* numberOfLines={1} is a defensive backstop — the rail
+                      is now wide enough for the text on every supported
+                      device, but small-screen iPhones with bumped font
+                      scaling could still push it. Truncation is preferable
+                      to a two-line pill. */}
+                  <Text style={styles.signOutText} numberOfLines={1}>
+                    Sign out
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -302,7 +310,11 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   headerSide: {
-    width: 80,
+    // Symmetric left/right side rails. Sized to fit the right-side
+    // "Sign out" pill without wrapping: text(~55px) + pill padding(2×16)
+    // ≈ 87px, so 96 leaves ~9px of breathing room. Left rail uses the
+    // same width to keep the centered progress bar truly centered.
+    width: 96,
     justifyContent: "center",
   },
   headerSideRight: {

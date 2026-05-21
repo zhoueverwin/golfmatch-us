@@ -419,7 +419,7 @@ const OnboardingKycScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={4}
+      step={5}
       title={wasPreviouslyRejected ? "Try verification again" : "Verify your identity"}
       subtitle={
         wasPreviouslyRejected

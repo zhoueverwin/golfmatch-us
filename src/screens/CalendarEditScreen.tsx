@@ -21,11 +21,13 @@ import { Availability } from "../types/dataModels";
 import { DataProvider } from "../services";
 import StandardHeader from "../components/StandardHeader";
 import Toast from "../components/Toast";
+import { usePreserveScroll } from "../hooks/usePreserveScroll";
 
 type CalendarEditScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const CalendarEditScreen: React.FC = () => {
   const navigation = useNavigation<CalendarEditScreenNavigationProp>();
+  const scroll = usePreserveScroll();
   const { profileId } = useAuth(); // Get current user's profile ID
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -258,7 +260,13 @@ const CalendarEditScreen: React.FC = () => {
         rightComponent={saveButtonComponent}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scroll.ref}
+        onScroll={scroll.onScroll}
+        scrollEventThrottle={scroll.scrollEventThrottle}
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Month Navigation */}
         <View style={styles.monthNavigation}>
           <TouchableOpacity

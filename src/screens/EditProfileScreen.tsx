@@ -28,6 +28,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePreserveScroll } from "../hooks/usePreserveScroll";
 
 import { Colors } from "../constants/colors";
 import { Spacing, BorderRadius } from "../constants/spacing";
@@ -246,6 +247,7 @@ const computeCompleteness = (data: ProfileFormData): Completeness => {
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<EditProfileNavigationProp>();
+  const scroll = usePreserveScroll();
   const { profileId } = useAuth(); // Get current user's profile ID
   const queryClient = useQueryClient(); // For invalidating React Query cache after save
   const [loading, setLoading] = useState(true);
@@ -1075,6 +1077,9 @@ const EditProfileScreen: React.FC = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
       <ScrollView
+        ref={scroll.ref}
+        onScroll={scroll.onScroll}
+        scrollEventThrottle={scroll.scrollEventThrottle}
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

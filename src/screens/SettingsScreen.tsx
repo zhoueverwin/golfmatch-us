@@ -17,6 +17,7 @@ import { Typography } from "../constants/typography";
 import { RootStackParamList } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import StandardHeader from "../components/StandardHeader";
+import { usePreserveScroll } from "../hooks/usePreserveScroll";
 
 type SettingsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -36,6 +37,7 @@ interface SettingItem {
 
 function SettingsScreen(): React.ReactElement {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
+  const scroll = usePreserveScroll();
   const { signOut } = useAuth();
 
   async function handleSignOut(): Promise<void> {
@@ -109,6 +111,9 @@ function SettingsScreen(): React.ReactElement {
         onBackPress={() => navigation.goBack()}
       />
       <ScrollView
+        ref={scroll.ref}
+        onScroll={scroll.onScroll}
+        scrollEventThrottle={scroll.scrollEventThrottle}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >

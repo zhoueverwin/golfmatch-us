@@ -19,13 +19,16 @@ import PrefectureSelector from "./PrefectureSelector";
 import SkillLevelSelector from "./SkillLevelSelector";
 import ScoreSelector from "./ScoreSelector";
 import LastLoginSelector from "./LastLoginSelector";
+import DistanceSelector from "./DistanceSelector";
 import {
   getPrefectureLabel,
   getSkillLevelLabel,
   getAgeDecadesLabel,
   getScoreLabel,
   getLastLoginLabel,
+  getDistanceLabel,
 } from "../constants/filterOptions";
+import { logDistanceFilterChanged } from "../services/firebaseAnalytics";
 
 interface FilterModalProps {
   visible: boolean;
@@ -43,6 +46,7 @@ interface FilterModalProps {
 const ICON_PAIR: Record<string, { outline: keyof typeof Ionicons.glyphMap; filled: keyof typeof Ionicons.glyphMap }> = {
   age: { outline: "calendar-outline", filled: "calendar" },
   state: { outline: "location-outline", filled: "location" },
+  distance: { outline: "navigate-outline", filled: "navigate" },
   skill: { outline: "golf-outline", filled: "golf" },
   score: { outline: "stats-chart-outline", filled: "stats-chart" },
   lastLogin: { outline: "time-outline", filled: "time" },
@@ -66,6 +70,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const [showAgeSelector, setShowAgeSelector] = useState(false);
   const [showPrefectureSelector, setShowPrefectureSelector] = useState(false);
+  const [showDistanceSelector, setShowDistanceSelector] = useState(false);
   const [showSkillLevelSelector, setShowSkillLevelSelector] = useState(false);
   const [showScoreSelector, setShowScoreSelector] = useState(false);
   const [showLastLoginSelector, setShowLastLoginSelector] = useState(false);
@@ -81,6 +86,14 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setFilters({ ...filters, age_decades: decades });
   const handlePrefectureChange = (prefecture: string | undefined) =>
     setFilters({ ...filters, prefecture });
+  const handleDistanceChange = (miles: number | null) => {
+    // Fire-and-forget telemetry — never await on the UI thread.
+    logDistanceFilterChanged({
+      fromMiles: filters.distance_miles ?? null,
+      toMiles: miles,
+    });
+    setFilters({ ...filters, distance_miles: miles });
+  };
   const handleSkillLevelChange = (skillLevel: string | undefined) =>
     setFilters({ ...filters, golf_skill_level: skillLevel });
   const handleScoreChange = (score: number | undefined) =>
@@ -92,6 +105,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   // computed locally so the rendering logic stays close to the data shape.
   const ageActive = !!filters.age_decades && filters.age_decades.length > 0;
   const stateActive = !!filters.prefecture;
+  const distanceActive = filters.distance_miles != null;
   const skillActive = !!filters.golf_skill_level;
   const scoreActive = !!filters.average_score_max && filters.average_score_max !== 999;
   const lastLoginActive = filters.last_login_days != null;
@@ -99,6 +113,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const activeFilterCount = [
     ageActive,
     stateActive,
+    distanceActive,
     skillActive,
     scoreActive,
     lastLoginActive,
@@ -228,6 +243,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
               onPress={() => setShowPrefectureSelector(true)}
             />
             <FilterRow
+              iconKey="distance"
+              title="Distance"
+              value={getDistanceLabel(filters.distance_miles)}
+              isActive={distanceActive}
+              onPress={() => setShowDistanceSelector(true)}
+            />
+            <FilterRow
               iconKey="skill"
               title="Skill Level"
               value={getSkillLevelLabel(filters.golf_skill_level)}
@@ -296,6 +318,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
         selectedPrefecture={filters.prefecture}
         onClose={() => setShowPrefectureSelector(false)}
         onApply={handlePrefectureChange}
+      />
+      <DistanceSelector
+        visible={showDistanceSelector}
+        selectedMiles={filters.distance_miles}
+        onClose={() => setShowDistanceSelector(false)}
+        onApply={handleDistanceChange}
       />
       <SkillLevelSelector
         visible={showSkillLevelSelector}

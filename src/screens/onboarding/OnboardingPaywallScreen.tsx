@@ -57,13 +57,22 @@ const OnboardingPaywallScreen: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ["currentUserProfile"] });
   };
 
-  const advanceToMain = async () => {
+  const advanceToMain = () => {
     if (advancedRef.current) return;
     advancedRef.current = true;
-    await refreshAllCaches();
+    // Dispatch the navigation reset SYNCHRONOUSLY before any awaits.
+    // If we awaited cache refresh first, the resulting state updates
+    // (isProMember / is_verified) would flip AppNavigator's stack arm
+    // mid-await — unmounting this screen before the explicit reset
+    // lands and producing a one-frame flash of the default background
+    // between the paywall and Discover.
     navigation.dispatch(
       CommonActions.reset({ index: 0, routes: [{ name: "Main" }] }),
     );
+    // Refresh caches in the background. Main's screens use React
+    // Query and will refetch on mount, so a brief stale-data window
+    // is acceptable and invisible.
+    void refreshAllCaches();
   };
 
   return (

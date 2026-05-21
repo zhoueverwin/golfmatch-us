@@ -69,6 +69,7 @@ export type RootStackParamList = {
   OnboardingGender: undefined;
   OnboardingBirthdate: undefined;
   OnboardingState: undefined;
+  OnboardingLocation: undefined;
   OnboardingPhoto: undefined;
   OnboardingKyc: undefined;
   OnboardingPaywall: undefined;
@@ -77,6 +78,7 @@ export type RootStackParamList = {
   Profile: { userId: string; refresh?: boolean };
   EditProfile: undefined;
   Settings: undefined;
+  LocationSettings: undefined;
   NotificationSettings: undefined;
   NotificationHistory: undefined;
   CalendarEdit: undefined;

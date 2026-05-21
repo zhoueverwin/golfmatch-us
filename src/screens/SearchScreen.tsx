@@ -30,6 +30,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { userInteractionService } from "../services/userInteractionService";
 import { UserActivityService } from "../services/userActivityService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../services/supabase";
+import * as Location from "expo-location";
+import {
+  updateHomeLocation,
+  isLocationStale,
+} from "../services/locationService";
 
 type SearchScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -87,6 +93,50 @@ const SearchScreen: React.FC = () => {
   useEffect(() => {
     loadSavedFilters();
   }, []);
+
+  // Silent location refresh.
+  //
+  // For users with location_source='gps' whose stored coords are older than
+  // 14 days, refresh in the background without prompting. iOS won't show
+  // the permission dialog again here (already granted) — we just grab the
+  // current position and upsert. Non-GPS users and denied users are
+  // ignored: see locationService.isLocationStale.
+  useEffect(() => {
+    if (!profileId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("location_source, location_updated_at")
+          .eq("id", profileId)
+          .single();
+        if (cancelled || !data) return;
+        if (!isLocationStale(data)) return;
+
+        // Only attempt the silent refresh if permission is still granted —
+        // querying status is non-prompting on both platforms.
+        const perm = await Location.getForegroundPermissionsAsync();
+        if (cancelled || perm.status !== "granted") return;
+
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        if (cancelled) return;
+        await updateHomeLocation(
+          profileId,
+          { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
+          "gps",
+        );
+      } catch {
+        // Silent refresh failures are non-fatal — user keeps their existing
+        // coords. Surface nothing to the UI.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
 
   // Load Search data when that tab is active
   useEffect(() => {

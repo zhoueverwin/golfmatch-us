@@ -36,6 +36,8 @@ import { useBackHandler } from "../hooks/useBackHandler";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { messagesService } from "../services/supabase/messages.service";
+import { reviewPromptService } from "../services/reviewPromptService";
+import { logMessageSent } from "../services/firebaseAnalytics";
 import { Message as DBMessage } from "../types/dataModels";
 import { supabase } from "../services/supabase";
 import { resolveContentType } from "../services/storageService";
@@ -815,7 +817,13 @@ const ChatScreen: React.FC = () => {
 
       if (response.success && response.data) {
         const transformedMessage = transformMessage(response.data);
-        
+
+        // Fire-and-forget: record that the user has sent ≥1 message (gates the
+        // first-reply review prompt) and log to analytics. Errors are swallowed
+        // inside each helper so a send is never blocked by either.
+        reviewPromptService.markFirstMessageSentIfNeeded();
+        logMessageSent();
+
         try {
           // Prepend message to state (inverted list — newest first), checking for duplicates
           setMessages((prev) => {

@@ -161,7 +161,7 @@ const OnboardingPhotoScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={3}
+      step={4}
       title="Add a profile photo"
       subtitle="A clear photo of you is required. You can change it anytime."
       continueDisabled={!localUri || busy}

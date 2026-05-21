@@ -29,6 +29,9 @@ import ToastNotification from '../components/ToastNotification';
 import { UserActivityService } from '../services/userActivityService';
 import { messagesService } from '../services/supabase/messages.service';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { reviewPromptService } from '../services/reviewPromptService';
+import { logEvent } from '../services/firebaseAnalytics';
+import { reviewPromptStrings } from '../constants/reviewPromptStrings';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -554,6 +557,23 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   // Debounce delay for coalescing rapid messages from same sender
   const MESSAGE_NOTIF_DEBOUNCE_MS = 3000;
 
+  const maybeShowReviewPrompt = async () => {
+    try {
+      if (!(await reviewPromptService.shouldShowOnIncomingMessage())) return;
+      // Short delay so the inbound-message toast/badge animates first; the
+      // native review sheet then appears against a settled UI.
+      setTimeout(async () => {
+        await reviewPromptService.requestReview();
+        await reviewPromptService.markPromptShown();
+        await logEvent(reviewPromptStrings.analytics.eventName, {
+          trigger: reviewPromptStrings.analytics.triggerFirstReply,
+        });
+      }, 1500);
+    } catch (error) {
+      console.warn('[NotifRT] Review prompt gate failed:', error);
+    }
+  };
+
   const handleMessageNotification = async (message: MessageNotificationPayload) => {
     console.log('[NotifRT] 🔔 Processing message notification:', {
       from: message.sender_id,
@@ -570,6 +590,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     // Always set badges immediately (idempotent, no spam risk)
     setHasNewMessages(true);
     CacheService.set('messages_notification', true, 7 * 24 * 60 * 60 * 1000);
+
+    // First-reply review prompt — fires once, only after the user has sent ≥1
+    // message themselves. Independent of the notification-preference gate
+    // below so users who muted push notifications can still be asked.
+    void maybeShowReviewPrompt();
 
     const enabled = await notificationService.isNotificationEnabled(profileId, 'message');
     if (!enabled) {
