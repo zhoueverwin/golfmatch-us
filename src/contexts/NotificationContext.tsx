@@ -631,15 +631,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       const title = sender?.name || 'Message';
       const body = `${sender?.name || 'Someone'} sent you a message`;
 
-      // Save single notification to database
-      await notificationService.createNotification(
-        profileId,
-        'message',
-        title,
-        body,
-        latestMessage.sender_id,
-        { chatId: latestMessage.chat_id }
-      );
+      // NOTE: Do NOT create a notification row here — the DB trigger
+      // `create_message_notification` already inserts (or coalesces) one
+      // per receiver+sender pair on every message INSERT. Creating again
+      // from the client doubled rows on the My Page notifications list.
+      // This handler only updates UI badges and renders the toast.
 
       // Show toast or push notification
       const notification: NotificationData = {

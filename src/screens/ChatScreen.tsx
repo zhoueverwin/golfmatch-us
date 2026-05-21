@@ -733,18 +733,21 @@ const ChatScreen: React.FC = () => {
     });
   };
 
-  // Format last active time for display
+  // Format last active time for display. Clamp negative deltas to 0 so a
+  // skewed device clock never renders "-2m ago" — anything <1m reads as
+  // "Active now" (presence-indicator vocabulary, not message vocabulary).
   const formatLastActive = (timestamp: string | null): string => {
     if (!timestamp) return "";
-    
+
     const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = Math.max(0, Date.now() - date.getTime());
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 60) {
+    if (minutes < 1) {
+      return "Active now";
+    } else if (minutes < 60) {
       return `${minutes}m ago`;
     } else if (hours < 24) {
       return `${hours}h ago`;

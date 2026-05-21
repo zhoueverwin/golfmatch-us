@@ -43,6 +43,7 @@ import PostMenuModal from "../components/PostMenuModal";
 import FullscreenImageViewer from "../components/FullscreenImageViewer";
 import { DataProvider } from "../services";
 import { getProfilePicture, getValidProfilePictures } from "../constants/defaults";
+import { getDistanceMiles, formatDistanceLabel } from "../services/locationService";
 import { UserActivityService } from "../services/userActivityService";
 import { supabaseDataProvider } from "../services/supabaseDataProvider";
 import { membershipService } from "../services/membershipService";
@@ -111,6 +112,9 @@ const UserProfileScreen: React.FC = () => {
   const [mutualLikesMap, setMutualLikesMap] = useState<Record<string, boolean>>({});
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [lastActiveAt, setLastActiveAt] = useState<string | null>(null);
+  // Privacy-bucketed distance to the viewed user (e.g. "<5 mi", "12 mi").
+  // null when self-view, or when either profile lacks a home_location.
+  const [distanceLabel, setDistanceLabel] = useState<string | null>(null);
   // Use Set for expandedPosts to avoid unbounded state growth
   const [expandedPostIds, setExpandedPostIds] = useState<Set<string>>(new Set());
 
@@ -217,6 +221,26 @@ const UserProfileScreen: React.FC = () => {
       checkMutualLikesForPosts(postsRef.current);
     }
   }, [postsKey]);
+
+  // Fetch distance via the privacy-bucketed RPC. Skips self-view and any
+  // case where either user lacks a home_location (RPC returns
+  // bucket: "unknown" — formatDistanceLabel then returns null and the chip
+  // simply doesn't render). No raw coordinates ever cross the wire.
+  useEffect(() => {
+    if (!profileId || !userId || profileId === userId) {
+      setDistanceLabel(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { miles, bucket } = await getDistanceMiles(profileId, userId);
+      if (cancelled) return;
+      setDistanceLabel(formatDistanceLabel(miles, bucket));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId, userId]);
 
   // Store refetchPosts in ref to avoid dependency issues
   const refetchPostsRef = React.useRef(refetchPosts);
@@ -1112,6 +1136,40 @@ const UserProfileScreen: React.FC = () => {
                 />
               </View>
 
+              {/* Thumbnail strip — lets users scan all photos at a glance and
+                  jump to any one. Active thumbnail is highlighted; inactive
+                  fade to 0.5 opacity. Mirrors the original JP-app pattern. */}
+              {hasMultiplePhotos && (
+                <View style={styles.profileThumbnailStrip}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.profileThumbnailContent}
+                  >
+                    {photos.map((photo, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          setPhotoIndex(idx);
+                          heroScrollRef.current?.scrollTo({ x: idx * width, animated: true });
+                        }}
+                      >
+                        <ExpoImage
+                          source={{ uri: photo }}
+                          style={[
+                            styles.profileThumbnailImage,
+                            idx === photoIndex && styles.profileThumbnailImageActive,
+                          ]}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                          recyclingKey={`profile-thumb-${idx}`}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </>
           );
         })()}
@@ -1134,12 +1192,20 @@ const UserProfileScreen: React.FC = () => {
             )}
           </View>
 
-          {/* Location + last-active meta row */}
+          {/* Location + distance + last-active meta row */}
           <View style={styles.metaRow}>
             <Ionicons name="location" size={14} color={Colors.gray[500]} />
             <Text style={styles.metaText} numberOfLines={1}>
               {profile.location?.prefecture || profile.basic?.prefecture || 'Location not set'}
             </Text>
+            {distanceLabel && (
+              <>
+                <Text style={styles.metaDot}>·</Text>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {distanceLabel} away
+                </Text>
+              </>
+            )}
             {profileId !== userId && isOnline === false && lastActiveAt && (
               <>
                 <Text style={styles.metaDot}>·</Text>
@@ -1497,6 +1563,26 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.semibold,
     color: Colors.white,
     letterSpacing: 0.2,
+  },
+  profileThumbnailStrip: {
+    backgroundColor: Colors.white,
+    paddingVertical: Spacing.sm,
+  },
+  profileThumbnailContent: {
+    paddingHorizontal: Spacing.md,
+    gap: 8,
+  },
+  profileThumbnailImage: {
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 2,
+    borderColor: "transparent",
+    opacity: 0.5,
+  },
+  profileThumbnailImageActive: {
+    opacity: 1,
+    borderColor: Colors.primary,
   },
   basicInfoSection: {
     backgroundColor: Colors.white,

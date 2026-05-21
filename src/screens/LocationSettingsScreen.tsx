@@ -114,7 +114,7 @@ const LocationSettingsScreen: React.FC = () => {
     if (!profileId || busy) return;
     Alert.alert(
       "Use state only?",
-      "We'll stop using your precise location and match based on your state instead. You can re-enable later.",
+      "We'll delete your precise location and match based on your state instead. You can re-enable later.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -122,16 +122,18 @@ const LocationSettingsScreen: React.FC = () => {
           onPress: async () => {
             setBusy(true);
             try {
-              // Setting location_source='manual' marks the row as intentionally
-              // downgraded. The DB-side state centroid is preserved as the
-              // home_location value (no need to recompute).
-              await supabase
-                .from("profiles")
-                .update({
-                  location_source: "manual",
-                  location_updated_at: new Date().toISOString(),
-                })
-                .eq("id", profileId);
+              // Server-side atomic downgrade: overwrites home_location with
+              // the state centroid AND sets source='state_centroid' in one
+              // transaction. The user's precise GPS point is physically
+              // replaced — not just hidden — so the privacy intent is
+              // honored at the storage layer, not only at the display layer.
+              const { error } = await supabase.rpc(
+                "downgrade_location_to_state_only",
+                { p_profile_id: profileId },
+              );
+              if (error) {
+                Alert.alert("Couldn't update", error.message);
+              }
               await load();
             } finally {
               setBusy(false);

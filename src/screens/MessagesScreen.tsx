@@ -272,16 +272,19 @@ const MessagesScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  // Format timestamp to display format
+  // Format timestamp to display format. Clamp negative deltas to 0 so a
+  // device with a slow clock (or seed data with a future created_at) never
+  // renders "-330m ago" — anything <1m collapses to "Just now".
   const formatTimestamp = (timestamp: string): string => {
     const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = Math.max(0, Date.now() - date.getTime());
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 60) {
+    if (minutes < 1) {
+      return 'Just now';
+    } else if (minutes < 60) {
       return `${minutes}m ago`;
     } else if (hours < 24) {
       return `${hours}h ago`;
