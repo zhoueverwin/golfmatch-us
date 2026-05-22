@@ -7,7 +7,8 @@ import Constants from 'expo-constants';
 const PRODUCTION_PROJECT_IDS = [
   'rriwpoqhbgvprbhomckk', // GolfMatch JP production
   'tylrhszuzpebehzlahfq', // GolfMatch US production (legacy free-tier; pre-migration)
-  'bvnwjrxdrbvctesfmedn', // GolfMatch US production (Pro; post-migration)
+  'bvnwjrxdrbvctesfmedn', // GolfMatch US production (Pro, ap-northeast-1; paused 2026-05-22)
+  'situfkpgyziruiusiykd', // GolfMatch US production (Pro, us-east-2; active from 2026-05-22)
 ];
 
 // JP dev branch identifier (long deleted); kept to label the banner clearly
