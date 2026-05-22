@@ -342,7 +342,137 @@ rm -rf ~/.metro-cache
 export TMPDIR="$HOME/.metro-tmp" && npx expo start --clear
 ```
 
+## Beta-Tester Allowlist & App Store Reviewer Prep
 
+This section is the operational runbook for two related comp-account flows:
+the **beta-tester allowlist** (free access for invited friends/influencers) and
+the **App Store reviewer demo account** (KYC-bypassed but paywall-visible for
+Apple's reviewer). Read the trade-off table before deciding which to use.
+
+### When to use which
+
+| Cohort | Path | Why |
+|---|---|---|
+| 5–20 close friends / investors | `beta_testers` allowlist | Zero friction; they install the App Store app and just sign in |
+| 50+ external testers / wider beta | TestFlight beta build | Apple expects TestFlight to differ from production |
+| Influencers / B2B partners | `beta_testers` allowlist | They get the real polished app, not a beta sticker |
+| **Apple's reviewer** | **`setup_review_account` helper — never the allowlist** | Reviewer must see the paywall; allowlist would hide IAP → 3.2(f) risk |
+
+### Adding a beta tester (free for life, bypasses KYC + paywall)
+
+Run via Supabase MCP / `db-push-develop.sh` against the dev project, then later
+production. Trigger fires on profile INSERT — the tester just signs up via the
+app afterwards and gets auto-promoted.
+
+```sql
+INSERT INTO public.beta_testers (email, note) VALUES
+  ('friend1@gmail.com',   'High school golf buddy'),
+  ('influencer@example.com', 'IG golfer with 50k followers')
+ON CONFLICT (email) DO UPDATE SET note = EXCLUDED.note;
+```
+
+Email must be lowercase (table CHECK enforces it). For a **female** tester,
+override gender after they sign up:
+
+```sql
+UPDATE profiles SET gender = 'female'
+  WHERE id IN (
+    SELECT p.id FROM profiles p
+      JOIN auth.users u ON u.id::text = p.user_id
+     WHERE lower(u.email) = 'jane@example.com'
+  );
+```
+
+### Revoking a tester
+
+```sql
+DELETE FROM beta_testers WHERE email = 'foo@x.com';
+-- Also clear their granted status (the allowlist trigger only fires on INSERT):
+UPDATE profiles SET is_premium = false,
+                    premium_source = null,
+                    premium_granted_at = null
+  WHERE id IN (
+    SELECT p.id FROM profiles p
+      JOIN auth.users u ON u.id::text = p.user_id
+     WHERE lower(u.email) = 'foo@x.com'
+  );
+```
+
+> **Note**: `premium_source = 'manual'` is write-locked from the app for
+> authenticated/anon roles (migration 25). Only service-role SQL (via MCP or
+> edge functions) and the `apply_beta_tester_grants` trigger can set it. So
+> revoking from the allowlist requires the SQL above — there's no "self-serve"
+> downgrade path in the app.
+
+### Pre-submission prep for Apple App Store
+
+Apple's reviewer can't pass real Didit KYC (no government ID to upload), so
+they need a pre-approved demo account. The `setup_review_account` helper does
+this in one call without granting premium — the reviewer still has to walk
+through the paywall and complete a StoreKit Sandbox purchase to verify IAP.
+
+**Workflow before each App Store submission**:
+
+1. **Sign up a fresh demo account through the app**. Pick an unmistakable
+   email like `applereview@golfmatch.info`. Walk through Name → State →
+   Photo and stop at the KYC screen (don't close the app).
+
+2. **Run the helper via Supabase MCP** to bypass KYC while keeping the paywall:
+
+   ```sql
+   SELECT * FROM public.setup_review_account('applereview@golfmatch.info');
+   ```
+
+   The returned `ready_for_review` column should be `true` and `notes` should
+   say "Ready." If it warns the account is premium, run the SQL it suggests
+   to clear premium.
+
+3. **Test the demo account in the simulator**: sign in → should land on
+   the paywall (NOT Discover). Tap "Unlock Premium" → Apple StoreKit
+   prompt appears.
+
+4. **In App Store Connect** → App Information → App Review Information:
+   - **Sign-in required**: Yes
+   - **Username**: `applereview@golfmatch.info`
+   - **Password**: (whatever you set)
+   - **Demo Account Notes**: copy this verbatim →
+     > KYC pre-approved for review (reviewer cannot upload real government
+     > ID). Paywall + Apple StoreKit IAP remain active — please test with a
+     > sandbox Apple ID. Discover/Swipe and Messaging require premium,
+     > accessible via the paywall.
+
+5. **Bump buildNumber + EAS build**:
+
+   ```bash
+   eas build --platform ios --auto-submit
+   ```
+
+### What's allowed vs blocked at the database level
+
+Migrations 20, 25, 26 layer three independent enforcement gates so the app
+is provably compliant with Apple Developer Program License Agreement
+**Section 3.2(f)** (no hidden IAP bypass):
+
+- `premium_source = 'revenuecat'` — ✅ allowed from the app (RC sync fallback)
+- `premium_source = NULL` — ✅ allowed from the app (downgrade path)
+- `premium_source = 'manual'` or `'permanent'` — ❌ **rejected** by trigger
+  when called from `authenticated`/`anon` roles. Only service-role SQL +
+  the `apply_beta_tester_grants` trigger can set them.
+- `setup_review_account()` function — only `service_role` can execute;
+  calling as `authenticated` returns `permission denied for function`.
+
+### Safety habits
+
+1. **Real personal emails only** in `beta_testers`. Apple's audits sometimes
+   flag throwaway/temp-mail addresses as evidence of bypass abuse.
+2. **Never expose the allowlist in the app UI**. No "enter promo code" button,
+   no marketing link that hints at the bypass. The mechanism must be
+   server-side and opaque from the client.
+3. **Never add Apple's reviewer email to `beta_testers`**. They must see the
+   paywall. Use `setup_review_account()` instead — that's the explicit,
+   Apple-transparent path.
+4. **Keep the allowlist modest** (target <50 emails). If you need broader
+   testing, ship a TestFlight build with gate flags instead.
 
 save the money!!!
 test on expo for fast checking: npx expo start --clear -c
