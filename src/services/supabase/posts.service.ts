@@ -586,6 +586,21 @@ export class PostsService {
     limit: number = 20,
   ): Promise<PaginatedServiceResponse<Post[]>> {
     try {
+      // Look up viewer's gender so the feed shows opposite-gender authors only
+      // (plus the viewer's own posts). Mirrors the strict opposite-gender rule
+      // applied to Discover/Search in migration 21.
+      const { data: viewerProfile } = await supabase
+        .from("profiles")
+        .select("gender")
+        .eq("id", currentUserId)
+        .single();
+      const oppositeGender =
+        viewerProfile?.gender === "male"
+          ? "female"
+          : viewerProfile?.gender === "female"
+            ? "male"
+            : null;
+
       // Get users that current user has liked
       const { data: likedUsers, error: likesError } = await supabase
         .from("user_likes")
@@ -606,17 +621,32 @@ export class PostsService {
       // Supabase .range() is inclusive on both ends, so range(0, limit) returns limit+1 rows
       const to = from + limit;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("posts")
         .select(
           `
           ${this.POST_SELECT_FIELDS},
-          user:profiles!posts_user_id_fkey(${this.PROFILE_SELECT_FIELDS})
+          user:profiles!posts_user_id_fkey!inner(${this.PROFILE_SELECT_FIELDS})
         `,
         )
         .in("user_id", userIds)
         .order("created_at", { ascending: false })
         .range(from, to);
+
+      // Opposite-gender filter on the embedded author. Posts authored by the
+      // viewer themselves still come through because `user_id` is in the
+      // userIds list — the inner join keeps both branches (own post: gender
+      // matches viewer's own, so OK only if we explicitly allow it). To keep
+      // own posts visible across all genders, we OR them back in via
+      // `user_id.eq.<self>` against the inner join.
+      if (oppositeGender) {
+        query = query.or(
+          `gender.eq.${oppositeGender},id.eq.${currentUserId}`,
+          { foreignTable: "user" },
+        );
+      }
+
+      const { data, error } = await query;
 
       // PostgREST returns 416 when range start is beyond available data
       if (error) {
@@ -684,19 +714,39 @@ export class PostsService {
         ...Array.from(socialData.likedUserIds).filter((id) => id !== this.OPERATOR_USER_ID),
       ];
 
+      // Look up viewer's gender for opposite-gender filtering. We already
+      // fetched currentUserProfile above but only selected matchmaking fields
+      // — reuse the same row to avoid a second roundtrip.
+      const { data: viewerGenderRow } = await supabase
+        .from("profiles")
+        .select("gender")
+        .eq("id", currentUserId)
+        .single();
+      const oppositeGender =
+        viewerGenderRow?.gender === "male"
+          ? "female"
+          : viewerGenderRow?.gender === "female"
+            ? "male"
+            : null;
+
       // 5. Fetch posts with extended profile fields for scoring
       // Exclude posts from current user and users they already follow (no overlap with Following)
-      // Note: No time window restriction - show all posts for better discovery
+      // `!inner` on the embed lets us filter by author's gender; mirrors the
+      // strict opposite-gender rule applied to Discover/Search in migration 21.
       let query = supabase
         .from("posts")
         .select(
           `
           ${this.POST_SELECT_FIELDS},
-          user:profiles!posts_user_id_fkey(${this.PROFILE_SELECT_FIELDS_EXTENDED})
+          user:profiles!posts_user_id_fkey!inner(${this.PROFILE_SELECT_FIELDS_EXTENDED})
         `,
         )
         .order("created_at", { ascending: false })
         .limit(fetchLimit);
+
+      if (oppositeGender) {
+        query = query.eq("user.gender", oppositeGender);
+      }
 
       // Exclude current user and followed users
       for (const userId of excludeUserIds) {

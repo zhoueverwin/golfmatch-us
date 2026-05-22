@@ -1,0 +1,26 @@
+-- Enable full-row delivery on UPDATE events for the profiles table so that
+-- Supabase Realtime + RLS can actually evaluate row ownership and forward the
+-- event to subscribed clients.
+--
+-- Background:
+--   Without REPLICA IDENTITY FULL, logical replication sends only the primary
+--   key in the OLD tuple. Supabase Realtime evaluates RLS against that OLD
+--   tuple before delivering the event to subscribers. RLS policies on profiles
+--   reference columns beyond `id` (e.g. `auth.uid() = user_id`), so RLS can't
+--   confirm ownership from just the PK — and silently filters the event out.
+--
+--   Symptom in production: OnboardingKycScreen.tsx subscribes to profile
+--   UPDATE events to advance the user past KYC when an admin manually
+--   approves them. The DB row updates, but the client never receives the
+--   event — user is stuck on "Under review" until they manually log out and
+--   log back in (which forces a fresh SELECT bypassing realtime).
+--
+--   Impact extends beyond KYC: anything else that subscribes to profiles
+--   updates (presence, premium status, location) was silently broken the
+--   same way.
+--
+-- Cost:
+--   Every UPDATE on profiles writes the full pre-state to WAL instead of
+--   just the PK. With ~30 columns, that's a small constant overhead —
+--   completely negligible at our write volume.
+ALTER TABLE public.profiles REPLICA IDENTITY FULL;

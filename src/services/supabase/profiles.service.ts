@@ -107,6 +107,27 @@ export class ProfilesService {
       );
     }
     try {
+      // Force opposite-gender results regardless of any caller-supplied gender
+      // filter. Mirrors the strict rule applied to Discover RPCs in
+      // migration 21 — this is a male<->female dating app.
+      const { data: sessionData } = await supabase.auth.getUser();
+      const authUserId = sessionData?.user?.id;
+      let viewerGender: string | null = null;
+      if (authUserId) {
+        const { data: viewer } = await supabase
+          .from("profiles")
+          .select("gender")
+          .eq("user_id", authUserId)
+          .single();
+        viewerGender = viewer?.gender ?? null;
+      }
+      const forcedOppositeGender: string | null =
+        viewerGender === "male"
+          ? "female"
+          : viewerGender === "female"
+            ? "male"
+            : null;
+
       let query = supabase.from("profiles").select(ProfilesService.PROFILE_COLUMNS, { count: "exact" });
 
       // Exclude specific user IDs (e.g., already liked/passed users)
@@ -124,6 +145,14 @@ export class ProfilesService {
         .not("birth_date", "is", null)
         .not("profile_pictures", "eq", "{}");
 
+      // Gate: hide unverified profiles (haven't finished onboarding/KYC) and
+      // unpaid males. Females show as long as they're verified; males also
+      // require an active premium subscription. Mirrors the same predicate
+      // applied server-side in migration 19 to the discovery RPCs.
+      query = query
+        .eq("is_verified", true)
+        .or("gender.eq.female,is_premium.eq.true");
+
       // Prefecture filter (single or multiple for region-based search)
       if (filters.prefectures && filters.prefectures.length > 0) {
         query = query.in("prefecture", filters.prefectures);
@@ -136,8 +165,12 @@ export class ProfilesService {
         query = query.eq("golf_skill_level", filters.golf_skill_level);
       }
 
-      // Gender filter (used to enforce opposite-gender matching)
-      if (filters.gender) {
+      // Gender filter. Force opposite-gender when we know the viewer's
+      // gender, regardless of any caller-supplied filter — this is a strict
+      // male<->female dating app.
+      if (forcedOppositeGender) {
+        query = query.eq("gender", forcedOppositeGender);
+      } else if (filters.gender) {
         query = query.eq("gender", filters.gender);
       }
 

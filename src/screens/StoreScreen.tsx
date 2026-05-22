@@ -74,14 +74,38 @@ const StoreScreen: React.FC = () => {
     });
   };
 
-  // Get price from current offering. Falls back to a USD placeholder only
-  // while RevenueCat is still loading the offering — the real price string
-  // is auto-localized by Apple (e.g. "$29.99" in US, "¥4,500" in JP).
+  // Cheapest effective monthly across all available tiers. Drives the
+  // headline price label so adding a 6-month / annual tier in RevenueCat
+  // automatically discounts the visible number. Falls back to the monthly
+  // price string, then a USD placeholder, while RC is still loading.
   const getSubscriptionPrice = useCallback((): string => {
-    if (currentOffering && currentOffering.monthly) {
-      return currentOffering.monthly.product.priceString;
+    const packages = currentOffering?.availablePackages ?? [];
+    const monthsByPackageType: Record<string, number> = {
+      MONTHLY: 1,
+      TWO_MONTH: 2,
+      THREE_MONTH: 3,
+      SIX_MONTH: 6,
+      ANNUAL: 12,
+    };
+    let bestRate = Infinity;
+    let bestCurrencyCode = "USD";
+    for (const pkg of packages) {
+      const months = monthsByPackageType[pkg.packageType] ?? 0;
+      if (months === 0) continue;
+      const rate = pkg.product.price / months;
+      if (rate < bestRate) {
+        bestRate = rate;
+        bestCurrencyCode = pkg.product.currencyCode || "USD";
+      }
     }
-    return "$29.99";
+    if (Number.isFinite(bestRate)) {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: bestCurrencyCode,
+        maximumFractionDigits: 2,
+      }).format(bestRate);
+    }
+    return currentOffering?.monthly?.product.priceString ?? "$29.99";
   }, [currentOffering]);
 
   // Helper function to sync premium status directly to database
@@ -543,7 +567,7 @@ const StoreScreen: React.FC = () => {
           {/* Terms and Conditions */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>
-              {`The monthly plan is ${getSubscriptionPrice()} and renews automatically once you subscribe.`}
+              {`Plans start at ${getSubscriptionPrice()}/mo and renew automatically once you subscribe.`}
             </Text>
             <Text style={styles.termsText}>
               You'll be charged through your Apple ID account at the time of purchase.

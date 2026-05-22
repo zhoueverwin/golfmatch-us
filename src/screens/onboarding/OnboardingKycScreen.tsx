@@ -97,6 +97,23 @@ const OnboardingKycScreen: React.FC = () => {
     };
   }, [phase]);
 
+  // Early-exit: if the profile lands on this screen already approved (e.g.
+  // beta-tester allowlist pre-grants verification on profile creation), skip
+  // straight to the next step without ever showing the Didit intro. Mirrors
+  // the same routing handleVerdict applies on a live realtime verdict.
+  useEffect(() => {
+    if (advancedRef.current) return;
+    if (
+      userProfile?.is_verified === true &&
+      userProfile?.kyc_status === "approved"
+    ) {
+      handleVerdict("approved", userProfile.gender ?? null);
+    }
+    // Intentionally only runs once on mount per profile load — the realtime
+    // sub below handles subsequent updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProfile?.is_verified, userProfile?.kyc_status]);
+
   // Subscribe to profiles changes for this user so we can advance as soon
   // as the webhook flips kyc_status to approved/rejected.
   useEffect(() => {

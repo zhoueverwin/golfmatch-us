@@ -76,9 +76,51 @@ const KYC_STATUS_CONFIG: Record<
 const MembershipStatusScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { isProMember, expirationDate, willRenew, currentOffering } = useRevenueCat();
-  // Localized monthly price; falls back to a USD placeholder while RC is loading.
-  const monthlyPriceLabel =
-    currentOffering?.monthly?.product.priceString ?? "$29.99";
+  // Lowest effective monthly across all available tiers — drives the "From
+  // $X/mo" upsell label so adding a 6-month or annual tier in RevenueCat
+  // automatically discounts the visible headline. Falls back to a USD
+  // placeholder while RC is still loading.
+  //
+  // packageType strings come from RC: 'MONTHLY', 'SIX_MONTH', 'ANNUAL', etc.
+  // Mapping back to "months in this package" lets us divide the total price
+  // and find the cheapest per-month rate, regardless of which tiers are
+  // actually enabled in the dashboard.
+  const monthsByPackageType: Record<string, number> = {
+    MONTHLY: 1,
+    TWO_MONTH: 2,
+    THREE_MONTH: 3,
+    SIX_MONTH: 6,
+    ANNUAL: 12,
+  };
+  const cheapestMonthlyLabel = (() => {
+    const packages = currentOffering?.availablePackages ?? [];
+    if (packages.length === 0) return "$29.99";
+    let bestRate = Infinity;
+    let bestFormatter:
+      | ((value: number) => string)
+      | null = null;
+    for (const pkg of packages) {
+      const months = monthsByPackageType[pkg.packageType] ?? 0;
+      if (months === 0) continue;
+      const rate = pkg.product.price / months;
+      if (rate < bestRate) {
+        bestRate = rate;
+        // Re-use the source product's locale + currency so the rounded
+        // number renders correctly across regions (¥, €, etc.).
+        const currencyCode = pkg.product.currencyCode || "USD";
+        bestFormatter = (value) =>
+          new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: currencyCode,
+            maximumFractionDigits: 2,
+          }).format(value);
+      }
+    }
+    if (!Number.isFinite(bestRate) || !bestFormatter) {
+      return currentOffering?.monthly?.product.priceString ?? "$29.99";
+    }
+    return bestFormatter(bestRate);
+  })();
   const { profileId, userProfile: cachedProfile } = useAuth();
   // Bootstrap from the cached profile so verified users (i.e. everyone
   // who reaches this screen — AppNavigator's needsKycGate guarantees it)
@@ -263,7 +305,7 @@ const MembershipStatusScreen: React.FC = () => {
         <View style={styles.benefitsCard}>
           <Text style={styles.benefitsCardTitle}>Premium Benefits</Text>
           <Text style={styles.benefitsLead}>
-            Your monthly subscription includes the features below.
+            Your premium subscription includes the features below.
           </Text>
 
           {PREMIUM_BENEFITS.map((benefit, index) => (
@@ -361,7 +403,7 @@ const MembershipStatusScreen: React.FC = () => {
                   <Text style={styles.upgradeButtonText}>Become a Premium Member</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <Text style={styles.priceLabel}>{monthlyPriceLabel} / month</Text>
+              <Text style={styles.priceLabel}>From {cheapestMonthlyLabel}/mo</Text>
             </>
           )}
         </View>

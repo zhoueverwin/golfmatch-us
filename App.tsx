@@ -7,6 +7,17 @@ import {
   NotoSansJP_600SemiBold,
   NotoSansJP_700Bold,
 } from '@expo-google-fonts/noto-sans-jp';
+import {
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_600SemiBold,
+} from '@expo-google-fonts/fraunces';
+import {
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from '@expo-google-fonts/manrope';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -23,7 +34,7 @@ import CacheService from './src/services/cacheService';
 // objects missing newly-added sections (e.g. the 2026-05-20 PM expansion
 // added `relationship` and `lifestyle` sections that the old cache shape
 // doesn't have).
-const CACHE_VERSION = '2026-05-20-profile-expansion';
+const CACHE_VERSION = '2026-05-22-daily-picks-gender';
 const CACHE_VERSION_KEY = '@golfmatch_cache_version';
 
 // Configure React Query client with optimal settings
@@ -88,6 +99,13 @@ export default function App() {
     NotoSansJP_500Medium,
     NotoSansJP_600SemiBold,
     NotoSansJP_700Bold,
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_600SemiBold,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
   });
 
   useEffect(() => {
