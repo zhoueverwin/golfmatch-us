@@ -1074,10 +1074,12 @@ const UserProfileScreen: React.FC = () => {
                   </TouchableOpacity>
                 )}
 
-                {/* Page counter pill — Hinge/Tinder convention */}
+                {/* Page counter pill — Hinge/Tinder convention.
+                    Sits below the floating header so it doesn't overlap with
+                    the report/menu ellipsis in the top-right corner. */}
                 {hasMultiplePhotos && (
                   <View
-                    style={[styles.photoCounterPill, { top: insets.top + 8 }]}
+                    style={[styles.photoCounterPill, { top: insets.top + 56 }]}
                     pointerEvents="none"
                   >
                     <BlurView intensity={30} tint="dark" style={styles.photoCounterBlur}>
