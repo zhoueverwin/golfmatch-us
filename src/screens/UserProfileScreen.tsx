@@ -1074,36 +1074,6 @@ const UserProfileScreen: React.FC = () => {
                   </TouchableOpacity>
                 )}
 
-                {/* Photo indicator bars — positioned below floating header */}
-                {hasMultiplePhotos && (
-                  <View
-                    style={[styles.photoIndicatorContainer, { top: insets.top + 56 }]}
-                    pointerEvents="none"
-                  >
-                    {photos.map((_, idx) => {
-                      const inputRange = [
-                        (idx - 1) * width,
-                        idx * width,
-                        (idx + 1) * width,
-                      ];
-                      const barOpacity = scrollX.interpolate({
-                        inputRange,
-                        outputRange: [0.35, 0.95, 0.35],
-                        extrapolate: "clamp",
-                      });
-                      return (
-                        <Animated.View
-                          key={idx}
-                          style={[
-                            styles.photoIndicatorBar,
-                            { opacity: barOpacity },
-                          ]}
-                        />
-                      );
-                    })}
-                  </View>
-                )}
-
                 {/* Page counter pill — Hinge/Tinder convention */}
                 {hasMultiplePhotos && (
                   <View
@@ -1530,20 +1500,6 @@ const styles = StyleSheet.create({
   heroScrollView: {
     width: "100%",
     height: "100%",
-  },
-  photoIndicatorContainer: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    flexDirection: "row",
-    zIndex: 10,
-    gap: 4,
-  },
-  photoIndicatorBar: {
-    flex: 1,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: "rgba(255,255,255,0.95)",
   },
   photoCounterPill: {
     position: "absolute",
