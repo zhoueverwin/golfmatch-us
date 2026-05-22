@@ -87,3 +87,4 @@ migration_artifacts/
 # Asset backups
 *.jpg.bak
 *.png.bak
+.migration-dump/

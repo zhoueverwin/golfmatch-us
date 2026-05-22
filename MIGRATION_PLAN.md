@@ -1,47 +1,64 @@
-# Supabase Migration Plan: Free → Pro
+# Supabase Migration Plan: Tokyo → US-East (Virginia)
 
-**Source project ref:** `tylrhszuzpebehzlahfq` (free tier, region: <fill in>)
-**Source URL:** `https://tylrhszuzpebehzlahfq.supabase.co`
-**Target project ref:** `<NEW_REF>` (Pro tier, region: <pick same region as source to minimise latency churn>)
+**Source project ref:** `bvnwjrxdrbvctesfmedn` (Pro tier, region: `ap-northeast-1` / Tokyo)
+**Source URL:** `https://bvnwjrxdrbvctesfmedn.supabase.co`
+**Target project ref:** `situfkpgyziruiusiykd` (Pro tier, region: `us-east-2` / Ohio — the app is US-only, so we deliberately want US-East for latency; us-east-2 picked over us-east-1 for materially better recent reliability)
 **Target URL:** `https://<NEW_REF>.supabase.co`
 
 This plan is written so an AI executor can run it end-to-end. Every step has (a) the command to run, (b) the verification check, and (c) the rollback. **Do not skip the verification checks** — they catch the silent-failure modes that hit Supabase migrations.
+
+**Region-move-specific risks** (vs. the original Free → Pro draft this evolved from):
+- All public storage URLs change hostname (project ref is in the hostname). Any URL persisted in `messages`, `posts`, `post_media`, push notification payloads, etc. will 404 once the old project is paused. We rewrite in place — see §5.4.
+- Auth provider redirect URIs (`/auth/v1/callback`) change hostname. Google + Apple consoles must list both old and new during transition.
+- Edge function URLs change hostname → Didit + RevenueCat webhook URLs must be updated in their dashboards.
+- Realtime websocket reconnects during cutover will look like a transient network blip to any open app. Acceptable; the SDK auto-reconnects.
 
 ---
 
 ## 0. Scope snapshot (what we are moving)
 
-Captured from the live source project on plan-creation day:
+Captured from the live source project on **2026-05-22**:
 
-- **Public schema:** 40 tables, ~110 functions, ~45 triggers.
-- **RLS state:** 39/40 tables have RLS enabled. `public.disposable_email_domains` has RLS **disabled** (advisor flagged it). Decide before migration: keep disabled or enable + add policies.
-- **Auth:** 4 rows in `public.profiles`, which 1:1 with `auth.users` via `handle_new_user` trigger. Auth providers in use (verify in Dashboard → Auth → Providers): email/password, phone OTP, Google OAuth, Apple Sign-In.
-- **Storage buckets** (7):
-  | Bucket | Public |
-  |---|---|
-  | `admin-assets` | true |
-  | `blog-images` | true |
-  | `kyc-verification` | **false** (sensitive) |
-  | `message-media` | true |
-  | `post-media` | true |
-  | `profile-pictures` | true |
-  | `user-uploads` | true |
-- **Edge Functions** (3):
+- **Postgres:** 17.6, db timezone = `UTC` (not `Asia/Tokyo` — good, region move doesn't shift any cron semantics).
+- **Public schema:** ~70 tables (full list via `mcp__supabase__list_tables` — do not rely on a count here; verify before dumping).
+- **Views in public:** `kyc_review_queue` (1).
+- **RLS state:** verify with `get_advisors` against the target post-restore. Source has known advisor on `public.disposable_email_domains` (RLS disabled — read-only reference data; either keep or enable + add `FOR SELECT USING (true)`).
+- **Auth:** ~4 rows in `public.profiles`, 1:1 with `auth.users` via `handle_new_user` trigger. Providers in use (verify in Dashboard → Auth → Providers): email/password, phone OTP, Google OAuth, Apple Sign-In.
+- **Storage buckets** (**8** — was 7 in the original draft; `post-images` is the addition):
+  | Bucket | Public | File size limit | MIME restrictions |
+  |---|---|---|---|
+  | `admin-assets` | true | – | – |
+  | `blog-images` | true | 5 MB | image/jpeg, png, webp, gif |
+  | `kyc-verification` | **false** (sensitive) | 10 MB | image/jpeg, png, webp |
+  | `message-media` | true | – | – |
+  | `post-images` | true | 10 MB | image/png, jpeg, gif, webp, svg+xml |
+  | `post-media` | true | – | – |
+  | `profile-pictures` | true | – | – |
+  | `user-uploads` | true | – | – |
+
+  Total objects: ~38 (~46 MB). Tiny — physical copy will take minutes, not hours.
+- **Edge Functions** (**5** — was 3 in the original draft; `admin-tools` and `request-kyc-review` are the additions):
   | Slug | verify_jwt | Notes |
   |---|---|---|
   | `revenuecat-webhook` | false | RevenueCat calls it; URL is registered in RC dashboard |
   | `didit-webhook` | false | Didit calls it; URL is registered in Didit dashboard |
   | `create-didit-session` | true | Called by the app |
+  | `admin-tools` | false | Admin dashboard HTML calls it |
+  | `request-kyc-review` | true | Called by the app's KYC manual-review escape hatch |
 - **Edge Function env vars to recreate:**
   - `DIDIT_API_KEY`
   - `DIDIT_WEBHOOK_SECRET`
   - `DIDIT_WORKFLOW_ID`
   - `REVENUECAT_WEBHOOK_SECRET`
+  - Any admin-tools / request-kyc-review secrets (inspect Dashboard → Edge Functions → Secrets on the source — anything not in the auto-injected `SUPABASE_*` set needs recreating).
   - (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by the platform — **do not set manually**, they'll auto-bind to the new project.)
-- **Installed extensions** (must be enabled on target before restoring): `pg_net` (extensions schema), `pg_trgm` (public), `pgcrypto` (extensions), `pg_stat_statements` (extensions), `supabase_vault` (vault), `uuid-ossp` (extensions). Plus the always-installed defaults (`plpgsql`).
-- **pg_cron jobs:** none.
+- **Installed extensions** (must be enabled on target before restoring): `postgis 3.3.7` (in `extensions`), `pg_net 0.20.0` (in `extensions`), `pg_trgm 1.6` (in `public`), `pgcrypto 1.3` (in `extensions`), `pg_stat_statements 1.11` (in `extensions`), `pg_cron 1.6.4` (in `pg_catalog`), `supabase_vault 0.3.1` (in `vault`), `uuid-ossp 1.1` (in `extensions`). Plus the always-installed defaults (`plpgsql`). **PostGIS and pg_cron are new vs. the original draft — do not skip them, they are load-bearing for distance scoring and the daily snapshot job respectively.**
+- **pg_cron jobs:** **1** (was "none" in the original draft):
+  - `compute_yesterday_snapshot` — `30 0 * * *` (UTC) — runs `SELECT public.compute_daily_snapshot((CURRENT_DATE - 1)::date);`
+  - **NB:** `pg_dump` does not capture rows in the `cron` schema. Must be re-registered manually on target (§3.9).
+- **Realtime publication (`supabase_realtime`)** — 7 public tables: `matches`, `messages`, `notifications`, `post_reactions`, `profile_views`, `profiles`, `user_likes`. Also the per-day partitions under `supabase_realtime_messages_publication` in the `realtime` schema (these are managed by the platform and rebuilt automatically).
 - **Vault secrets:** none.
-- **Local migration files** (5 baseline + 6 applied since): see `supabase/migrations/`. These reproduce most but not all of the live DB — the live DB has drift from manual SQL applied via MCP (`20260512123807`…`20260515032528`). The pg_dump approach in §3 captures the *current state*, not the migration history, which is what we want for a like-for-like copy.
+- **Local migration files:** 49 applied migrations (latest: `20260522123114 setup_review_account_helper`). Drift from MCP-applied SQL is present — **use `pg_dump`, not `supabase db push`**.
 
 **Drift warning:** because the live DB has been changed both via local migrations and via direct MCP-applied SQL, **do not** try to migrate by running `supabase db push` against the new project. That will diverge. Use `pg_dump` of the live source as the source of truth.
 
@@ -50,9 +67,10 @@ Captured from the live source project on plan-creation day:
 ## 1. Prep work (do before touching any DB)
 
 ### 1.1 Create the Pro project
-- Supabase Dashboard → New project → choose **Pro plan** and the **same region** as the source.
+- Supabase Dashboard → New project → choose **Pro plan** and region **`us-east-2` (Ohio)**. The app is US-only (`golfmatchdating.us.com`, US App Store, `app_config.app_version.ios.store_url` is `apps.apple.com/us/`) — we want the database next to the user base. The original "same region" guidance no longer applies; this *is* the region move. us-east-2 picked over us-east-1 because us-east-1 has the heaviest historical outage rate of any AWS region; us-east-2 has the same latency profile (~5 ms delta) with a cleaner record.
 - Set a strong DB password and store it in 1Password.
 - Record: project ref, anon key, service_role key, JWT secret, DB connection string (pooler + direct).
+- After creation, in Dashboard → Database → Extensions, toggle on: **PostGIS**, **pg_cron**, **pg_net**, **pg_stat_statements** (most are on by default — verify). Toggling pg_cron via the Dashboard is more reliable than `CREATE EXTENSION` from SQL.
 
 ### 1.2 Match Postgres major version
 Source is Postgres 17 (per `supabase/config.toml: major_version = 17`). When creating the new project, confirm Dashboard → Settings → Database → Postgres version is also 17. Mismatched majors will break `pg_dump` restore.
@@ -66,14 +84,23 @@ supabase --version             # should be >= 1.200
 ```
 
 ### 1.4 Capture connection strings into env vars (don't paste passwords inline)
+
+**Use the pooler for both source and target.** The direct DB hostnames resolve only over IPv6 — most local machines don't have IPv6 outbound, and the pooler is mandatory in that case anyway. Pooler hostname format depends on when the project was provisioned:
+- Older projects: `aws-0-<region>.pooler.supabase.com`
+- Newer projects (post-2025 infra rollout): `aws-1-<region>.pooler.supabase.com`
+
+For *this* migration, target lives on `aws-1`. Always try both if the first errors with `Tenant or user not found`.
+
 ```bash
-# Source — copy from old Dashboard → Settings → Database → Connection string → URI (direct, not pooler)
-export SRC_DB="postgresql://postgres:<SRC_PWD>@db.tylrhszuzpebehzlahfq.supabase.co:5432/postgres"
-# Target
-export DST_DB="postgresql://postgres:<DST_PWD>@db.<NEW_REF>.supabase.co:5432/postgres"
-export SRC_REF="tylrhszuzpebehzlahfq"
-export DST_REF="<NEW_REF>"
+# Source (Tokyo, older tenant) — pooler session mode (port 5432) for compatibility with pg_dump
+export SRC_DB="postgresql://postgres.bvnwjrxdrbvctesfmedn:<SRC_PWD>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
+# Target (Ohio, newer tenant)
+export DST_DB="postgresql://postgres.situfkpgyziruiusiykd:sa25965313..@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
+export SRC_REF="bvnwjrxdrbvctesfmedn"
+export DST_REF="situfkpgyziruiusiykd"
 ```
+
+Prefer the `PGPASSWORD` env var over inlining the password in the URI to keep it out of `ps`/process listings.
 
 ### 1.5 Freeze the source (production cutover only)
 If this is a real cutover (not a dry run):
@@ -108,8 +135,16 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto"         WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pg_net"           WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pg_trgm"          WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "postgis"          WITH SCHEMA extensions;
+-- pg_cron MUST be enabled via Dashboard → Database → Extensions toggle, not pure SQL.
+-- After the Dashboard toggle, this is a no-op confirmation:
+CREATE EXTENSION IF NOT EXISTS "pg_cron";
 -- supabase_vault is auto-installed on project creation; verify only.
 ```
+
+**Why PostGIS matters here:** the `profiles` table has a `home_location` geography column (added in migration `00000000000010_profiles_home_location`), the `search_profiles_within_radius` RPC depends on PostGIS operators, and a state-centroid trigger writes to it on every profile update. A restore without PostGIS will fail on the first `geography` column it touches.
+
+**Why pg_cron matters here:** the `compute_yesterday_snapshot` job rolls up `daily_snapshots`. Without it, the analytics table silently stops accumulating rows after cutover — won't break the app, but you'll discover it weeks later when reporting goes flat.
 
 **Verify:** `SELECT extname, extversion FROM pg_extension ORDER BY 1;` — should include all of the above.
 
@@ -150,11 +185,11 @@ Before restoring, open `dump_schema.sql` and:
 2. **Strip role creation.** Lines like `CREATE ROLE supabase_admin ...` — delete. The target already has these.
 3. **Strip Supabase-managed function bodies** that conflict on restore:
    - Anything in schemas `auth.*`, `storage.*`, `realtime.*`, `vault.*` whose definition matches what Supabase ships. Keep only **your own** auth/storage triggers — most importantly the `auth.users` → `public.handle_new_user` trigger.
-4. **`pg_net` URLs baked into triggers.** Search for `net.http_post` and any string containing `tylrhszuzpebehzlahfq.supabase.co`. The `trigger_send_push_notification` (and any other webhook-firing trigger) likely embeds the old Edge Function URL. Replace `tylrhszuzpebehzlahfq` with `$DST_REF` literally in the SQL before restore.
+4. **`pg_net` URLs baked into triggers.** Search for `net.http_post` and any string containing `bvnwjrxdrbvctesfmedn.supabase.co`. The `trigger_send_push_notification` / `send_push_notification` function (added in migration `add_send_push_notification_function`) embeds the old Edge Function URL. Replace `bvnwjrxdrbvctesfmedn` with `$DST_REF` literally in the SQL before restore.
 
 Run this check after editing:
 ```bash
-grep -n "tylrhszuzpebehzlahfq" dump_schema.sql dump_data.sql
+grep -n "bvnwjrxdrbvctesfmedn" dump_schema.sql dump_data.sql
 # Expected: no matches. If any remain, fix before restore.
 ```
 
@@ -166,8 +201,8 @@ psql "$DST_DB" -v ON_ERROR_STOP=1 -f dump_schema.sql 2>&1 | tee restore_schema.l
 
 **Verify:**
 - `grep -i "error" restore_schema.log` — must be empty (or only "already exists" for benign objects you decided to ignore).
-- `psql "$DST_DB" -c "\dt public.*"` shows all 40 tables.
-- `psql "$DST_DB" -c "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public';"` — should be in the same ballpark as source (~110, ignoring pg_trgm built-ins).
+- `psql "$DST_DB" -c "\dt public.*"` shows all ~70 tables (run the same `\dt public.*` against `$SRC_DB` and diff the lists).
+- `psql "$DST_DB" -c "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public';"` — should match source within a small delta (ignoring pg_trgm/extension-installed built-ins).
 
 ### 3.5 Restore data to target
 
@@ -225,7 +260,29 @@ BEGIN
 END$$;
 ```
 
-### 3.8 Decide on the `disposable_email_domains` advisor
+### 3.8 Re-register pg_cron jobs (not captured by pg_dump)
+
+`pg_dump` skips the `cron` schema. Re-create the job(s) manually on target:
+
+```sql
+-- Verify the function exists first
+SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+WHERE n.nspname='public' AND proname='compute_daily_snapshot';
+
+-- Register the job
+SELECT cron.schedule(
+  'compute_yesterday_snapshot',
+  '30 0 * * *',
+  $$SELECT public.compute_daily_snapshot((CURRENT_DATE - 1)::date);$$
+);
+
+-- Verify
+SELECT jobid, schedule, command, active, jobname FROM cron.job;
+```
+
+**Schedule semantics check:** `30 0 * * *` runs at 00:30 UTC, regardless of where the DB lives physically. That was 09:30 JST under the old setup; now it's 19:30 ET (EST) / 20:30 ET (EDT) under the new setup. For a "yesterday's snapshot" rollup that's fine — but if you'd rather have the rollup happen in the dead of US night, change to e.g. `30 7 * * *` (= 03:30 ET EDT).
+
+### 3.9 Decide on the `disposable_email_domains` advisor
 
 The source has RLS disabled on this table. Pick one:
 - **Keep as-is** (table is read-only reference data, exposure acceptable): no action.
@@ -248,12 +305,29 @@ Realtime tables aren't part of `pg_dump`'s logical-replication state.
 SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
 ```
 
-Compare against source (same query). For each table that appears on source but not target:
+Compare against source (same query). The known-good list to ensure (captured from source on 2026-05-22):
+
 ```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.<table_name>;
+ALTER PUBLICATION supabase_realtime ADD TABLE
+  public.matches,
+  public.messages,
+  public.notifications,
+  public.post_reactions,
+  public.profile_views,
+  public.profiles,
+  public.user_likes;
 ```
 
-Mobile app uses realtime for chats & messages at minimum (see `realtime_select_policies_user_likes_matches` migration). Confirm `messages`, `chats`, `user_likes`, `matches` are present.
+Run as one statement so an already-added table doesn't abort the rest (Postgres will reject the whole statement if any one fails — wrap in a DO block with EXCEPTION handlers if you've already partially added).
+
+**`REPLICA IDENTITY` for the `profiles` table**: migration `20260522020102 profiles_replica_identity_full` sets `ALTER TABLE public.profiles REPLICA IDENTITY FULL;` — confirm this survived the restore:
+
+```sql
+SELECT relreplident FROM pg_class WHERE relname = 'profiles' AND relnamespace = 'public'::regnamespace;
+-- 'f' = FULL (correct); 'd' = DEFAULT (broken — realtime UPDATE events will be missing old-row data)
+```
+
+If not 'f', re-run: `ALTER TABLE public.profiles REPLICA IDENTITY FULL;`
 
 ---
 
@@ -264,15 +338,16 @@ Mobile app uses realtime for chats & messages at minimum (see `realtime_select_p
 ### 5.1 Recreate buckets on target
 
 Dashboard → Storage → Create bucket, exactly matching:
-| Bucket | Public |
-|---|---|
-| `admin-assets` | true |
-| `blog-images` | true |
-| `kyc-verification` | **false** |
-| `message-media` | true |
-| `post-media` | true |
-| `profile-pictures` | true |
-| `user-uploads` | true |
+| Bucket | Public | File size limit | MIME restrictions |
+|---|---|---|---|
+| `admin-assets` | true | – | – |
+| `blog-images` | true | 5 MB | image/jpeg, png, webp, gif |
+| `kyc-verification` | **false** | 10 MB | image/jpeg, png, webp |
+| `message-media` | true | – | – |
+| `post-images` | true | 10 MB | image/png, jpeg, gif, webp, svg+xml |
+| `post-media` | true | – | – |
+| `profile-pictures` | true | – | – |
+| `user-uploads` | true | – | – |
 
 ### 5.2 Storage RLS policies
 
@@ -308,6 +383,46 @@ psql "$DST_DB" -c "SELECT bucket_id, count(*) FROM storage.objects GROUP BY 1 OR
 ```
 Spot-check 3–5 random URLs from each public bucket in a browser.
 
+### 5.4 Rewrite persisted storage URLs (region-move-specific — was not in original draft)
+
+Public storage URLs embed the project ref in the hostname (`https://bvnwjrxdrbvctesfmedn.supabase.co/storage/v1/object/public/...`). Any URL persisted as a string in your tables will 404 after the old project is paused.
+
+Find the offending columns first:
+```sql
+-- Run on target after data restore to enumerate every text/jsonb column that contains the old ref
+SELECT table_schema, table_name, column_name
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND data_type IN ('text', 'character varying', 'jsonb', 'json');
+-- Then for each, run a count query like:
+-- SELECT count(*) FROM public.messages WHERE content LIKE '%bvnwjrxdrbvctesfmedn%';
+```
+
+Likely hit list (verify before running UPDATEs):
+- `messages.content` (image/video URLs pasted into chat)
+- `posts` media URL columns (and `post_media.url` if present)
+- `profiles` photo URL columns
+- `notifications` payload JSON
+
+Rewrite pattern (run inside a transaction, one column at a time):
+```sql
+BEGIN;
+UPDATE public.messages
+SET content = REPLACE(content, 'bvnwjrxdrbvctesfmedn.supabase.co', '<NEW_REF>.supabase.co')
+WHERE content LIKE '%bvnwjrxdrbvctesfmedn.supabase.co%';
+-- Inspect, then COMMIT (or ROLLBACK if anything looks wrong)
+COMMIT;
+```
+
+For `jsonb` columns, use `regexp_replace` over the text cast and cast back:
+```sql
+UPDATE public.notifications
+SET data = REPLACE(data::text, 'bvnwjrxdrbvctesfmedn.supabase.co', '<NEW_REF>.supabase.co')::jsonb
+WHERE data::text LIKE '%bvnwjrxdrbvctesfmedn.supabase.co%';
+```
+
+**Verify:** zero rows match `'%bvnwjrxdrbvctesfmedn%'` after the rewrite.
+
 ---
 
 ## 6. Edge Functions
@@ -327,25 +442,35 @@ supabase secrets set \
   DIDIT_WEBHOOK_SECRET="<value>" \
   DIDIT_WORKFLOW_ID="<value>" \
   REVENUECAT_WEBHOOK_SECRET="<value>"
+# Plus any secrets used by admin-tools / request-kyc-review — inspect old project first:
+#   Dashboard (old) → Edge Functions → Secrets → screenshot the full list
 ```
 
 Pull these from old project: Dashboard (old) → Edge Functions → Secrets. **Do not** set `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` — Supabase auto-injects these and they'll already point to the new project.
 
 ### 6.3 Deploy
 
+All 5 edge functions (this is the corrected list — original draft only deployed 3):
+
 ```bash
 supabase functions deploy revenuecat-webhook   --no-verify-jwt
 supabase functions deploy didit-webhook        --no-verify-jwt
-supabase functions deploy create-didit-session # verify_jwt stays true (default)
+supabase functions deploy admin-tools          --no-verify-jwt
+supabase functions deploy create-didit-session                # verify_jwt=true (default)
+supabase functions deploy request-kyc-review                  # verify_jwt=true (default)
 ```
 
-The `--no-verify-jwt` flag mirrors the source config (verify_jwt=false for both webhooks).
+The `--no-verify-jwt` flag mirrors the source config. Confirm the per-function `verify_jwt` setting against the source by re-running `mcp__supabase__list_edge_functions` against the **old** project before deploying.
 
 **Verify:**
 ```bash
-supabase functions list   # all 3 status=ACTIVE
-curl -i "https://$DST_REF.supabase.co/functions/v1/revenuecat-webhook"  # 400/401 is fine (means it's reachable); 404 is bad
+supabase functions list   # all 5 status=ACTIVE
+curl -i "https://$DST_REF.supabase.co/functions/v1/revenuecat-webhook"   # 400/401 is fine (reachable); 404 is bad
 curl -i "https://$DST_REF.supabase.co/functions/v1/didit-webhook"
+curl -i "https://$DST_REF.supabase.co/functions/v1/admin-tools"
+# create-didit-session and request-kyc-review will 401 without a JWT — that's correct
+curl -i "https://$DST_REF.supabase.co/functions/v1/create-didit-session"
+curl -i "https://$DST_REF.supabase.co/functions/v1/request-kyc-review"
 ```
 
 ---
@@ -409,6 +534,22 @@ For a hotfix-grade rollout, prefer an OTA via `eas update` if your code path doe
 
 ---
 
+## 9b. External systems repoint checklist (region-move addition)
+
+Config drift across these 7 surfaces is where the actual blast radius lives — the DB move itself is minutes of work. Tick every box:
+
+- [ ] **`.env` (local)** — `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] **`eas.json`** — all 3 build profiles (development, preview, production) carry the URL and anon key inline (see lines 11, 25, 39 today). Per the team rule, these must match `.env` exactly.
+- [ ] **EAS secrets** (`eas secret:list`) — rotate `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+- [ ] **Edge Function secrets** on the new project — `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`, `DIDIT_WORKFLOW_ID`, `REVENUECAT_WEBHOOK_SECRET`, plus anything else the old project's Edge Functions page lists.
+- [ ] **Google OAuth client** (Google Cloud Console) — add `https://<NEW_REF>.supabase.co/auth/v1/callback` to authorized redirect URIs **before** cutover. Remove the old URL at T+14d.
+- [ ] **Apple Sign-In Services ID** (Apple Developer) — update Return URL to the new project's callback. Repaste team ID + key ID + `.p8` if the JWT secret changes.
+- [ ] **Didit webhook URL** (Didit console) — point at `https://<NEW_REF>.supabase.co/functions/v1/didit-webhook`. Leave the old one configured for 24h.
+- [ ] **RevenueCat webhook URL** (RC dashboard) — point at `https://<NEW_REF>.supabase.co/functions/v1/revenuecat-webhook`. Idempotency-keyed via `revenuecat_webhook_events`, so dual delivery is safe.
+- [ ] **Admin HTML files** (`admin-tools.html`, `admin-dashboard.html`, `kyc-review.html`) — these embed the project ref in `fetch()` calls. Either edit the hardcoded URL or, better, refactor to accept `?project=<ref>` so the operator passes both URL and key at load time.
+- [ ] **`.mcp.json`** — update if it references the project ref directly (it likely does for the Supabase MCP binding).
+- [ ] **`supabase/config.toml`** — `project_id = "golfmatch"` is a local nickname, not the ref, so it doesn't need to change. But if you've run `supabase link`, re-run it: `supabase link --project-ref <NEW_REF>`.
+
 ## 10. Cutover-day runbook (compressed)
 
 Once the dry run is green:
@@ -453,15 +594,37 @@ The old project must remain paused-but-restorable for at least 14 days post-cuto
 
 ## 13. Acceptance checklist (must all be ✅ before deleting old project)
 
-- [ ] All 40 public tables present on target with matching row counts.
+**Database parity:**
+- [ ] All public tables present on target with matching row counts (run the diff query from §3.5 — `pg_stat_user_tables` on both sides).
 - [ ] `auth.users` count matches.
 - [ ] `handle_new_user` trigger present on `auth.users` and tested with a fresh signup.
-- [ ] All 7 storage buckets present with matching object counts and the `kyc-verification` bucket is **private**.
-- [ ] 3 edge functions deployed and reachable; each responds to a curl ping with a non-404 status.
+- [ ] PostGIS installed; `profiles.home_location` column type = `geography`; `search_profiles_within_radius` RPC runs without error.
+- [ ] `pg_cron` job `compute_yesterday_snapshot` present in `cron.job` with `active=true`.
+- [ ] `profiles.relreplident = 'f'` (REPLICA IDENTITY FULL).
+- [ ] No advisor warnings on target except the documented `disposable_email_domains` decision.
+
+**Storage:**
+- [ ] All 8 storage buckets present with matching object counts.
+- [ ] `kyc-verification` bucket is **private**.
+- [ ] Public bucket URLs resolve in a browser (sample 3–5 per bucket).
+- [ ] Zero rows in `messages`/`posts`/`notifications` contain `bvnwjrxdrbvctesfmedn.supabase.co` after the §5.4 rewrite.
+
+**Edge functions & integrations:**
+- [ ] All 5 edge functions deployed and reachable; each responds to a curl ping with a non-404 status.
 - [ ] RevenueCat sandbox purchase fires the new webhook and writes to `revenuecat_webhook_events`.
 - [ ] Didit verification flow end-to-end completes against the new webhook.
-- [ ] Push notification trigger (`trigger_send_push_notification`) fires `net.http_post` against the **new** project URL (verify by inspecting trigger body on target).
-- [ ] Realtime: messages/chats/user_likes/matches subscribe and receive live events on the mobile app.
+- [ ] Push notification trigger fires `net.http_post` against the **new** project URL (verify by inspecting trigger body on target — should reference `<NEW_REF>.supabase.co`, not `bvnwjrxdrbvctesfmedn`).
+- [ ] Realtime: messages/profiles/user_likes/matches/notifications subscribe and receive live events on the mobile app.
+
+**Auth:**
 - [ ] Sign-in succeeds for: email, phone, Google, Apple.
-- [ ] No advisor warnings on target except the documented `disposable_email_domains` decision.
-- [ ] Supabase project paused, not deleted, for the first 14 days.
+- [ ] Google OAuth console lists both old and new `/auth/v1/callback` URLs (old can be removed at T+14d).
+- [ ] Apple Sign-In Services ID return URL updated.
+
+**Client:**
+- [ ] `.env`, `eas.json` (all 3 build profiles: dev, preview, production), and any EAS secret all point at `<NEW_REF>`.
+- [ ] App OTA shipped and verified on a real device (sign in → swipe → message → KYC link → purchase sandbox).
+
+**Operational:**
+- [ ] Old project **paused, not deleted**, for the first 14 days.
+- [ ] PITR enabled on new project (Dashboard → Database → Backups → PITR — Pro-only).

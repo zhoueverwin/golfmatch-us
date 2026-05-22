@@ -8,8 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://bvnwjrxdrbvctesfmedn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2bndqcnhkcmJ2Y3Rlc2ZtZWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzQ1NTYsImV4cCI6MjA5MzcxMDU1Nn0.9ezDkimLyxKY_Ttn2ishAKs-5ZWnX436QTO_5hh0E9g",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://situfkpgyziruiusiykd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdHVma3BneXppcnVpdXNpeWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTg5NDksImV4cCI6MjA5NTAzNDk0OX0.dzlBMjomis9zhO5iwEAJaXYrbMB4Mm1jwNX6Xo2aI08",
         "EXPO_PUBLIC_APPLE_SERVICE_ID": "com.zhoueverwin.golfmatchapp.signin",
         "EXPO_PUBLIC_REVENUECAT_API_KEY_IOS": "appl_MUMiLvLTJwoPSfpmnmouBUuUGPI",
         "EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID": "appl_MUMiLvLTJwoPSfpmnmouBUuUGPI",
@@ -22,8 +22,8 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://bvnwjrxdrbvctesfmedn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2bndqcnhkcmJ2Y3Rlc2ZtZWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzQ1NTYsImV4cCI6MjA5MzcxMDU1Nn0.9ezDkimLyxKY_Ttn2ishAKs-5ZWnX436QTO_5hh0E9g",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://situfkpgyziruiusiykd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdHVma3BneXppcnVpdXNpeWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTg5NDksImV4cCI6MjA5NTAzNDk0OX0.dzlBMjomis9zhO5iwEAJaXYrbMB4Mm1jwNX6Xo2aI08",
         "EXPO_PUBLIC_APPLE_SERVICE_ID": "com.zhoueverwin.golfmatchapp.signin",
         "EXPO_PUBLIC_REVENUECAT_API_KEY_IOS": "appl_MUMiLvLTJwoPSfpmnmouBUuUGPI",
         "EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID": "appl_MUMiLvLTJwoPSfpmnmouBUuUGPI",
@@ -36,8 +36,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://bvnwjrxdrbvctesfmedn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2bndqcnhkcmJ2Y3Rlc2ZtZWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzQ1NTYsImV4cCI6MjA5MzcxMDU1Nn0.9ezDkimLyxKY_Ttn2ishAKs-5ZWnX436QTO_5hh0E9g",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://situfkpgyziruiusiykd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdHVma3BneXppcnVpdXNpeWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTg5NDksImV4cCI6MjA5NTAzNDk0OX0.dzlBMjomis9zhO5iwEAJaXYrbMB4Mm1jwNX6Xo2aI08",
         "EXPO_PUBLIC_APPLE_SERVICE_ID": "com.zhoueverwin.golfmatchapp.signin",
         "EXPO_PUBLIC_REVENUECAT_API_KEY_IOS": "appl_MUMiLvLTJwoPSfpmnmouBUuUGPI",
         "EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID": "appl_MUMiLvLTJwoPSfpmnmouBUuUGPI",
