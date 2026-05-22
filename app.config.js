@@ -33,7 +33,7 @@ export default {
         // ATT (App Tracking Transparency) permission message for iOS 14+
         NSUserTrackingUsageDescription: "Used to show ads that are more relevant to you."
       },
-      buildNumber: "39"
+      buildNumber: "40"
     },
     android: {
       adaptiveIcon: {
