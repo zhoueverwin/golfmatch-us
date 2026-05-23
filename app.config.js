@@ -31,9 +31,9 @@ export default {
         NSMicrophoneUsageDescription: "Golfmatch uses the microphone to record audio when you capture video for your posts. For example: record your swing video with sound.",
         NSUserNotificationsUsageDescription: "Used to send notifications about new matches, messages, likes, and other activity. For example: get notified when you have a new match.",
         // ATT (App Tracking Transparency) permission message for iOS 14+
-        NSUserTrackingUsageDescription: "Used to show ads that are more relevant to you."
+        NSUserTrackingUsageDescription: "Allow Golfmatch to measure the performance of our advertising campaigns. We don't display ads inside the app."
       },
-      buildNumber: "40"
+      buildNumber: "41"
     },
     android: {
       adaptiveIcon: {
@@ -81,21 +81,21 @@ export default {
       [
         "react-native-fbsdk-next",
         {
-          appID: "2701896453510217",
-          clientToken: "8a26b940143e8a48123a3320cfc02c26",
+          appID: "1292131582549130",
+          clientToken: "390215948d58de8add882e2f97d69d58",
           displayName: "Golfmatch Dating",
-          scheme: "fb2701896453510217",
+          scheme: "fb1292131582549130",
           advertiserIDCollectionEnabled: true,
           autoLogAppEventsEnabled: true,
           isAutoInitEnabled: true,
-          iosUserTrackingPermission: "Used to show ads that are more relevant to you."
+          iosUserTrackingPermission: "Allow Golfmatch to measure the performance of our advertising campaigns. We don't display ads inside the app."
         }
       ],
       // App Tracking Transparency for iOS 14+
       [
         "expo-tracking-transparency",
         {
-          userTrackingPermission: "Used to show ads that are more relevant to you."
+          userTrackingPermission: "Allow Golfmatch to measure the performance of our advertising campaigns. We don't display ads inside the app."
         }
       ],
       [
