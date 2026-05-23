@@ -27,6 +27,11 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { revenueCatService } from "../../services/revenueCatService";
 import CacheService from "../../services/cacheService";
+import {
+  logOnboardingPaywallShown,
+  logOnboardingPaywallCompleted,
+  logOnboardingHomeReached,
+} from "../../services/firebaseAnalytics";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingPaywall">;
@@ -85,11 +90,21 @@ const OnboardingPaywallScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const { isProMember, refreshCustomerInfo, currentOffering, isInitialized } =
     useRevenueCat();
-  const { profileId, refreshProfile, signOut } = useAuth();
+  const { profileId, refreshProfile, signOut, userProfile } = useAuth();
   const queryClient = useQueryClient();
   const advancedRef = useRef(false);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+
+  // Fire-and-forget impression log for the paywall funnel. Mounted-once
+  // pattern: ref guard prevents double-firing if RC re-renders the
+  // component before the user acts.
+  const shownLoggedRef = useRef(false);
+  useEffect(() => {
+    if (shownLoggedRef.current) return;
+    shownLoggedRef.current = true;
+    void logOnboardingPaywallShown();
+  }, []);
 
   // Diamond bob animation — mirrors the CSS @keyframes gmBob loop
   const bob = useRef(new Animated.Value(0)).current;
@@ -205,14 +220,22 @@ const OnboardingPaywallScreen: React.FC = () => {
   const advanceToMain = () => {
     if (advancedRef.current) return;
     advancedRef.current = true;
-    // Dispatch the navigation reset SYNCHRONOUSLY before any awaits.
-    // If we awaited cache refresh first, the resulting state updates
-    // (isProMember / is_verified) would flip AppNavigator's stack arm
-    // mid-await — unmounting this screen before the explicit reset
-    // lands and producing a one-frame flash of the default background
-    // between the paywall and Discover.
+    // v1.1 paywall-before-liveness: if the user hasn't completed liveness
+    // yet, reset to OnboardingKyc (the liveness screen) instead of Main.
+    // AppNavigator's needsKycGate would also catch this on next render,
+    // but resetting synchronously avoids a one-frame flash of Main while
+    // the gate re-evaluates. If the user is already verified (returning
+    // member with lapsed sub), reset straight to Main.
+    const needsLiveness = !userProfile?.is_verified;
+    const nextRoute = needsLiveness ? "OnboardingKyc" : "Main";
+    void logOnboardingPaywallCompleted();
+    if (!needsLiveness) {
+      // Only fire home_reached here if liveness was already done; the
+      // liveness screen fires it otherwise to ensure exactly-once.
+      void logOnboardingHomeReached();
+    }
     navigation.dispatch(
-      CommonActions.reset({ index: 0, routes: [{ name: "Main" }] }),
+      CommonActions.reset({ index: 0, routes: [{ name: nextRoute }] }),
     );
     void refreshAllCaches();
   };
@@ -431,33 +454,29 @@ const OnboardingPaywallScreen: React.FC = () => {
               <View style={styles.divider} />
 
               <View style={styles.benefits}>
-                <Benefit>
-                  <Text style={styles.bold}>See everyone who liked you</Text>
-                  {" — no more guessing"}
-                </Benefit>
-                <Benefit>
-                  <Text style={styles.bold}>
-                    Unlimited likes &amp; super-likes
-                  </Text>
-                </Benefit>
-                <Benefit>
-                  {"Filter by "}
-                  <Text style={styles.bold}>
-                    home course, handicap &amp; tee times
-                  </Text>
-                </Benefit>
-                <Benefit>
-                  <Text style={styles.bold}>Profile boosts</Text>
-                  {" at peak tee times"}
-                </Benefit>
-                <Benefit>
-                  {"Exclusive "}
-                  <Text style={styles.bold}>gold verified badge</Text>
-                </Benefit>
+                <Benefit
+                  n="01"
+                  title="Find single golfers near your home course."
+                  body="Filter by area, age, and golf skill to see who plays nearby."
+                />
+                <BenefitDivider />
+                <Benefit
+                  n="02"
+                  title="Message your matches."
+                  body="Send a message, plan a tee time, meet at the course."
+                />
+                <BenefitDivider />
+                <Benefit
+                  n="03"
+                  title="A curated shortlist each morning."
+                  body="Compatible golfers, chosen for you. Not random scrolling."
+                />
               </View>
 
+              <View style={styles.taglineRule} />
               <Text style={styles.tagline}>
-                "It's a long walk between two strangers — make it count."
+                "It's a long walk between two strangers —{"\n"}
+                make it count."
               </Text>
             </View>
 
@@ -618,14 +637,25 @@ const TierRow: React.FC<TierRowProps> = ({
 };
 
 // ─── Benefit row ──────────────────────────────────────────────────────
-const Benefit: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+// ─── Editorial benefit row ────────────────────────────────────────────
+// Numbered catalogue entry: italic serif numeral + Fraunces headline +
+// Manrope body line. Replaces the old check-bulleted feature list with a
+// printed-club-letter feel.
+const Benefit: React.FC<{ n: string; title: string; body: string }> = ({
+  n,
+  title,
+  body,
+}) => (
   <View style={styles.benefitRow}>
-    <View style={styles.check}>
-      <Ionicons name="checkmark" size={14} color={C.ink} />
+    <Text style={styles.benefitNum}>{n}</Text>
+    <View style={styles.benefitCol}>
+      <Text style={styles.benefitTitle}>{title}</Text>
+      <Text style={styles.benefitBody}>{body}</Text>
     </View>
-    <Text style={styles.benefitText}>{children}</Text>
   </View>
 );
+
+const BenefitDivider: React.FC = () => <View style={styles.benefitDivider} />;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.cream },
@@ -809,32 +839,69 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
 
-  // Benefits
+  // Benefits — editorial numbered list. Hairline dividers between rows
+  // give a printed-catalogue feel within the white card.
   divider: { height: 1, backgroundColor: C.line, marginVertical: 14, marginHorizontal: 4 },
-  benefits: { gap: 11 },
-  benefitRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  check: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: C.gold,
-    alignItems: "center",
-    justifyContent: "center",
+  benefits: {
+    marginTop: 2,
   },
-  benefitText: {
+  benefitRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingVertical: 14,
+    gap: 16,
+  },
+  benefitNum: {
+    fontFamily: F.displayItalic,
+    fontSize: 22,
+    lineHeight: 24,
+    color: C.goldDeep,
+    letterSpacing: -0.4,
+    width: 30,
+    marginTop: 2,
+  },
+  benefitCol: {
     flex: 1,
-    fontFamily: F.sans,
-    fontSize: 13.5,
-    lineHeight: 20,
-    color: C.ink,
+    gap: 4,
   },
-  bold: { fontFamily: F.sansBold, color: C.ink },
+  benefitTitle: {
+    fontFamily: F.display,
+    fontSize: 17,
+    lineHeight: 22,
+    color: C.ink,
+    letterSpacing: -0.3,
+  },
+  benefitBody: {
+    fontFamily: F.sans,
+    fontSize: 13,
+    lineHeight: 19,
+    color: C.inkSoft,
+  },
+  benefitDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.line,
+    marginHorizontal: 4,
+    opacity: 0.7,
+  },
+
+  // Tagline — italic pull-quote with a small gold rule above as a
+  // typographic "section break". Centered, two-line, teal italic.
+  taglineRule: {
+    alignSelf: "center",
+    width: 28,
+    height: 1,
+    backgroundColor: C.goldDeep,
+    marginTop: 20,
+    marginBottom: 12,
+    opacity: 0.75,
+  },
   tagline: {
-    marginTop: 16,
     fontFamily: F.displayItalic,
     fontSize: 15,
+    lineHeight: 22,
     color: C.teal,
     textAlign: "center",
+    paddingHorizontal: 16,
   },
 
   // CTA

@@ -9,6 +9,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing, BorderRadius } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { RootStackParamList } from "../../types";
+import { logOnboardingStepCompleted } from "../../services/firebaseAnalytics";
 import {
   requestPermissionAndGetLocation,
   updateHomeLocation,
@@ -38,7 +39,10 @@ const OnboardingLocationScreen: React.FC = () => {
   const { profileId } = useAuth();
   const [busy, setBusy] = useState(false);
 
-  const proceedToPhoto = () => navigation.navigate("OnboardingPhoto");
+  const proceedToPhoto = () => {
+    void logOnboardingStepCompleted("location");
+    navigation.navigate("OnboardingPhoto");
+  };
 
   const handleUseLocation = async () => {
     if (!profileId || busy) return;
@@ -89,7 +93,7 @@ const OnboardingLocationScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={3}
+      step={5}
       title="Find golfers near you"
       subtitle="Share your location and we'll match you with golfers within driving distance — or skip and we'll just use your state."
       continueLabel="Use my location"

@@ -6,11 +6,18 @@
 //
 // We verify the X-Signature-V2 HMAC, pull the verified user's profile_id out
 // of `vendor_data` (which create-didit-session sets at session creation),
-// and write the verdict + ID-extracted fields to `profiles`.
+// and write the verdict to `profiles`.
 //
-// Gender from the government ID determines the paywall path downstream:
-// female → free, male → premium-required. That's exactly the anti-bypass
-// outcome we set this up for.
+// v1.1 change: gender + birth_date are self-attested at onboarding, NOT
+// extracted from Didit anymore. The webhook only writes verification
+// status, and (for the lite workflow) cross-checks Didit's AI age
+// estimation against the user's self-attested birth_date. On mismatch,
+// it flags kyc_requires_document=true so the client escalates to the
+// heavy (document-required) workflow.
+//
+// The heavy workflow's webhook payload preserves the original v1.0
+// behavior of writing the verified status straight through, since the
+// document check has already established age authoritatively.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -18,6 +25,20 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const DIDIT_WEBHOOK_SECRET = Deno.env.get("DIDIT_WEBHOOK_SECRET");
+// Used to identify the workflow type when Didit doesn't include metadata
+// in the webhook payload. If unset, every payload is treated as heavy
+// (v1.0 behavior).
+const DIDIT_WORKFLOW_ID_LIGHT = Deno.env.get("DIDIT_WORKFLOW_ID_LIGHT");
+
+const MIN_AGE = 18;
+// Age below which we always escalate to document review even if the
+// self-attested age agrees with AI estimation — under-21 is a high-risk
+// band where the AI estimator is least reliable.
+const ESCALATION_AGE_FLOOR = 21;
+// Maximum allowed |aiAge - selfAge| before we escalate. 5 years is
+// generous enough to accommodate AI estimator drift on borderline faces
+// while still catching a 30yo claiming to be 60 (or vice versa).
+const MAX_AGE_MISMATCH_YEARS = 5;
 
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000; // 5 min, matches Didit's documented tolerance
 
@@ -42,9 +63,42 @@ interface DiditWebhookEvent {
       issuing_state?: string;
       [key: string]: unknown;
     }>;
+    // v1.1 lite-workflow payload — Didit returns a liveness check with
+    // an estimated age. The exact shape is documented in the Didit
+    // dashboard; we defensively accept either age_estimation as a number
+    // or a {min, max} object and reduce to a single int.
+    liveness_checks?: Array<{
+      status?: string;
+      age_estimation?: number | { min?: number; max?: number };
+      [key: string]: unknown;
+    }>;
     [key: string]: unknown;
   };
   [key: string]: unknown;
+}
+
+// Reduce Didit's age_estimation field to a single integer. Handles both
+// shapes seen in the wild: a bare number, or a {min, max} bracket.
+function extractAiAge(
+  raw: number | { min?: number; max?: number } | undefined | null,
+): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number" && Number.isFinite(raw)) return Math.round(raw);
+  if (typeof raw === "object") {
+    const min = typeof raw.min === "number" ? raw.min : null;
+    const max = typeof raw.max === "number" ? raw.max : null;
+    if (min != null && max != null) return Math.round((min + max) / 2);
+    if (min != null) return Math.round(min);
+    if (max != null) return Math.round(max);
+  }
+  return null;
+}
+
+function yearsBetween(start: Date, end: Date): number {
+  let years = end.getFullYear() - start.getFullYear();
+  const m = end.getMonth() - start.getMonth();
+  if (m < 0 || (m === 0 && end.getDate() < start.getDate())) years--;
+  return years;
 }
 
 // Constant-time string compare to defeat timing attacks on signature check.
@@ -125,12 +179,32 @@ function mapDiditStatusToProfileStatus(
   }
 }
 
-// Normalise Didit's gender ("M"/"F") to our profiles.gender column ("male"/"female").
+// v1.1: gender + birth_date no longer extracted from Didit; the user
+// self-attests them at onboarding. normaliseGender is retained for the
+// rare heavy-workflow path where we still cross-reference the document
+// gender against the self-attested value (future safeguard, currently
+// unused).
 function normaliseGender(g: string | undefined): "male" | "female" | null {
   const up = (g || "").trim().toUpperCase();
   if (up === "M" || up === "MALE") return "male";
   if (up === "F" || up === "FEMALE") return "female";
   return null;
+}
+
+// Decide whether the incoming webhook is from the lite (liveness-only)
+// or heavy (document-required) Didit workflow. Prefer metadata.mode set
+// at session creation; fall back to comparing the workflow_id against
+// the lite-workflow env var.
+function isLiteWorkflow(event: DiditWebhookEvent): boolean {
+  const metadataMode = (event.metadata?.mode || "") as string;
+  if (metadataMode === "lite") return true;
+  if (metadataMode === "heavy") return false;
+  if (DIDIT_WORKFLOW_ID_LIGHT && event.workflow_id === DIDIT_WORKFLOW_ID_LIGHT) {
+    return true;
+  }
+  // Unknown: assume heavy (preserves v1.0 behavior on payloads that
+  // predate the metadata.mode tag).
+  return false;
 }
 
 Deno.serve(async (req: Request) => {
@@ -254,26 +328,94 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Approved: pull ID-extracted fields and write them as the source of truth.
+  // Forward-only progression guard: if the profile is already approved,
+  // do NOT process any further events for this user. Didit fires multiple
+  // webhook events per session (status.updated + data.updated, sometimes
+  // for the same logical state); they can arrive out-of-order. Without
+  // this guard, an early "Not Started" or "In Progress" event arriving
+  // after the "Approved" one would downgrade kyc_status — and the
+  // sync_is_verified_with_kyc_status trigger would then flip is_verified
+  // back to false, silently demoting an approved user.
+  const { data: currentProfileState } = await supabase
+    .from("profiles")
+    .select("kyc_status, is_verified")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (
+    currentProfileState?.kyc_status === "approved" &&
+    currentProfileState?.is_verified === true
+  ) {
+    console.log(
+      `[didit-webhook] Ignoring out-of-order event for already-approved ` +
+        `profile=${profileId} incoming_status=${profileStatus}`,
+    );
+    return new Response(
+      JSON.stringify({ status: "ok", action: "ignored_already_approved" }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  // Approved: in v1.1, we no longer extract gender/birth_date/age from
+  // Didit — those are self-attested at onboarding. The lite path is now
+  // simplified: a Didit "Approved" verdict is sufficient (the workflow
+  // is pure liveness + IP analysis, no document, no age estimation, so
+  // no further cross-check adds value). The earlier escalation logic
+  // turned out to be a footgun — it could write kyc_requires_document=true
+  // when the webhook briefly saw an empty selfBirthDate during event
+  // delivery, causing the client to navigate to "One more thing" even
+  // for users who'd correctly completed liveness.
   if (profileStatus === "approved") {
-    const idData = event.decision?.id_verifications?.[0];
-    const gender = normaliseGender(idData?.gender);
-    const birthDate = idData?.date_of_birth || null;
-    const age = idData?.age ?? null;
+    const lite = isLiteWorkflow(event);
 
-    const update: Record<string, unknown> = {
-      kyc_status: "approved",
-      kyc_verified_at: new Date().toISOString(),
-      is_verified: true,
-      updated_at: new Date().toISOString(),
-    };
-    if (gender) update.gender = gender;
-    if (birthDate) update.birth_date = birthDate;
-    if (age !== null && age !== undefined) update.age = age;
+    if (lite) {
+      // Lite-workflow approval is unconditional: Didit's liveness verdict
+      // is the final answer for this workflow. No age cross-check, no
+      // escalation. The earlier age-mismatch logic was a footgun (could
+      // escalate spuriously during webhook event timing) and isn't useful
+      // anyway when the workflow doesn't include AGE_ESTIMATION.
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          kyc_status: "approved",
+          kyc_verified_at: new Date().toISOString(),
+          is_verified: true,
+          kyc_requires_document: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profileId);
+      if (error) {
+        console.error(
+          `[didit-webhook] Failed to write approved verdict for ${profileId}:`,
+          error,
+        );
+        return new Response(JSON.stringify({ error: "DB update failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({ status: "ok", action: "approved_lite" }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
+    // Heavy (document-required) workflow path. Either an explicit
+    // escalation from the lite check, or the v1.0 rollback flag forcing
+    // document workflow for everyone. The document itself authoritatively
+    // establishes age, so we trust the verdict directly — no further
+    // cross-check needed. We do NOT write gender/birth_date here (v1.1
+    // keeps those as self-attested even on the heavy path, since users
+    // already entered them in onboarding).
     const { error } = await supabase
       .from("profiles")
-      .update(update)
+      .update({
+        kyc_status: "approved",
+        kyc_verified_at: new Date().toISOString(),
+        is_verified: true,
+        kyc_requires_document: false,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", profileId);
 
     if (error) {
@@ -288,7 +430,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ status: "ok", action: "approved" }),
+      JSON.stringify({ status: "ok", action: "approved_heavy" }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   }

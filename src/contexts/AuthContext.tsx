@@ -33,6 +33,7 @@ interface CachedProfile {
   available_days?: string;
   is_verified?: boolean;
   kyc_status?: string | null;
+  birth_date?: string | null;
 }
 import { useUserPresence } from "../hooks/useUserPresence";
 import { supabase } from "../services/supabase";

@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,24 +20,58 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withRepeat,
+  withSequence,
+  Easing,
 } from "react-native-reanimated";
+import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { Colors } from "../../constants/colors";
-import { Typography } from "../../constants/typography";
-import { Spacing, BorderRadius, Shadows } from "../../constants/spacing";
-import { useAuth } from "../../contexts/AuthContext";
 import { RootStackParamList } from "../../types";
+import { useAuth } from "../../contexts/AuthContext";
 
-// Effective onboarding length. Flow:
-//   Name (1) → State (2) → Location (3) → Photo (4) → KYC (5)
-// Gender + Birthdate are derived from Didit's ID verdict, not asked again.
-const TOTAL_STEPS = 5;
+// Effective onboarding length — the numbered funnel ends at Photo. Flow:
+//   Name (1) → Birthdate (2) → Gender (3) → State (4) →
+//   Location (5) → Photo (6) → [paywall: unnumbered] → [liveness: unnumbered]
+const TOTAL_STEPS = 6;
+
+// Editorial palette — mirrors OnboardingPaywallScreen so the funnel + paywall
+// read as one continuous product instead of two stitched-together visual
+// languages. Treat these as the source of truth for any new onboarding UI.
+const C = {
+  ink: "#14342B",
+  inkSoft: "#3F5A50",
+  inkLine: "#E8E0CB",
+  teal: "#0E7C73",
+  tealMint: "#D4EDE9",
+  gold: "#F4D35E",
+  goldDeep: "#E0B743",
+  cream: "#FAF6EE",
+  cream2: "#F2EBD9",
+  paper: "#FFFFFF",
+  muted: "#88806A",
+};
+
+const F = {
+  display: "Fraunces_600SemiBold",
+  displayReg: "Fraunces_400Regular",
+  displayItalic: "Fraunces_400Regular_Italic",
+  sans: "Manrope_400Regular",
+  sansMed: "Manrope_500Medium",
+  sansSemi: "Manrope_600SemiBold",
+  sansBold: "Manrope_700Bold",
+};
 
 type Nav = StackNavigationProp<RootStackParamList>;
 
 interface Props {
-  step: number; // 1..5 (Done sets step={TOTAL_STEPS + 1})
+  // Funnel step (1..TOTAL_STEPS). Pass `undefined` for post-funnel screens
+  // (paywall, liveness) — the progress rail and step label are hidden.
+  step?: number;
+  // Optional override for the kicker line above the title. Defaults to
+  // "STEP NN · OF SIX" when `step` is provided, or null when it isn't.
+  // Screens can pass thematic labels like "PORTRAIT" / "INTRODUCTION".
+  kicker?: string;
   title: string;
   subtitle?: string;
   continueDisabled?: boolean;
@@ -50,8 +84,14 @@ interface Props {
   children: ReactNode;
 }
 
+// Zero-pad a step number so the kicker reads "STEP 01 · OF SIX" rather than
+// "STEP 1 · OF 6". The pad mirrors the paywall's editorial section markers.
+const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+const SPELL_OUT = ["ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN"];
+
 const OnboardingShell: React.FC<Props> = ({
   step,
+  kicker,
   title,
   subtitle,
   continueDisabled,
@@ -66,6 +106,25 @@ const OnboardingShell: React.FC<Props> = ({
   const navigation = useNavigation<Nav>();
   const { signOut } = useAuth();
   const buttonScale = useSharedValue(1);
+
+  // Slow breath on the progress rail — gold gradient subtly brightens
+  // 0.78 → 1.0 over 2.6s, then back. Restrained, not flashing. Only runs
+  // when there's a progress rail to breathe.
+  const railPulse = useSharedValue(0.85);
+
+  const showProgress = typeof step === "number";
+
+  useEffect(() => {
+    if (!showProgress) return;
+    railPulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.78, { duration: 2600, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+  }, [showProgress, railPulse]);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -84,136 +143,220 @@ const OnboardingShell: React.FC<Props> = ({
     );
   };
 
-  // Step can exceed TOTAL_STEPS on the Done screen; cap for the bar width.
-  const progressStep = Math.min(step, TOTAL_STEPS);
+  const progressStep = showProgress ? Math.min(step!, TOTAL_STEPS) : 0;
   const progressPercent = (progressStep / TOTAL_STEPS) * 100;
+
+  // Default kicker derived from the step number when a custom one isn't
+  // provided. Format: "STEP 03 · OF SIX" — gives the funnel a chapter-
+  // marker feel without requiring every screen to compose its own.
+  const defaultKicker = showProgress
+    ? `STEP ${pad2(progressStep)} \u00B7 OF SIX`
+    : null;
+  const kickerText = kicker ?? defaultKicker;
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
 
+  const railOpacityStyle = useAnimatedStyle(() => ({
+    opacity: railPulse.value,
+  }));
+
   return (
     <View style={styles.root}>
-      {/* Layered atmosphere: white → mint gradient + two soft color blobs
-          that bleed off-screen. Sets a spa/coastal mood without competing
-          with the form content. */}
-      <LinearGradient
-        colors={["#FFFFFF", "#F5FBFA", "#EBF7F5"]}
-        locations={[0, 0.55, 1]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={[styles.blob, styles.blobTopLeft]} />
-      <View style={[styles.blob, styles.blobBottomRight]} />
+      {/* Cream paper base */}
+      <View style={styles.creamBase} />
+
+      {/* Atmospheric gold halo — wide soft radial bleed at the top of the
+          screen, echoing the paywall's halo behind the diamond. Sets a warm
+          editorial tone without competing with content. */}
+      <Svg style={styles.halo} width={520} height={520} pointerEvents="none">
+        <Defs>
+          <RadialGradient
+            id="onboardHalo"
+            cx="50%"
+            cy="50%"
+            rx="50%"
+            ry="50%"
+            fx="50%"
+            fy="50%"
+          >
+            <Stop offset="0%" stopColor={C.gold} stopOpacity={0.42} />
+            <Stop offset="55%" stopColor={C.gold} stopOpacity={0.06} />
+            <Stop offset="100%" stopColor={C.gold} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#onboardHalo)" />
+      </Svg>
+
+      {/* Lower-right teal whisper — barely there, gives depth and stops the
+          screen from feeling flat at the bottom near the CTA. */}
+      <Svg
+        style={styles.tealBleed}
+        width={480}
+        height={480}
+        pointerEvents="none"
+      >
+        <Defs>
+          <RadialGradient
+            id="onboardTealBleed"
+            cx="50%"
+            cy="50%"
+            rx="50%"
+            ry="50%"
+            fx="50%"
+            fy="50%"
+          >
+            <Stop offset="0%" stopColor={C.teal} stopOpacity={0.1} />
+            <Stop offset="60%" stopColor={C.teal} stopOpacity={0.02} />
+            <Stop offset="100%" stopColor={C.teal} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#onboardTealBleed)" />
+      </Svg>
 
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <KeyboardAvoidingView
           style={styles.kav}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          {/* Header: hairline-bordered back / progress rail with step label /
-              sign-out pill. Back hides automatically when there's nowhere to
-              go (e.g. KYC as the first screen in the returning-user gate). */}
+          {/* Header — minimalist trio: back chevron, centered kicker + rail,
+              text-only sign-out. No pill bordering; the cream surface
+              already gives separation. */}
           <View style={styles.header}>
             <View style={styles.headerSide}>
               {!hideBack && navigation.canGoBack() && (
-                <TouchableOpacity
+                <Pressable
                   onPress={() => navigation.goBack()}
-                  style={styles.iconButton}
+                  style={({ pressed }) => [
+                    styles.iconButton,
+                    pressed && { opacity: 0.55 },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Back"
-                  activeOpacity={0.75}
+                  hitSlop={8}
                 >
-                  <Ionicons
-                    name="chevron-back"
-                    size={20}
-                    color={Colors.text.primary}
-                  />
-                </TouchableOpacity>
+                  <Ionicons name="chevron-back" size={20} color={C.ink} />
+                </Pressable>
               )}
             </View>
 
             <View style={styles.headerCenter}>
-              <Text style={styles.stepLabel}>
-                STEP {progressStep}
-                <Text style={styles.stepLabelDim}>  ·  {TOTAL_STEPS}</Text>
-              </Text>
-              <View style={styles.progressTrack}>
-                <LinearGradient
-                  colors={[Colors.primaryLight, Colors.primary]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={[styles.progressFill, { width: `${progressPercent}%` }]}
-                />
-              </View>
+              {showProgress ? (
+                <Animated.View
+                  entering={FadeIn.duration(360)}
+                  style={styles.railWrap}
+                >
+                  {/* Track — ink-tinted cream so it doesn't disappear on
+                      gold fill. The fill animates breath via opacity. */}
+                  <View style={styles.progressTrack}>
+                    <Animated.View
+                      style={[
+                        styles.progressFillContainer,
+                        { width: `${progressPercent}%` },
+                        railOpacityStyle,
+                      ]}
+                    >
+                      <LinearGradient
+                        colors={[C.gold, C.goldDeep]}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                    </Animated.View>
+                  </View>
+                </Animated.View>
+              ) : null}
             </View>
 
             <View style={[styles.headerSide, styles.headerSideRight]}>
               {showSignOut && (
-                <TouchableOpacity
+                <Pressable
                   onPress={handleSignOut}
-                  style={styles.signOutPill}
+                  style={({ pressed }) => [
+                    styles.signOutLink,
+                    pressed && { opacity: 0.55 },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Sign out"
-                  activeOpacity={0.75}
+                  hitSlop={8}
                 >
-                  {/* numberOfLines={1} is a defensive backstop — the rail
-                      is now wide enough for the text on every supported
-                      device, but small-screen iPhones with bumped font
-                      scaling could still push it. Truncation is preferable
-                      to a two-line pill. */}
                   <Text style={styles.signOutText} numberOfLines={1}>
                     Sign out
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </View>
           </View>
 
-          {/* Body — staggered entry for title, subtitle, content */}
+          {/* Body — choreographed entrance:
+                kicker (40)  →  title (120)  →  subtitle (220)  →
+                content (320)  →  CTA (420)
+              Each spring-damped, none distracting. */}
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            {kickerText ? (
+              <Animated.Text
+                entering={FadeInDown.duration(420).delay(40).springify().damping(20)}
+                style={styles.kicker}
+              >
+                {kickerText}
+              </Animated.Text>
+            ) : null}
+
             <Animated.Text
-              entering={FadeInDown.duration(450).delay(50).springify().damping(18)}
+              entering={FadeInDown.duration(480).delay(120).springify().damping(18)}
               style={styles.title}
             >
               {title}
             </Animated.Text>
+
             {subtitle ? (
               <Animated.Text
-                entering={FadeInDown.duration(450).delay(150).springify().damping(18)}
+                entering={FadeInDown.duration(480).delay(220).springify().damping(18)}
                 style={styles.subtitle}
               >
                 {subtitle}
               </Animated.Text>
             ) : null}
+
             <Animated.View
-              entering={FadeInDown.duration(500).delay(250).springify().damping(18)}
+              entering={FadeInDown.duration(520).delay(320).springify().damping(18)}
               style={styles.bodyContent}
             >
               {children}
             </Animated.View>
           </ScrollView>
 
-          {/* Footer — gradient pill button with press-scale feedback.
-              An explicit empty `continueLabel=""` hides the whole footer so
-              screens with their own CTA (e.g. KYC) don't render a dead bar. */}
+          {/* Footer — ink CTA with gold label + arrow. Same visual contract
+              as the paywall's "Unlock Premium →" so users see a single
+              recognizable button shape across the whole flow.
+              An explicit empty `continueLabel=""` hides the whole footer. */}
           {continueLabel !== "" ? (
             <Animated.View
-              entering={FadeIn.duration(400).delay(350)}
+              entering={FadeIn.duration(420).delay(420)}
               style={styles.footer}
             >
               <Pressable
                 onPressIn={() => {
                   if (!continueDisabled) {
-                    buttonScale.value = withTiming(0.97, { duration: 120 });
+                    buttonScale.value = withTiming(0.97, {
+                      duration: 110,
+                      easing: Easing.out(Easing.quad),
+                    });
                   }
                 }}
                 onPressOut={() => {
-                  buttonScale.value = withSpring(1, { damping: 12, stiffness: 220 });
+                  // Two-stage release — quick rebound past 1.0, then settle.
+                  // Reads as a tiny haptic flick without actual haptics.
+                  buttonScale.value = withSequence(
+                    withTiming(1.015, { duration: 110, easing: Easing.out(Easing.cubic) }),
+                    withSpring(1, { damping: 14, stiffness: 240, mass: 0.6 }),
+                  );
                 }}
                 onPress={onContinue}
                 disabled={continueDisabled}
@@ -223,20 +366,10 @@ const OnboardingShell: React.FC<Props> = ({
                 <Animated.View
                   style={[
                     styles.primaryButton,
-                    continueDisabled
-                      ? styles.primaryButtonDisabled
-                      : Shadows.medium,
+                    continueDisabled && styles.primaryButtonDisabled,
                     buttonAnimatedStyle,
                   ]}
                 >
-                  {!continueDisabled ? (
-                    <LinearGradient
-                      colors={[Colors.primary, Colors.primaryDark]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                  ) : null}
                   <Text
                     style={[
                       styles.primaryButtonText,
@@ -244,20 +377,27 @@ const OnboardingShell: React.FC<Props> = ({
                     ]}
                   >
                     {continueLabel ?? "Continue"}
+                    {!continueDisabled ? (
+                      <Text style={styles.primaryButtonArrow}>{"  →"}</Text>
+                    ) : null}
                   </Text>
                 </Animated.View>
               </Pressable>
 
               {secondaryLabel && onSecondary ? (
-                <TouchableOpacity
-                  style={styles.secondaryButton}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.secondaryButton,
+                    pressed && { opacity: 0.55 },
+                  ]}
                   onPress={onSecondary}
-                  activeOpacity={0.6}
                   accessibilityRole="button"
                   accessibilityLabel={secondaryLabel}
                 >
-                  <Text style={styles.secondaryButtonText}>{secondaryLabel}</Text>
-                </TouchableOpacity>
+                  <Text style={styles.secondaryButtonText}>
+                    {secondaryLabel}
+                  </Text>
+                </Pressable>
               ) : null}
             </Animated.View>
           ) : null}
@@ -270,50 +410,37 @@ const OnboardingShell: React.FC<Props> = ({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: C.cream,
   },
-  safeArea: {
-    flex: 1,
+  creamBase: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: C.cream,
   },
-  kav: {
-    flex: 1,
-  },
-  // Soft decorative blobs — sit BEHIND content via absolute positioning.
-  // Negative offsets make them bleed off-screen so the eye reads them as
-  // atmosphere rather than UI elements.
-  blob: {
+  // Atmospheric layers — both bleed beyond the viewport so the eye reads
+  // them as ambient light rather than UI shapes.
+  halo: {
     position: "absolute",
-    borderRadius: 9999,
+    top: -200,
+    alignSelf: "center",
   },
-  blobTopLeft: {
-    width: 280,
-    height: 280,
-    top: -120,
-    left: -100,
-    backgroundColor: Colors.lightGreen,
-    opacity: 0.32,
-  },
-  blobBottomRight: {
-    width: 380,
-    height: 380,
-    bottom: -180,
+  tealBleed: {
+    position: "absolute",
+    bottom: -200,
     right: -160,
-    backgroundColor: Colors.primary,
-    opacity: 0.07,
   },
+  safeArea: { flex: 1 },
+  kav: { flex: 1 },
+
+  // Header rail
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.md,
-    gap: Spacing.md,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 14,
+    gap: 12,
   },
   headerSide: {
-    // Symmetric left/right side rails. Sized to fit the right-side
-    // "Sign out" pill without wrapping: text(~55px) + pill padding(2×16)
-    // ≈ 87px, so 96 leaves ~9px of breathing room. Left rail uses the
-    // same width to keep the centered progress bar truly centered.
     width: 96,
     justifyContent: "center",
   },
@@ -325,117 +452,138 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  stepLabel: {
-    fontSize: 11,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.primary,
-    letterSpacing: 2.5,
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.paper,
+    borderWidth: 1,
+    borderColor: C.inkLine,
   },
-  stepLabelDim: {
-    color: Colors.text.tertiary,
-    fontWeight: Typography.fontWeight.normal,
+  signOutLink: {
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+  },
+  signOutText: {
+    fontFamily: F.sansMed,
+    fontSize: 12.5,
+    color: C.inkSoft,
+    letterSpacing: 0.3,
+  },
+
+  // Progress rail — gold gradient over a cream2 track. The rail is the
+  // only "primary" colored element on screen so it actually reads as
+  // progress instead of decoration.
+  railWrap: {
+    width: "100%",
+    alignItems: "center",
+    gap: 8,
   },
   progressTrack: {
     width: "100%",
-    height: 4,
+    height: 3,
     borderRadius: 2,
-    backgroundColor: Colors.gray[100],
+    backgroundColor: C.cream2,
     overflow: "hidden",
   },
-  progressFill: {
+  progressFillContainer: {
     height: "100%",
     borderRadius: 2,
+    overflow: "hidden",
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-  },
-  signOutPill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-  },
-  signOutText: {
-    fontSize: 13,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
-    fontWeight: Typography.fontWeight.medium,
-    color: Colors.text.secondary,
-  },
-  scroll: {
-    flex: 1,
-  },
+
+  // Scroll body
+  scroll: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.lg,
+    paddingHorizontal: 26,
+    paddingTop: 18,
+    paddingBottom: 24,
   },
+
+  // Editorial kicker — small, gold-deep, generously letter-spaced. The
+  // smallest piece of type on the screen but it sets the tone.
+  kicker: {
+    fontFamily: F.sansBold,
+    fontSize: 10.5,
+    letterSpacing: 2.6,
+    color: C.goldDeep,
+    textTransform: "uppercase",
+    marginBottom: 14,
+  },
+
+  // Fraunces serif headline. Tight letter-spacing + display weight to
+  // match the paywall hero. lineHeight kept compact so two-line titles
+  // (most onboarding questions) hold together as one visual block.
   title: {
-    fontSize: 32,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.text.primary,
-    marginBottom: Spacing.sm,
-    letterSpacing: -0.5,
-    lineHeight: 38,
+    fontFamily: F.display,
+    fontSize: 40,
+    lineHeight: 44,
+    color: C.ink,
+    letterSpacing: -1.1,
+    marginBottom: 12,
   },
   subtitle: {
+    fontFamily: F.sans,
     fontSize: 15,
-    fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.secondary,
-    marginBottom: Spacing["2xl"],
     lineHeight: 24,
-    maxWidth: "92%",
+    color: C.inkSoft,
+    marginBottom: 28,
+    maxWidth: "94%",
   },
-  bodyContent: {
-    flex: 1,
-  },
+  bodyContent: { flex: 1 },
+
+  // Footer + buttons
   footer: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.xs,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 6,
+    gap: 6,
   },
   primaryButton: {
-    height: 56,
-    borderRadius: BorderRadius.full,
+    height: 58,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    backgroundColor: Colors.primary,
+    backgroundColor: C.ink,
+    // Subtle ink shadow + gold-rim glow approximation. RN doesn't support
+    // multi-layer shadows; pick the more important one (depth) here.
+    shadowColor: C.ink,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.28,
+    shadowRadius: 22,
+    elevation: 8,
   },
   primaryButtonDisabled: {
-    backgroundColor: Colors.gray[200],
+    backgroundColor: C.cream2,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   primaryButtonText: {
+    fontFamily: F.sansSemi,
     fontSize: 16,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.bold),
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.white,
+    color: C.gold,
     letterSpacing: 0.3,
   },
+  primaryButtonArrow: {
+    fontFamily: F.sansSemi,
+    fontSize: 16,
+    color: C.gold,
+  },
   primaryButtonTextDisabled: {
-    color: Colors.gray[400],
+    color: C.muted,
   },
   secondaryButton: {
     alignItems: "center",
-    paddingVertical: Spacing.md,
+    paddingVertical: 14,
   },
   secondaryButtonText: {
-    fontSize: 14,
-    fontFamily: Typography.getFontFamily(Typography.fontWeight.medium),
-    fontWeight: Typography.fontWeight.medium,
-    color: Colors.primary,
+    fontFamily: F.sansMed,
+    fontSize: 13.5,
+    color: C.teal,
+    textDecorationLine: "underline",
   },
 });
 

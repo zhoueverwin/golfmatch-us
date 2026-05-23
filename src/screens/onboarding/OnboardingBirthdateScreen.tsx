@@ -9,6 +9,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
+import { logOnboardingStepCompleted } from "../../services/firebaseAnalytics";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingBirthdate">;
@@ -40,7 +41,7 @@ function formatYMD(d: Date): string {
 
 const OnboardingBirthdateScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  const { profileId } = useAuth();
+  const { profileId, refreshProfile } = useAuth();
   const [date, setDate] = useState<Date>(defaultDate);
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,7 +69,12 @@ const OnboardingBirthdateScreen: React.FC = () => {
         })
         .eq("id", profileId);
       if (error) throw error;
-      navigation.navigate("OnboardingState");
+      // Keep AuthContext's cache in sync so the AppNavigator's
+      // needsBirthdateGate evaluates false on the next render, and so
+      // the webhook's birth_date read sees the user-attested value.
+      await refreshProfile();
+      void logOnboardingStepCompleted("birthdate");
+      navigation.navigate("OnboardingGender");
     } catch (err: any) {
       Alert.alert("Couldn't save", err?.message ?? "Please try again.");
     } finally {
@@ -78,7 +84,7 @@ const OnboardingBirthdateScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={3}
+      step={2}
       title="When were you born?"
       subtitle="You must be 18 or older to use GolfMatch. Your birthday isn't shown on your profile — just your age."
       continueDisabled={!touched || !valid || saving}

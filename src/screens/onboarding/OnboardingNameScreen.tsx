@@ -14,6 +14,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing, BorderRadius, Shadows } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
+import { logOnboardingStepCompleted } from "../../services/firebaseAnalytics";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingName">;
@@ -43,8 +44,8 @@ const OnboardingNameScreen: React.FC = () => {
         .update({ name: trimmed, updated_at: new Date().toISOString() })
         .eq("id", profileId);
       if (error) throw error;
-      // Skip Gender + Birthdate — Didit's KYC step pulls those from the ID.
-      navigation.navigate("OnboardingState");
+      void logOnboardingStepCompleted("name");
+      navigation.navigate("OnboardingBirthdate");
     } catch (err: any) {
       Alert.alert("Couldn't save", err?.message ?? "Please try again.");
     } finally {

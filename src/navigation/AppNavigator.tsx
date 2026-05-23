@@ -368,16 +368,24 @@ const AppNavigatorContent = () => {
   const { user, loading, profileId, userProfile: cachedProfile } = useAuth();
   const { isProMember, isEntitlementResolved } = useRevenueCat();
 
-  // Universal KYC gate: returning users who never completed Didit verification
-  // are pushed through it before reaching Main. Without this, accounts created
-  // before KYC was wired in (or any account where the verdict never landed) can
-  // bypass the anti-bypass mechanism entirely.
+  // v1.1 gate order: name → birthdate → gender → state → location → photo →
+  // (if male) paywall → liveness → home. The Birthdate + Gender gates fire
+  // for returning users who signed up after v1.1 but bailed before filling
+  // those self-attested fields; in v1.0 they were always populated by Didit
+  // so existing users won't hit these gates. Migration 27 backfills nulls.
+  const needsBirthdateGate = !!(cachedProfile && !cachedProfile.birth_date);
+  const needsGenderGate = !!(cachedProfile && !cachedProfile.gender);
+
+  // Universal KYC/liveness gate: returning users who never completed Didit
+  // verification are pushed through it before reaching Main. Without this,
+  // accounts created before KYC was wired in (or any account where the
+  // verdict never landed) can bypass the anti-bypass mechanism entirely.
   const needsKycGate = !!(cachedProfile && !cachedProfile.is_verified);
 
-  // Gendered hard paywall (fail-secure): only an explicit "female" plus
-  // verified KYC skips the paywall. Anything else — "male", "U" (Didit's
-  // value for IDs without a sex field), null, "other" — gets gated until
-  // a subscription is active. Females and premium males reach Main directly.
+  // Gendered hard paywall (fail-secure): only an explicit "female" skips
+  // the paywall. Anything else — "male", null, "other" — gets gated until
+  // a subscription is active. v1.1 puts paywall BEFORE liveness so the
+  // sunk-cost commitment drives liveness completion.
   const needsPaywallGate = !!(
     cachedProfile && cachedProfile.gender !== "female" && !isProMember
   );
@@ -716,42 +724,67 @@ const AppNavigatorContent = () => {
               {isNewUser ? (
                 <>
                   {/*
-                    Onboarding flow with Didit KYC (gender + birth_date come
-                    from the verified government ID, so the Gender + Birthdate
-                    self-entry screens are skipped). Order:
-                      Name → State → Photo → KYC → (males) Paywall → Done
-                                                  (females) → Done
+                    v1.1 onboarding flow — gender + birth_date are self-
+                    attested (no longer extracted from Didit). Order:
+                      Name → Birthdate → Gender → State → Location → Photo
+                            → (males) Paywall → Liveness → Main
+                            → (females)         Liveness → Main
+                    Paywall before liveness: sunk-cost commitment drives
+                    liveness completion. Liveness uses Didit's lite workflow
+                    (selfie + face match + age estimation, no document).
                   */}
                   <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingLocation" component={OnboardingLocationScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPhoto" component={OnboardingPhotoScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  {/* Gender + Birthdate screens still registered for backwards-compat /
-                      deep links; not on the linear onboarding path. */}
-                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>
-              ) : needsKycGate ? (
+              ) : needsBirthdateGate ? (
                 <>
-                  {/* Returning user who never completed KYC — push them
-                      through it before they can reach Main / Paywall.
-                      OnboardingKycScreen routes onward based on the verified
-                      gender, so paywall gating still applies for males. */}
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  {/* Returning user missing birth_date (v1.1 self-attested
+                      gate). Cascades into gender / paywall / liveness as
+                      each lower-priority gate fires on re-render. */}
+                  <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="Main" component={MainTabNavigator} />
+                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+                </>
+              ) : needsGenderGate ? (
+                <>
+                  {/* Returning user missing gender. */}
+                  <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
+                  <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>
               ) : needsPaywallGate ? (
                 <>
-                  {/* Returning male user without an active subscription —
-                      gated by RevenueCat's prebuilt Paywall (configured in
-                      RC dashboard) before reaching Main. */}
+                  {/* Returning non-female user without an active subscription.
+                      v1.1: paywall is upstream of liveness — after purchase,
+                      OnboardingPaywallScreen resets to OnboardingKyc if the
+                      user still needs liveness. */}
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
+                  <Stack.Screen name="Main" component={MainTabNavigator} />
+                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+                </>
+              ) : needsKycGate ? (
+                <>
+                  {/* Returning user (typically female, since males would have
+                      hit the paywall gate first) who hasn't completed
+                      liveness. v1.1: paywall already happened upstream, so
+                      Kyc routes straight to Main on approved. */}
+                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>

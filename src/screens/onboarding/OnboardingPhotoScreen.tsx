@@ -21,6 +21,7 @@ import { Spacing, BorderRadius } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
 import CacheService from "../../services/cacheService";
+import { logOnboardingStepCompleted } from "../../services/firebaseAnalytics";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingPhoto">;
@@ -145,23 +146,28 @@ const OnboardingPhotoScreen: React.FC = () => {
     }
   };
 
-  // KYC is next — Didit's webhook will set `gender` from the verified ID,
-  // and OnboardingKyc routes onward (males → Paywall, females → Main).
-  // Photo is REQUIRED — skipping leaves the profile with empty
+  // v1.1: paywall comes BEFORE liveness (sunk-cost commitment drives
+  // liveness completion). Non-female users hit the paywall first; female
+  // users go straight to liveness. Both paths land at Main once liveness
+  // approves. Photo is REQUIRED — skipping leaves the profile with empty
   // profile_pictures, which makes the user undiscoverable in search and
   // also makes the navigator misclassify them as a "new user" on re-login.
   const handleContinue = async () => {
     if (!localUri || uploading || saving) return;
     const ok = await uploadAndSave(localUri);
     if (!ok) return;
-    navigation.navigate("OnboardingKyc");
+    void logOnboardingStepCompleted("photo");
+    // Read self-attested gender (set on OnboardingGenderScreen). Fail-secure:
+    // anything not explicitly "female" routes through the paywall.
+    const isFemale = userProfile?.gender === "female";
+    navigation.navigate(isFemale ? "OnboardingKyc" : "OnboardingPaywall");
   };
 
   const busy = uploading || saving;
 
   return (
     <OnboardingShell
-      step={4}
+      step={6}
       title="Add a profile photo"
       subtitle="A clear photo of you is required. You can change it anytime."
       continueDisabled={!localUri || busy}

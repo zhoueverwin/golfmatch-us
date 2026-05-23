@@ -17,6 +17,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing, BorderRadius } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
+import { logOnboardingStepCompleted } from "../../services/firebaseAnalytics";
 import { PREFECTURES } from "../../constants/filterOptions";
 import { RootStackParamList } from "../../types";
 
@@ -46,6 +47,7 @@ const OnboardingStateScreen: React.FC = () => {
         .update({ prefecture: selected, updated_at: new Date().toISOString() })
         .eq("id", profileId);
       if (error) throw error;
+      void logOnboardingStepCompleted("state");
       // The state-centroid backfill at the DB layer ensures
       // home_location is populated immediately on this update — see
       // migration 00000000000011_state_centroid_backfill. The next
@@ -60,7 +62,7 @@ const OnboardingStateScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={2}
+      step={4}
       title="Where do you live?"
       subtitle="We use this to surface golfers near you."
       continueDisabled={!selected || saving}

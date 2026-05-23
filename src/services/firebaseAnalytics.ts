@@ -338,6 +338,85 @@ export async function logDistanceFilterChanged(params: {
   }
 }
 
+// ============================================================================
+// v1.1 Onboarding Funnel Events
+// ============================================================================
+// These power the success metrics for the v1.1 liveness-only KYC rollout:
+//   - per-step drop-off (which screen leaks users)
+//   - paywall conversion (post-photo male users who purchase)
+//   - liveness completion rate (purchased users who finish the selfie)
+//   - escalation rate (lite workflow → document required)
+// All events are fire-and-forget; failures are logged, not surfaced.
+
+export type OnboardingStep =
+  | "name"
+  | "birthdate"
+  | "gender"
+  | "state"
+  | "location"
+  | "photo";
+
+export async function logOnboardingStepCompleted(
+  step: OnboardingStep,
+): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_step_completed", { step });
+  } catch (error) {
+    console.error("[Firebase] Error logging onboarding_step_completed:", error);
+  }
+}
+
+export async function logOnboardingPaywallShown(): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_paywall_shown");
+  } catch (error) {
+    console.error("[Firebase] Error logging onboarding_paywall_shown:", error);
+  }
+}
+
+export async function logOnboardingPaywallCompleted(): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_paywall_completed");
+  } catch (error) {
+    console.error("[Firebase] Error logging onboarding_paywall_completed:", error);
+  }
+}
+
+export async function logOnboardingLivenessShown(): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_liveness_shown");
+  } catch (error) {
+    console.error("[Firebase] Error logging onboarding_liveness_shown:", error);
+  }
+}
+
+export async function logOnboardingLivenessCompleted(): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_liveness_completed");
+  } catch (error) {
+    console.error("[Firebase] Error logging onboarding_liveness_completed:", error);
+  }
+}
+
+export async function logOnboardingLivenessEscalatedToDocument(): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_liveness_escalated_to_document");
+  } catch (error) {
+    console.error(
+      "[Firebase] Error logging onboarding_liveness_escalated_to_document:",
+      error,
+    );
+  }
+}
+
+export async function logOnboardingHomeReached(): Promise<void> {
+  try {
+    await analytics().logEvent("onboarding_home_reached");
+  } catch (error) {
+    console.error("[Firebase] Error logging onboarding_home_reached:", error);
+  }
+}
+
 /**
  * Bucket helper for distance-segmented events. Keep buckets in sync with
  * the privacy buckets in get_user_distance_miles. The "unknown" bucket

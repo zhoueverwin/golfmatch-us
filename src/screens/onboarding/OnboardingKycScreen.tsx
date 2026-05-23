@@ -18,19 +18,30 @@ import { Spacing, BorderRadius } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
 import CacheService from "../../services/cacheService";
+import {
+  logOnboardingLivenessShown,
+  logOnboardingLivenessCompleted,
+  logOnboardingHomeReached,
+} from "../../services/firebaseAnalytics";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingKyc">;
 
 /**
- * KYC step in onboarding. Opens Didit's hosted verification flow in an
- * in-app browser; subscribes to `profiles.kyc_status` via Realtime; routes
+ * Liveness step in onboarding (v1.1). Opens Didit's hosted lite-workflow
+ * flow (selfie + face match + age estimation, no document) in an in-app
+ * browser; subscribes to `profiles.kyc_status` via Realtime; routes
  * forward when the verdict lands.
  *
- * The webhook writes the ID-extracted `gender` to `profiles`, which we then
- * read to decide the next step:
- *   - male   → OnboardingPaywall (which navigates to Main on purchase)
- *   - female → Main directly (no celebration screen)
+ * Paywall is upstream of this screen in v1.1, so on `approved` the user
+ * always goes straight to Main. If the webhook flags `kyc_requires_document`
+ * (AI age < 21 or > 5y mismatch from self-attested birthdate), the user is
+ * routed to OnboardingKyc again with the heavy Didit workflow forced via
+ * the `mode=heavy` request param.
+ *
+ * Filename is OnboardingKycScreen for backwards-compat with the existing
+ * RootStackParamList route key; the user-facing copy and behavior are
+ * now liveness-only.
  */
 const OnboardingKycScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
@@ -79,12 +90,14 @@ const OnboardingKycScreen: React.FC = () => {
     (userProfile as { kyc_attempt_count?: number } | null | undefined)
       ?.kyc_attempt_count ?? 0;
 
-  // When we enter "waiting", arm a 90s timer that surfaces a retry/escape
-  // affordance if Didit hasn't returned a verdict by then (pending_review
-  // can take minutes to hours when escalated to human review).
+  // When we enter "waiting", arm a 20s timer that surfaces a retry
+  // affordance if Didit hasn't returned a verdict by then. v1.1 lite
+  // workflow is AI-decided and usually returns in 3-10s; if it's been
+  // 20s, something's off (network blip, webhook delay) and the user
+  // should have the option to bail rather than stare at a spinner.
   useEffect(() => {
     if (phase === "waiting") {
-      slowTimerRef.current = setTimeout(() => setSlowReview(true), 90 * 1000);
+      slowTimerRef.current = setTimeout(() => setSlowReview(true), 20 * 1000);
     } else {
       setSlowReview(false);
       if (slowTimerRef.current) {
@@ -107,15 +120,54 @@ const OnboardingKycScreen: React.FC = () => {
       userProfile?.is_verified === true &&
       userProfile?.kyc_status === "approved"
     ) {
-      handleVerdict("approved", userProfile.gender ?? null);
+      handleVerdict("approved");
     }
     // Intentionally only runs once on mount per profile load — the realtime
     // sub below handles subsequent updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile?.is_verified, userProfile?.kyc_status]);
 
+  // Auto-launch the Didit selfie flow on fresh visits. The intro screen
+  // ("Start verification" button + privacy explainer) added an unnecessary
+  // extra tap between paywall and the selfie capture; collapsed here so
+  // the user sees one brief "Preparing verification…" spinner and then
+  // Didit's hosted webview opens directly. The intro screen still appears
+  // when the user was previously rejected (so they understand why they're
+  // back) or when startVerification errors out (so they can retry).
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current) return;
+    if (advancedRef.current) return;
+    if (wasPreviouslyRejected) return;
+    if (phase !== "intro") return;
+    if (errorMessage) return;
+    if (!profileId || !session?.access_token) return;
+    // CRITICAL: wait for the profile cache to load before auto-launching.
+    // Without this guard, the screen mounts before AuthContext has
+    // re-fetched the profile on sign-in, userProfile is null, the
+    // is_verified check is falsy, and we kick off a Didit session
+    // unnecessarily. Worse: create-didit-session writes
+    // kyc_status='pending_review' which the sync_is_verified_with_kyc_status
+    // trigger uses to flip is_verified back to false — silently demoting
+    // a user who was already approved. The 2026-05-23 Xi-account
+    // regression was caused by exactly this race.
+    if (!userProfile) return;
+    if (
+      userProfile.is_verified === true &&
+      userProfile.kyc_status === "approved"
+    ) {
+      return;
+    }
+    autoStartedRef.current = true;
+    void startVerification();
+    // startVerification is stable within a single mount; intentionally
+    // excluded from deps so we don't re-fire on its identity change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId, session?.access_token, phase, errorMessage, wasPreviouslyRejected, userProfile]);
+
   // Subscribe to profiles changes for this user so we can advance as soon
-  // as the webhook flips kyc_status to approved/rejected.
+  // as the webhook flips kyc_status to approved/rejected, or sets the
+  // kyc_requires_document escalation flag.
   useEffect(() => {
     if (!profileId) return;
     const channel = supabase
@@ -129,12 +181,9 @@ const OnboardingKycScreen: React.FC = () => {
           filter: `id=eq.${profileId}`,
         },
         (payload) => {
-          const next = payload.new as {
-            kyc_status?: string;
-            gender?: string | null;
-          };
+          const next = payload.new as { kyc_status?: string };
           if (next.kyc_status) setLiveKycStatus(next.kyc_status);
-          handleVerdict(next.kyc_status, next.gender);
+          handleVerdict(next.kyc_status);
         },
       )
       .subscribe();
@@ -161,29 +210,21 @@ const OnboardingKycScreen: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ["currentUserProfile"] });
   };
 
-  const handleVerdict = async (
-    status: string | undefined,
-    gender: string | null | undefined,
-  ) => {
+  const handleVerdict = async (status: string | undefined) => {
     if (advancedRef.current) return;
     if (status === "approved") {
       advancedRef.current = true;
-      if (gender === "female") {
-        // Only explicit "female" skips the paywall. This is fail-secure:
-        // unknown/null/other genders (e.g. Didit returns "U" for IDs without
-        // a sex field, like Japanese driver's licenses) are routed through
-        // the paywall rather than letting them slip through as free users.
-        await refreshAllCaches();
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Main" }],
-          }),
-        );
-      } else {
-        // Male, null, "U", "other", anything-not-female → paywall.
-        navigation.navigate("OnboardingPaywall");
-      }
+      void logOnboardingLivenessCompleted();
+      void logOnboardingHomeReached();
+      // v1.1: paywall is upstream of liveness, so approved always means
+      // Main. No more gender-based paywall routing here.
+      await refreshAllCaches();
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        }),
+      );
     } else if (status === "rejected") {
       // Didit already shows its own "verification failed" notification on the
       // user's device; don't duplicate it with an in-app Alert. Just bounce
@@ -244,7 +285,9 @@ const OnboardingKycScreen: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      // Call our edge function to create a Didit session.
+      // Call our edge function to create a Didit session. mode='lite'
+      // requests the v1.1 liveness-only workflow; the escalation screen
+      // passes mode='heavy' to force document-required.
       const fnUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/create-didit-session`;
       const res = await fetch(fnUrl, {
         method: "POST",
@@ -252,7 +295,7 @@ const OnboardingKycScreen: React.FC = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ mode: "lite" }),
       });
       if (!res.ok) {
         const txt = await res.text();
@@ -260,6 +303,7 @@ const OnboardingKycScreen: React.FC = () => {
       }
       const { url } = (await res.json()) as { url: string; session_id: string };
 
+      void logOnboardingLivenessShown();
       setPhase("waiting");
 
       // Open Didit's hosted flow in an in-app browser. We don't strictly need
@@ -290,11 +334,13 @@ const OnboardingKycScreen: React.FC = () => {
 
   const renderBody = () => {
     if (phase === "waiting") {
-      // showLongWait flips when Didit confirms human review (realtime →
-      // liveKycStatus) OR when our 90s timer fires (network was slow / event
-      // was missed). Either signal is enough.
-      const showLongWait =
-        slowReview || liveKycStatus === "pending_review";
+      // slowReview flips on after 20s — the only signal that's actually
+      // meaningful for the lite (AI) workflow. We deliberately DO NOT
+      // treat liveKycStatus === 'pending_review' as a slow signal here,
+      // because create-didit-session sets that status before the user
+      // even opens Didit's flow — it's a "we're waiting on the webhook"
+      // state, not a "human is reviewing" state.
+      const showLongWait = slowReview;
       return (
         <View style={styles.center}>
           {showLongWait ? (
@@ -305,12 +351,12 @@ const OnboardingKycScreen: React.FC = () => {
             <ActivityIndicator size="large" color={Colors.primary} />
           )}
           <Text style={styles.waitingTitle}>
-            {showLongWait ? "Under review" : "Verifying your account…"}
+            {showLongWait ? "Taking longer than usual…" : "Checking your selfie…"}
           </Text>
           <Text style={styles.waitingBody}>
             {showLongWait
-              ? "Your ID is being reviewed by a real person. This usually completes within a few hours, sometimes up to 24 hours. You can close the app — we'll unlock it automatically when you're approved."
-              : "This usually takes a few seconds. You'll be moved forward automatically once your ID is verified."}
+              ? "Sometimes the result takes a bit to arrive. You can wait a few more seconds, or try again."
+              : "This usually finishes in a few seconds."}
           </Text>
           {showLongWait ? (
             <TouchableOpacity
@@ -327,7 +373,7 @@ const OnboardingKycScreen: React.FC = () => {
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
-                Retry with new photos
+                Try again
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -352,17 +398,10 @@ const OnboardingKycScreen: React.FC = () => {
               <Ionicons name="alert-circle" size={32} color={Colors.error} />
             </View>
             <Text style={styles.rejectionTitle}>
-              Previous verification was not accepted
+              That didn't pass
             </Text>
             <Text style={styles.rejectionBody}>
-              Your last ID check didn't pass our review. This usually happens
-              when the photo is blurry, the ID has expired, or the document
-              couldn't be matched to you. Please try again with a clear photo
-              of a valid, current government ID.
-            </Text>
-            <Text style={styles.rejectionContact}>
-              If you've already submitted a valid ID and believe this is a
-              mistake, contact support from the Help screen.
+              Try again with a clear, well-lit selfie facing the camera.
             </Text>
           </View>
         ) : (
@@ -370,23 +409,10 @@ const OnboardingKycScreen: React.FC = () => {
             <Ionicons name="shield-checkmark" size={48} color={Colors.primary} />
           </View>
         )}
-        <Text style={styles.bullet}>
-          <Text style={styles.bulletStrong}>1. </Text>Take a photo of a
-          government ID (driver's license or passport)
-        </Text>
-        <Text style={styles.bullet}>
-          <Text style={styles.bulletStrong}>2. </Text>Take a selfie so we can
-          match it to your ID
-        </Text>
-        <Text style={styles.bullet}>
-          <Text style={styles.bulletStrong}>3. </Text>That's it. Verification
-          is automatic and takes about 30 seconds.
-        </Text>
 
         <Text style={styles.privacy}>
-          GolfMatch uses Didit to verify identity. Your ID is only used to
-          confirm you're a real adult — it isn't shown on your profile and
-          isn't stored after verification.
+          Your selfie confirms you're a real adult. It isn't shown on your
+          profile and isn't stored after verification.
         </Text>
 
         {errorMessage ? (
@@ -436,12 +462,11 @@ const OnboardingKycScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={5}
-      title={wasPreviouslyRejected ? "Try verification again" : "Verify your identity"}
+      title={wasPreviouslyRejected ? "Let's try that again" : "One quick selfie"}
       subtitle={
         wasPreviouslyRejected
-          ? "Submit a clear photo of a valid, current government ID."
-          : "Required for safety. Takes about a minute, fully automatic."
+          ? "Face the camera in good light."
+          : "Confirms you're real. About 15 seconds."
       }
       continueDisabled
       onContinue={() => {}}

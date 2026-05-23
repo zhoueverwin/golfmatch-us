@@ -9,6 +9,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing, BorderRadius } from "../../constants/spacing";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../services/supabase";
+import { logOnboardingStepCompleted } from "../../services/firebaseAnalytics";
 import { RootStackParamList } from "../../types";
 
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingGender">;
@@ -17,7 +18,7 @@ type Gender = "male" | "female";
 
 const OnboardingGenderScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  const { profileId } = useAuth();
+  const { profileId, refreshProfile } = useAuth();
   const [selected, setSelected] = useState<Gender | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +31,14 @@ const OnboardingGenderScreen: React.FC = () => {
         .update({ gender: selected, updated_at: new Date().toISOString() })
         .eq("id", profileId);
       if (error) throw error;
-      navigation.navigate("OnboardingBirthdate");
+      // Refresh AuthContext's cached userProfile so OnboardingPhotoScreen
+      // sees the new gender when it routes (female → straight to Liveness,
+      // anything else → Paywall). Without this, the cache stays at its
+      // sign-in value (usually null) and female users incorrectly hit the
+      // paywall.
+      await refreshProfile();
+      void logOnboardingStepCompleted("gender");
+      navigation.navigate("OnboardingState");
     } catch (err: any) {
       Alert.alert("Couldn't save", err?.message ?? "Please try again.");
     } finally {
@@ -64,7 +72,7 @@ const OnboardingGenderScreen: React.FC = () => {
 
   return (
     <OnboardingShell
-      step={2}
+      step={3}
       title="What's your gender?"
       subtitle="GolfMatch matches you with golfers of the opposite gender."
       continueDisabled={!selected || saving}
