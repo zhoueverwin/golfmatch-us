@@ -279,13 +279,14 @@ class AuthService {
     password: string,
   ): Promise<OTPVerificationResult> {
     try {
-      // Only allow JP domains and select non-JP domains for email/password signup
-      // Gmail users should use Google OAuth, Apple users should use Apple Sign-In
+      // Basic email shape sanity check — Supabase will do a stricter format
+      // validation server-side, this just stops the most obvious typos from
+      // burning a Supabase auth call.
       const emailDomain = email.split('@')[1]?.toLowerCase();
-      if (!emailDomain || (!emailDomain.endsWith('.jp') && !AuthService.ALLOWED_NON_JP_DOMAINS.includes(emailDomain))) {
+      if (!emailDomain || !emailDomain.includes('.')) {
         return {
           success: false,
-          error: 'Email signup is only supported for .jp domain emails. Gmail users, please sign in with Google. Apple ID users, please sign in with Apple.',
+          error: 'Please enter a valid email address.',
         };
       }
 
@@ -329,6 +330,21 @@ class AuthService {
         if (__DEV__) {
           console.log("❌ [AuthService] Signup error:", error);
         }
+        // Supabase explicitly returns "User already registered" when
+        // AUTOCONFIRM is enabled (= "Confirm email" OFF in dashboard) and
+        // the email is taken. Surface this as a clean "already registered"
+        // message rather than the raw Supabase string.
+        const lower = (error.message || "").toLowerCase();
+        if (
+          lower.includes("already registered") ||
+          lower.includes("already exists")
+        ) {
+          return {
+            success: false,
+            error:
+              "This email has already been registered. Please sign in instead.",
+          };
+        }
         return {
           success: false,
           error: translateAuthError(error.message),
@@ -344,70 +360,35 @@ class AuthService {
         });
       }
 
-      // Check if user already exists and is verified (repeated signup)
-      // Supabase returns a user object but doesn't send a new confirmation email
-      // When email is already confirmed, email_confirmed_at will be a truthy value (Date string)
-      // Also check if user exists but no session was created (indicates existing verified user)
-      const isExistingVerifiedUser = data.user &&
-        (data.user.email_confirmed_at || data.user.confirmed_at) &&
-        !data.session;
-
-      if (isExistingVerifiedUser) {
-        if (__DEV__) {
-          console.log("⚠️ [AuthService] User already exists and is verified", {
-            emailConfirmed: !!data.user?.email_confirmed_at,
-            confirmed: !!data.user?.confirmed_at,
-            hasSession: !!data.session,
-          });
-        }
-        return {
-          success: false,
-          error: "This email address is already registered. Please sign in instead.",
-        };
-      }
-
-      // Check if email confirmation is required (new OR existing unverified user)
+      // signUp() returned `data.user` without `data.session`. Per Supabase
+      // docs (supabase/auth README, POST /signup section), this state is
+      // intentionally ambiguous when AUTOCONFIRM is OFF (= "Confirm email"
+      // ON in dashboard): for duplicate emails, Supabase returns FAUX user
+      // data with fabricated created_at to prevent email enumeration. The
+      // response is indistinguishable from a real new signup client-side.
+      //
+      // Reliable duplicate detection requires AUTOCONFIRM ON (Confirm email
+      // OFF), in which case Supabase returns an explicit "User already
+      // registered" error — handled in the error branch above.
+      //
+      // So if we reach here, EITHER:
+      //   - We're on AUTOCONFIRM OFF + Confirm email ON: this could be a
+      //     genuine new signup OR a duplicate, and we can't tell. Surface
+      //     an honest ambiguous message.
+      //   - Something unexpected happened (shouldn't normally hit this
+      //     branch when AUTOCONFIRM is ON because dups error explicitly).
       if (data.user && !data.session) {
-        // Check if this is an EXISTING unverified user vs a NEW user
-        // For new users, signUp() already sends verification email - no need to resend
-        // For existing unverified users, we need to explicitly resend
-        const createdAt = data.user.created_at ? new Date(data.user.created_at).getTime() : 0;
-        const now = Date.now();
-        const isNewUser = (now - createdAt) < 10000; // Created within last 10 seconds
-
         if (__DEV__) {
-          console.log("📧 [AuthService] Email confirmation required", {
-            isNewUser,
-            createdAt: data.user.created_at,
-            timeSinceCreation: now - createdAt,
-          });
+          console.log(
+            "📋 [AuthService] signUp returned no-session user (ambiguous per docs)",
+            { createdAt: data.user.created_at },
+          );
         }
-
-        // Only resend for existing unverified users (not new signups)
-        // Fire and forget - don't block UI waiting for resend result
-        if (!isNewUser) {
-          supabase.auth.resend({
-            type: "signup",
-            email: email,
-          }).then(({ error: resendError }) => {
-            if (__DEV__) {
-              if (resendError) {
-                console.log("⚠️ [AuthService] Resend verification result:", resendError.message);
-              } else {
-                console.log("✅ [AuthService] Verification email resent successfully");
-              }
-            }
-          }).catch((resendErr) => {
-            if (__DEV__) {
-              console.log("⚠️ [AuthService] Resend exception:", resendErr);
-            }
-          });
-        }
-
         return {
           success: true,
           session: undefined,
-          error: "Please check your email to confirm your address.",
+          error:
+            "We sent a confirmation link to your email. If you don't receive it, you may already have an account — try signing in.",
         };
       }
 
@@ -903,11 +884,41 @@ class AuthService {
     password: string,
   ): Promise<IdentityLinkResult> {
     try {
-      // For email linking, we need to use the updateUser method
-      const { error } = await supabase.auth.updateUser({
-        email,
-        password,
-      });
+      // BUG FIX (2026-05-23): passing `email` to updateUser triggers
+      // Supabase's "Secure email change" confirmation flow even when the
+      // email is unchanged. If the user doesn't click the confirmation
+      // email, Supabase rolls back the change after the session expires —
+      // the password "link" silently disappears on next sign-in.
+      //
+      // For the common case (OAuth user adding password sign-in with their
+      // EXISTING email), we only need to set the password. Supabase looks
+      // up users by email at password-signin time, so sign-in with the
+      // same email + new password still works without touching the email
+      // field.
+      //
+      // If the user is genuinely changing their email to a different one,
+      // fall back to the email-change path with confirmation flow.
+      const { data: userData } = await supabase.auth.getUser();
+      const currentEmail = userData?.user?.email?.toLowerCase();
+      const targetEmail = email.toLowerCase().trim();
+      const isSameEmail = currentEmail === targetEmail;
+
+      // Also stamp user_metadata.email_signin_enabled=true. Supabase's
+      // updateUser({password}) sets encrypted_password but does NOT add
+      // an 'email' identity row to auth.identities. So the AccountLinking
+      // UI can't tell "this user has password signin" by querying
+      // identities — we need a separate signal. user_metadata persists
+      // across sessions and is exposed via the SDK as user.user_metadata.
+      const { error } = isSameEmail
+        ? await supabase.auth.updateUser({
+            password,
+            data: { email_signin_enabled: true },
+          })
+        : await supabase.auth.updateUser({
+            email,
+            password,
+            data: { email_signin_enabled: true },
+          });
 
       if (error) {
         return {
@@ -918,7 +929,9 @@ class AuthService {
 
       return {
         success: true,
-        message: "Email successfully linked to your account",
+        message: isSameEmail
+          ? "Email sign-in is now linked to your account. You can sign in with your email and password."
+          : "Your email has been updated. Check your inbox to confirm the change.",
       };
     } catch (error) {
       return {

@@ -73,21 +73,24 @@ const WelcomeScreen: React.FC = () => {
 
         {/* Content on top of wave */}
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 40 }]}>
-          <Text style={styles.welcomeTitle}>Welcome to GolfMatch!</Text>
+          <Text style={styles.welcomeKicker}>FOR SINGLES WHO PLAY</Text>
+          <Text style={styles.welcomeTitle}>
+            Your next round{"\n"}could be the one.
+          </Text>
           <Text style={styles.welcomeDescription}>
-            New connections that start with golf.{"\n"}
-            Profiles, tee-time availability, and feed{"\n"}
-            posts help you get to know your match!
+            Real single golfers in your area, looking for{"\n"}
+            someone who gets why Saturday{"\n"}
+            morning matters.
           </Text>
 
           <TouchableOpacity
             style={styles.startButton}
             onPress={handleGetStarted}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Get started"
           >
-            <Text style={styles.startButtonText}>Get Started</Text>
+            <Text style={styles.startButtonText}>Get Started  →</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -139,38 +142,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  welcomeTitle: {
-    fontSize: 24,
-    fontFamily: Typography.getFontFamily("700"),
-    fontWeight: "700",
-    color: Colors.text.primary,
-    marginBottom: 20,
+  welcomeKicker: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: 11,
+    letterSpacing: 2.6,
+    color: "#E0B743", // goldDeep — matches paywall + onboarding shell
+    marginBottom: 14,
     textAlign: "center",
+  },
+  welcomeTitle: {
+    fontSize: 32,
+    fontFamily: "Fraunces_600SemiBold",
+    color: "#14342B", // ink
+    marginBottom: 16,
+    textAlign: "center",
+    letterSpacing: -0.8,
+    lineHeight: 36,
   },
   welcomeDescription: {
     fontSize: 15,
-    fontFamily: Typography.getFontFamily("400"),
-    color: Colors.text.secondary,
+    fontFamily: "Manrope_400Regular",
+    color: "#3F5A50", // inkSoft
     textAlign: "center",
-    lineHeight: 26,
-    marginBottom: 40,
+    lineHeight: 23,
+    marginBottom: 36,
   },
   startButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 18,
-    paddingHorizontal: 100,
-    borderRadius: 30,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
+    backgroundColor: "#14342B", // ink — matches paywall CTA
+    paddingVertical: 17,
+    paddingHorizontal: 80,
+    borderRadius: 999,
+    shadowColor: "#14342B",
+    shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 22,
+    elevation: 8,
   },
   startButtonText: {
-    color: Colors.white,
-    fontSize: 18,
-    fontFamily: Typography.getFontFamily("700"),
-    fontWeight: "700",
+    color: "#F4D35E", // gold — paywall CTA style
+    fontSize: 16,
+    fontFamily: "Manrope_600SemiBold",
+    letterSpacing: 0.3,
   },
 });
 

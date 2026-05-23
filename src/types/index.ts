@@ -64,6 +64,7 @@ export interface PostComment {
 export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
+  EmailAuth: undefined;
   // First-time-user onboarding (single-question-per-screen flow)
   OnboardingName: undefined;
   OnboardingGender: undefined;

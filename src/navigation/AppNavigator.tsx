@@ -30,6 +30,7 @@ import { useAnnouncements } from "../hooks/useAnnouncements";
 
 // Import screens
 import AuthScreen from "../screens/AuthScreen";
+import EmailAuthScreen from "../screens/EmailAuthScreen";
 import HomeScreen from "../screens/HomeScreen";
 import SearchScreen from "../screens/SearchScreen";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
@@ -418,6 +419,7 @@ const AppNavigatorContent = () => {
   const routeNameRef = useRef<string | undefined>(undefined);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isNewUser, setIsNewUser] = useState<boolean | null>(null); // null = checking, true = new, false = existing
+
 
   // Calculate profile completion percentage
   const calculateProfileCompletion = (profile: UserProfile | null): number => {
@@ -974,6 +976,16 @@ const AppNavigatorContent = () => {
               <Stack.Screen
                 name="Auth"
                 component={AuthScreen}
+                options={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  gestureDirection: "horizontal",
+                  cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+                }}
+              />
+              <Stack.Screen
+                name="EmailAuth"
+                component={EmailAuthScreen}
                 options={{
                   headerShown: false,
                   gestureEnabled: true,

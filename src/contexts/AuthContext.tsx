@@ -52,6 +52,22 @@ interface AuthContextType extends AuthState {
     error?: string;
     session?: Session;
   }>;
+  signInWithEmail: (
+    email: string,
+    password: string,
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    session?: Session;
+  }>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    session?: Session;
+  }>;
   linkEmail: (
     email: string,
     password: string,
@@ -238,6 +254,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userProfile,
     signInWithGoogle: authService.signInWithGoogle.bind(authService),
     signInWithApple: authService.signInWithApple.bind(authService),
+    signInWithEmail: authService.signInWithEmail.bind(authService),
+    signUpWithEmail: authService.signUpWithEmail.bind(authService),
     linkEmail: authService.linkEmail.bind(authService),
     linkGoogle: authService.linkGoogle.bind(authService),
     linkApple: authService.linkApple.bind(authService),

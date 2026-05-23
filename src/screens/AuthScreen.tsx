@@ -15,12 +15,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/colors";
 import { Typography } from "../constants/typography";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../types";
 import Loading from "../components/Loading";
+
+type Nav = StackNavigationProp<RootStackParamList>;
 
 const { width } = Dimensions.get("window");
 
 const AuthScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<Nav>();
   const {
     signInWithGoogle,
     signInWithApple,
@@ -129,14 +135,22 @@ const AuthScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* Logo Section */}
+          {/* Logo + tagline section — kicker for ceremony, logo for brand,
+              Fraunces italic tagline + Manrope subtitle for encouraging,
+              warm framing that matches the paywall + onboarding language. */}
           <View style={styles.logoSection}>
+            <Text style={styles.kicker}>WELCOME</Text>
             <Image
               source={require("../../assets/images/welcome/GolfMatch-GetStarted-Logo.png")}
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.tagline}>New connections that start with golf.</Text>
+            <Text style={styles.tagline}>
+              Single golfers near you are ready to play.
+            </Text>
+            <Text style={styles.subtitle}>
+              Sign in or sign up to find your next round.
+            </Text>
           </View>
 
           {/* Error Display */}
@@ -147,29 +161,35 @@ const AuthScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Social Login Buttons */}
+          {/* Social Login Buttons — Apple (black) + Google (white) form a
+              visually paired social-auth set; "or" divider; Email (ink with
+              gold text) closes the section with the same heavyweight CTA
+              language used on the paywall. Three differentiated buttons
+              break the monotone-pill-stack feel of the old design. */}
           <View style={styles.buttonsSection}>
-            {/* Apple Button */}
+            {/* Apple Button — Apple HIG black variant */}
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, styles.appleButton]}
               onPress={handleAppleAuth}
               disabled={oauthLoading}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Continue with Apple"
             >
               <View style={styles.buttonIconContainer}>
-                <Ionicons name="logo-apple" size={22} color="#000000" />
+                <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
               </View>
-              <Text style={styles.socialButtonText}>Continue with Apple</Text>
+              <Text style={[styles.socialButtonText, styles.appleButtonText]}>
+                Continue with Apple
+              </Text>
             </TouchableOpacity>
 
-            {/* Google Button */}
+            {/* Google Button — white variant per Google brand guidelines */}
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, styles.googleButton]}
               onPress={handleGoogleAuth}
               disabled={oauthLoading}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Continue with Google"
             >
@@ -178,15 +198,42 @@ const AuthScreen: React.FC = () => {
               </View>
               <Text style={styles.socialButtonText}>Continue with Google</Text>
             </TouchableOpacity>
+
+            {/* OR divider — typographic break between social and email
+                auth, signals "you can pick either path" rather than
+                making them feel like three equivalent choices. */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Email Button — opens EmailAuthScreen. Ink fill with gold
+                text echoes the paywall CTA — premium "alternative" feel
+                rather than a third equivalent button. */}
+            <TouchableOpacity
+              style={[styles.socialButton, styles.emailButton]}
+              onPress={() => navigation.navigate("EmailAuth")}
+              disabled={oauthLoading}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with email"
+            >
+              <View style={styles.buttonIconContainer}>
+                <Ionicons name="mail" size={22} color="#F4D35E" />
+              </View>
+              <Text style={[styles.socialButtonText, styles.emailButtonText]}>
+                Continue with email
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Age Notice */}
-          <Text style={styles.ageNotice}>
-            You must be 18 or older to sign up.
-          </Text>
-
-          {/* Footer */}
+          {/* Footer — age + terms grouped at the bottom for clean legal
+              layer, refined typography to match the editorial register. */}
           <View style={styles.footer}>
+            <Text style={styles.ageNotice}>
+              You must be 18 or older to sign up.
+            </Text>
             <Text style={styles.termsText}>
               By continuing, you agree to our{" "}
               <Text
@@ -239,18 +286,37 @@ const styles = StyleSheet.create({
   // Logo Section
   logoSection: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 36,
+  },
+  kicker: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: 11,
+    letterSpacing: 2.6,
+    color: "#E0B743", // goldDeep
+    marginBottom: 18,
   },
   logoImage: {
     width: width * 0.5,
     height: 45,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   tagline: {
-    fontSize: Typography.fontSize.lg,
-    fontFamily: Typography.getFontFamily("500"),
-    color: Colors.text.secondary,
-    fontWeight: "500",
+    fontFamily: "Fraunces_400Regular_Italic",
+    fontSize: 19,
+    color: "#14342B", // ink
+    letterSpacing: -0.3,
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 8,
+    paddingHorizontal: 8,
+  },
+  subtitle: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    color: "#3F5A50", // inkSoft
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 12,
   },
 
   // Error Display
@@ -276,62 +342,111 @@ const styles = StyleSheet.create({
   // Buttons Section
   buttonsSection: {
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 28,
   },
 
-  // Apple & Google Buttons
+  // Shared button shape — three variants override background + text color
+  // below. Same height + corner-radius across all three keeps the visual
+  // rhythm consistent even with different fills.
   socialButton: {
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
   socialButtonText: {
-    fontSize: Typography.fontSize.base,
-    fontFamily: Typography.getFontFamily("600"),
-    fontWeight: "600",
-    color: Colors.text.primary,
+    fontSize: 16,
+    fontFamily: "Manrope_600SemiBold",
+    color: "#14342B", // ink default
+    letterSpacing: 0.2,
+  },
+
+  // Apple — HIG black variant. White text + white Apple logo.
+  appleButton: {
+    backgroundColor: "#000000",
+  },
+  appleButtonText: {
+    color: "#FFFFFF",
+  },
+
+  // Google — white per Google brand. Subtle ink border keeps it from
+  // disappearing into the gradient background.
+  googleButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E8E0CB", // inkLine
+  },
+
+  // Email — ink fill with gold text. Matches the paywall CTA exactly so
+  // users see the same "premium button" shape from auth through purchase.
+  emailButton: {
+    backgroundColor: "#14342B", // ink
+    shadowColor: "#14342B",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 6,
+  },
+  emailButtonText: {
+    color: "#F4D35E", // gold
   },
 
   // Shared button icon container (positioned absolutely on left)
   buttonIconContainer: {
     position: "absolute",
-    left: 20,
+    left: 22,
     width: 22,
     height: 22,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  // Age Notice
-  ageNotice: {
-    fontSize: Typography.fontSize.xs,
-    fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.tertiary,
-    textAlign: "center",
-    marginBottom: 24,
-  },
-
-  // Footer
-  footer: {
+  // OR divider between social auth and email auth
+  dividerRow: {
+    flexDirection: "row",
     alignItems: "center",
+    marginVertical: 4,
     gap: 12,
   },
-  termsText: {
-    fontSize: Typography.fontSize.xs,
-    fontFamily: Typography.fontFamily.regular,
-    color: Colors.text.secondary,
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#88806A", // muted
+    opacity: 0.5,
+  },
+  dividerText: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
+    letterSpacing: 2.4,
+    color: "#88806A", // muted
+    textTransform: "uppercase",
+  },
+
+  // Footer — age + terms grouped together with refined typography
+  footer: {
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 4,
+  },
+  ageNotice: {
+    fontSize: 12,
+    fontFamily: "Manrope_500Medium",
+    color: "#88806A", // muted
     textAlign: "center",
-    lineHeight: 18,
-    paddingHorizontal: 8,
+    letterSpacing: 0.2,
+  },
+  termsText: {
+    fontSize: 11,
+    fontFamily: "Manrope_400Regular",
+    color: "#88806A", // muted
+    textAlign: "center",
+    lineHeight: 17,
+    paddingHorizontal: 12,
   },
   linkText: {
-    color: Colors.primary,
+    color: "#0E7C73", // teal
     textDecorationLine: "underline",
   },
 });
