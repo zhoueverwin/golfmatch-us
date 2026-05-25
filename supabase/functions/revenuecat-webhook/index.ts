@@ -84,11 +84,57 @@ Deno.serve(async (req: Request) => {
   }
 
   const event = payload.event;
-  if (!event || !event.id || !event.type || !event.app_user_id) {
-    return new Response(JSON.stringify({ error: "Missing required event fields" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
+
+  // Diagnostic log: every webhook surfaces the shape RC actually sent so future
+  // 400s identify the missing field instead of being opaque.
+  console.log("Webhook received", {
+    api_version: payload.api_version,
+    has_event: !!event,
+    event_id: event?.id ?? null,
+    event_type: event?.type ?? null,
+    has_app_user_id: !!event?.app_user_id,
+    environment: event?.environment ?? null,
+  });
+
+  if (!event) {
+    console.error("Rejected: payload has no `event` object");
+    return new Response(
+      JSON.stringify({ error: "Missing event object" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // RevenueCat's TEST event (sent when you click "Send test event" in the
+  // dashboard, or on initial webhook registration) does not carry the same
+  // fields as production events — no app_user_id, no product, no entitlements.
+  // Return 200 so RC stops retrying with exponential backoff. We do not write
+  // it to revenuecat_webhook_events since it isn't a real subscription event.
+  if (event.type === "TEST") {
+    console.log("TEST event acknowledged — not persisted");
+    return new Response(
+      JSON.stringify({ status: "ok", message: "Test event acknowledged" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!event.id || !event.type || !event.app_user_id) {
+    console.error("Rejected: missing required event fields", {
+      has_id: !!event.id,
+      has_type: !!event.type,
+      has_app_user_id: !!event.app_user_id,
+      type: event.type ?? "unknown",
     });
+    return new Response(
+      JSON.stringify({
+        error: "Missing required event fields",
+        diagnostics: {
+          has_id: !!event.id,
+          has_type: !!event.type,
+          has_app_user_id: !!event.app_user_id,
+        },
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   console.log(`Processing event: ${event.type} (${event.id}) for user ${event.app_user_id}`);
