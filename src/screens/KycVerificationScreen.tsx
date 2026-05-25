@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -168,17 +169,55 @@ const KycVerificationScreen: React.FC = () => {
 
       setPhase("waiting");
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        url,
-        "Golfmatch://kyc-callback",
-      );
+      // iOS only permits one ASWebAuthenticationSession at a time. Release
+      // any prior reference (e.g. from a recent sign-in) before opening
+      // Didit's, and retry once if iOS still rejects the call.
+      try { WebBrowser.maybeCompleteAuthSession(); } catch {}
+      if (Platform.OS === "ios") {
+        await new Promise((r) => setTimeout(r, 400));
+      }
 
-      // User dismissed the browser before completing — return to idle so
-      // they can retry.
+      let result: WebBrowser.WebBrowserAuthSessionResult;
+      try {
+        result = await WebBrowser.openAuthSessionAsync(
+          url,
+          "Golfmatch://kyc-callback",
+        );
+      } catch {
+        try { WebBrowser.maybeCompleteAuthSession(); } catch {}
+        await new Promise((r) => setTimeout(r, 600));
+        result = await WebBrowser.openAuthSessionAsync(
+          url,
+          "Golfmatch://kyc-callback",
+        );
+      }
+
+      // User dismissed the browser before completing — return to idle.
       if (result.type === "cancel" || result.type === "dismiss") {
         setPhase("idle");
+        return;
       }
-      // Otherwise the realtime subscription will pick up the verdict.
+
+      // The Supabase Realtime WebSocket may have been suspended while the
+      // Didit webview held foreground, so the kyc_status UPDATE could have
+      // been broadcast during that gap and missed. Proactively refresh and
+      // poll for up to ~20s; whichever of realtime / poll signals first
+      // wins via the advancedRef guard in handleVerdict.
+      await refreshAllCaches();
+      for (let i = 0; i < 10 && !advancedRef.current; i++) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("kyc_status")
+          .eq("id", profileId)
+          .single();
+        const status = data?.kyc_status;
+        if (status === "approved" || status === "rejected" || status === "retry") {
+          setLiveKycStatus(status);
+          void handleVerdict(status);
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
     } catch (err: any) {
       setPhase("idle");
       setErrorMessage(err?.message ?? "Couldn't start verification.");

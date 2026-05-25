@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
@@ -306,26 +307,61 @@ const OnboardingKycScreen: React.FC = () => {
       void logOnboardingLivenessShown();
       setPhase("waiting");
 
-      // Open Didit's hosted flow in an in-app browser. We don't strictly need
-      // the redirect here because the webhook is the source of truth; this
-      // is purely for UX (closes the browser when the user finishes).
-      const result = await WebBrowser.openAuthSessionAsync(
-        url,
-        "Golfmatch://onboarding/kyc-callback",
-      );
+      // iOS only permits one ASWebAuthenticationSession at a time. When the
+      // user just signed in via Google/Apple/Email (which also uses
+      // openAuthSessionAsync), iOS holds the prior session reference for a
+      // brief window. Calling maybeCompleteAuthSession + a short yield
+      // releases it so the Didit session below doesn't throw "Calling
+      // openAuthSessionAsync has failed". Retry once if it still fails.
+      try { WebBrowser.maybeCompleteAuthSession(); } catch {}
+      if (Platform.OS === "ios") {
+        await new Promise((r) => setTimeout(r, 400));
+      }
+
+      let result: WebBrowser.WebBrowserAuthSessionResult;
+      try {
+        result = await WebBrowser.openAuthSessionAsync(
+          url,
+          "Golfmatch://onboarding/kyc-callback",
+        );
+      } catch {
+        try { WebBrowser.maybeCompleteAuthSession(); } catch {}
+        await new Promise((r) => setTimeout(r, 600));
+        result = await WebBrowser.openAuthSessionAsync(
+          url,
+          "Golfmatch://onboarding/kyc-callback",
+        );
+      }
 
       // If the user dismissed the browser before completing Didit, no webhook
       // will fire — return to intro instead of leaving them on the spinner.
-      // The realtime subscription only advances on `approved` / `rejected`.
       if (result.type === "cancel" || result.type === "dismiss") {
         setPhase("intro");
         return;
       }
 
-      // After the browser closes successfully, fall back to the realtime
-      // subscription. If the webhook has already landed, that handler
-      // navigates onward; otherwise we sit on the "verifying" state until
-      // the 90s slowReview escape hatch kicks in.
+      // While the Didit webview had foreground, iOS likely suspended the
+      // Supabase Realtime WebSocket. The kyc_status UPDATE emitted by
+      // didit-webhook may have been broadcast during that gap — realtime
+      // does not replay missed events. Proactively refresh + poll the
+      // profile for up to ~20s as a fallback. The realtime sub remains
+      // active in parallel; whichever signal lands first wins via the
+      // advancedRef guard inside handleVerdict.
+      await refreshAllCaches();
+      for (let i = 0; i < 10 && !advancedRef.current; i++) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("kyc_status")
+          .eq("id", profileId)
+          .single();
+        const status = data?.kyc_status;
+        if (status === "approved" || status === "rejected" || status === "retry") {
+          setLiveKycStatus(status);
+          void handleVerdict(status);
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
     } catch (err: any) {
       setPhase("intro");
       setErrorMessage(err?.message ?? "Couldn't start verification.");
