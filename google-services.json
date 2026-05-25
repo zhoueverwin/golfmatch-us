@@ -1,22 +1,28 @@
 {
   "project_info": {
-    "project_number": "146640098179",
-    "project_id": "golfmatch-1290e",
-    "storage_bucket": "golfmatch-1290e.firebasestorage.app"
+    "project_number": "747335392562",
+    "project_id": "golfmatch-us-app",
+    "storage_bucket": "golfmatch-us-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:146640098179:android:placeholder",
+        "mobilesdk_app_id": "1:747335392562:android:124ba92255e57171fd0b2b",
         "android_client_info": {
           "package_name": "golfmatchdating.us.com"
         }
       },
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "placeholder"
+          "current_key": "AIzaSyDzDditk-uTI5MjwUtoM1Y5lzftw_jpbwE"
         }
-      ]
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"
