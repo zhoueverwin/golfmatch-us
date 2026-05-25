@@ -51,7 +51,6 @@
     "expo-image": "^3.0.10",
     "expo-image-manipulator": "^14.0.7",
     "expo-image-picker": "^17.0.8",
-    "expo-in-app-purchases": "^14.5.0",
     "expo-linear-gradient": "^15.0.7",
     "expo-location": "^19.0.7",
     "expo-media-library": "^18.2.0",
