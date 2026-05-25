@@ -570,7 +570,9 @@ const StoreScreen: React.FC = () => {
               {`Plans start at ${getSubscriptionPrice()}/mo and renew automatically once you subscribe.`}
             </Text>
             <Text style={styles.termsText}>
-              You'll be charged through your Apple ID account at the time of purchase.
+              {Platform.OS === "ios"
+                ? "You'll be charged through your Apple ID account at the time of purchase."
+                : "You'll be charged through your Google Play account at the time of purchase."}
             </Text>
             <Text style={styles.termsText}>
               At each renewal, the current price will be charged automatically.

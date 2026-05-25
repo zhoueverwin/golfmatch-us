@@ -264,10 +264,13 @@ const OnboardingPaywallScreen: React.FC = () => {
     try {
       setRestoring(true);
       const result = await revenueCatService.restorePurchases();
+      const accountLabel =
+        Platform.OS === "ios" ? "Apple ID" : "Google account";
       if (!result.success) {
         Alert.alert(
           "Couldn't restore",
-          result.error || "No active subscription was found on this Apple ID.",
+          result.error ||
+            `No active subscription was found on this ${accountLabel}.`,
         );
         return;
       }
@@ -278,7 +281,7 @@ const OnboardingPaywallScreen: React.FC = () => {
       } else {
         Alert.alert(
           "No active subscription",
-          "We couldn't find an active subscription on this Apple ID.",
+          `We couldn't find an active subscription on this ${accountLabel}.`,
         );
       }
     } finally {
