@@ -220,22 +220,14 @@ const OnboardingPaywallScreen: React.FC = () => {
   const advanceToMain = () => {
     if (advancedRef.current) return;
     advancedRef.current = true;
-    // v1.1 paywall-before-liveness: if the user hasn't completed liveness
-    // yet, reset to OnboardingKyc (the liveness screen) instead of Main.
-    // AppNavigator's needsKycGate would also catch this on next render,
-    // but resetting synchronously avoids a one-frame flash of Main while
-    // the gate re-evaluates. If the user is already verified (returning
-    // member with lapsed sub), reset straight to Main.
-    const needsLiveness = !userProfile?.is_verified;
-    const nextRoute = needsLiveness ? "OnboardingKyc" : "Main";
+    // v1.2: face verification is no longer part of onboarding. The paywall
+    // always advances directly to Main; for unverified females, the
+    // per-action verification CTA (useRequireVerification) handles the
+    // verify-before-doing flow inside the app.
     void logOnboardingPaywallCompleted();
-    if (!needsLiveness) {
-      // Only fire home_reached here if liveness was already done; the
-      // liveness screen fires it otherwise to ensure exactly-once.
-      void logOnboardingHomeReached();
-    }
+    void logOnboardingHomeReached();
     navigation.dispatch(
-      CommonActions.reset({ index: 0, routes: [{ name: nextRoute }] }),
+      CommonActions.reset({ index: 0, routes: [{ name: "Main" }] }),
     );
     void refreshAllCaches();
   };

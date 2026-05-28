@@ -28,6 +28,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 
 import { Colors } from "../constants/colors";
 import { Spacing, BorderRadius, Shadows } from "../constants/spacing";
@@ -73,6 +74,7 @@ const UserProfileScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { userId } = route.params;
   const { profileId } = useAuth(); // Get current user's profile ID
+  const requireVerification = useRequireVerification();
 
   // Use React Query hooks for data fetching
   const { profile, isLoading: profileLoading, refetch: refetchProfile } = useProfile(userId);
@@ -378,35 +380,35 @@ const UserProfileScreen: React.FC = () => {
 
   const handleLike = async () => {
     if (isLoadingLike || isLiked) return;
+    requireVerification("like", async () => {
+      setIsLoadingLike(true);
+      try {
+        const currentUserId = profileId || process.env.EXPO_PUBLIC_TEST_USER_ID;
 
-    setIsLoadingLike(true);
-    try {
-      // Get current user ID from AuthContext
-      const currentUserId = profileId || process.env.EXPO_PUBLIC_TEST_USER_ID;
+        if (!currentUserId) {
+          Alert.alert("Error", "Please sign in to like profiles");
+          setIsLoadingLike(false);
+          return;
+        }
 
-      if (!currentUserId) {
-        Alert.alert("Error", "Please sign in to like profiles");
+        if (userId === currentUserId) {
+          console.log("Cannot like yourself");
+          return;
+        }
+
+        const response = await DataProvider.likeUser(currentUserId, userId);
+        if (response.error) {
+          console.error("Failed to like user:", response.error);
+        } else {
+          setIsLiked(true);
+          console.log("Successfully liked user:", userId);
+        }
+      } catch (_error) {
+        console.error("Error liking user:", _error);
+      } finally {
         setIsLoadingLike(false);
-        return;
       }
-
-      if (userId === currentUserId) {
-        console.log("Cannot like yourself");
-        return;
-      }
-
-      const response = await DataProvider.likeUser(currentUserId, userId);
-      if (response.error) {
-        console.error("Failed to like user:", response.error);
-      } else {
-        setIsLiked(true);
-        console.log("Successfully liked user:", userId);
-      }
-    } catch (_error) {
-      console.error("Error liking user:", _error);
-    } finally {
-      setIsLoadingLike(false);
-    }
+    });
   };
 
   const handleMessage = async (postUserId?: string, postUserName?: string, postUserImage?: string) => {

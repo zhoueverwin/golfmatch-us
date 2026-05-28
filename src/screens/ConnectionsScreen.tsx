@@ -26,6 +26,7 @@ import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import { DataProvider, matchesService, messagesService } from "../services";
 import { userInteractionService } from "../services/userInteractionService";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 import { UserActivityService } from "../services/userActivityService";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -66,6 +67,7 @@ type ConnectionsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 const ConnectionsScreen: React.FC = () => {
   const navigation = useNavigation<ConnectionsScreenNavigationProp>();
   const { user, profileId } = useAuth();
+  const requireVerification = useRequireVerification();
   const { clearConnectionNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<"like" | "match">("like");
   const [connections, setConnections] = useState<ConnectionItem[]>([]);
@@ -289,34 +291,38 @@ const ConnectionsScreen: React.FC = () => {
   };
 
   const handleLikeBack = async (profileId: string) => {
-    try {
-      const currentUserId = user?.id || process.env.EXPO_PUBLIC_TEST_USER_ID;
-      if (!currentUserId) return;
+    const currentUserId = user?.id || process.env.EXPO_PUBLIC_TEST_USER_ID;
+    if (!currentUserId) return;
 
-      // Check if user has already liked back
-      const connectionItem = connections.find(item => item.profile.id === profileId);
-      if (connectionItem?.hasLikedBack) {
-        return;
-      }
-      
-      // Add to liked back users for UI state
-      setLikedBackUsers((prev) => new Set(prev).add(profileId));
+    const connectionItem = connections.find(item => item.profile.id === profileId);
+    if (connectionItem?.hasLikedBack) {
+      return;
+    }
 
-      // Send like to the database - returns boolean, not object
-      const success = await userInteractionService.likeUser(currentUserId, profileId);
-      
-      if (success) {
-        // Reload data to reflect the match
-        setTimeout(async () => {
-          await loadData();
-          // Remove from liked back users after reload
+    requireVerification("like", async () => {
+      try {
+        setLikedBackUsers((prev) => new Set(prev).add(profileId));
+        const success = await userInteractionService.likeUser(currentUserId, profileId);
+
+        if (success) {
+          setTimeout(async () => {
+            await loadData();
+            setLikedBackUsers((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(profileId);
+              return newSet;
+            });
+          }, 1000);
+        } else {
+          Alert.alert("Error", "Failed to send Like.");
           setLikedBackUsers((prev) => {
             const newSet = new Set(prev);
             newSet.delete(profileId);
             return newSet;
           });
-        }, 1000);
-      } else {
+        }
+      } catch (error) {
+        console.error('[ConnectionsScreen] Error liking back:', error);
         Alert.alert("Error", "Failed to send Like.");
         setLikedBackUsers((prev) => {
           const newSet = new Set(prev);
@@ -324,15 +330,7 @@ const ConnectionsScreen: React.FC = () => {
           return newSet;
         });
       }
-    } catch (error) {
-      console.error('[ConnectionsScreen] Error liking back:', error);
-      Alert.alert("Error", "Failed to send Like.");
-      setLikedBackUsers((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(profileId);
-        return newSet;
-      });
-    }
+    });
   };
 
 

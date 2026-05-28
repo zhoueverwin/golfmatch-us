@@ -746,6 +746,36 @@ class AuthService {
           firebaseSetUserId(supabaseData.session.user.id);
         }
 
+        // Apple only returns `fullName` on the *first* sign-in (and only if
+        // the user didn't choose "Hide My Name"). The identityToken JWT does
+        // NOT carry name claims, so handle_new_user falls back to the email
+        // local-part — junk for Private Relay addresses. App Review (5.x SIWA)
+        // requires us to use what Apple provided and not re-prompt the user,
+        // so persist it now to profiles.name. The trigger has already created
+        // the profile row by the time signInWithIdToken resolves.
+        if (supabaseData.session?.user && credential.fullName) {
+          const { givenName, familyName } = credential.fullName;
+          const appleName = [givenName, familyName]
+            .filter((part): part is string => !!part && part.trim().length > 0)
+            .join(" ")
+            .trim();
+          if (appleName) {
+            try {
+              await supabase
+                .from("profiles")
+                .update({
+                  name: appleName,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", supabaseData.session.user.id);
+            } catch (nameErr) {
+              // Don't fail the sign-in if name persistence fails; user can
+              // edit later in EditProfile. Just log it.
+              logAuthError("Failed to persist Apple fullName to profile", nameErr);
+            }
+          }
+        }
+
         return {
           success: true,
           session: supabaseData.session || undefined,

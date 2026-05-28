@@ -437,6 +437,11 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
 // Expose triggerSwipe via ref
 export interface SwipeCardRef {
   triggerSwipe: (direction: "left" | "right") => void;
+  // Spring the card back to center without advancing the index. Used by
+  // callers that need to reject a swipe after the gesture has already
+  // animated it off-screen — e.g. unverified users who hit a verification
+  // gate. Safe to call mid-animation; cancels any in-flight tween.
+  resetPosition: () => void;
 }
 
 export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
@@ -506,7 +511,17 @@ export const SwipeCardWithRef = React.forwardRef<SwipeCardRef, SwipeCardProps>(
       [currentUser, handleSwipeComplete, translateX, isAnimating],
     );
 
-    React.useImperativeHandle(ref, () => ({ triggerSwipe }), [triggerSwipe]);
+    const resetPosition = useCallback(() => {
+      isAnimating.value = false;
+      translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
+      translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+    }, [translateX, translateY, isAnimating]);
+
+    React.useImperativeHandle(
+      ref,
+      () => ({ triggerSwipe, resetPosition }),
+      [triggerSwipe, resetPosition],
+    );
 
     const panGesture = Gesture.Pan()
       .onUpdate((event) => {

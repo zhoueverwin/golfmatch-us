@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types";
 import { useAuth } from "./AuthContext";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 import { DataProvider } from "../services";
 import { supabase } from "../services/supabase";
 import MatchCelebrationModal from "../components/MatchCelebrationModal";
@@ -48,6 +49,7 @@ interface MatchProviderProps {
 
 export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
   const { profileId } = useAuth();
+  const requireVerification = useRequireVerification();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [unseenMatches, setUnseenMatches] = useState<Match[]>([]);
   const [currentMatch, setCurrentMatch] = useState<Match | null>(null);
@@ -258,18 +260,27 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
       if (chatResponse.success && chatResponse.data) {
         const chatId = chatResponse.data;
 
-        // Send the first message if provided
+        // Send the first message if provided. Gate for unverified females
+        // — they'll see the CTA modal instead and can verify before
+        // returning to the chat to send. The chat is still created either
+        // way so the match isn't lost.
         if (message) {
-          try {
-            await DataProvider.sendMessage(
-              chatId,
-              profileId,
-              otherUserId,
-              message,
-            );
-            console.log("[MatchContext] First message sent from celebration modal");
-          } catch (msgError) {
-            console.error("[MatchContext] Failed to send first message:", msgError);
+          let mayMessage = false;
+          requireVerification("send_message", () => {
+            mayMessage = true;
+          });
+          if (mayMessage) {
+            try {
+              await DataProvider.sendMessage(
+                chatId,
+                profileId,
+                otherUserId,
+                message,
+              );
+              console.log("[MatchContext] First message sent from celebration modal");
+            } catch (msgError) {
+              console.error("[MatchContext] Failed to send first message:", msgError);
+            }
           }
         }
 
@@ -289,7 +300,7 @@ export const MatchProvider: React.FC<MatchProviderProps> = ({ children }) => {
     } catch (error) {
       console.error("Error navigating to chat:", error);
     }
-  }, [currentMatch, profileId, navigation]);
+  }, [currentMatch, profileId, navigation, requireVerification]);
 
   const handleClose = useCallback(async () => {
     if (!currentMatch || !profileId) return;

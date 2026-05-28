@@ -61,7 +61,7 @@ const ProfileAvatar = memo(({ uri }: { uri: string | null }) => {
 
 const MyPageScreen: React.FC = () => {
   const navigation = useNavigation<MyPageScreenNavigationProp>();
-  const { profileId } = useAuth(); // Get profileId from AuthContext
+  const { profileId, userProfile: cachedProfile } = useAuth(); // Get profileId + cached profile from AuthContext
   const { unreadCount, unreadFootprintCount } = useNotifications(); // Get unread notification count from NotificationContext
   const { isProMember } = useRevenueCat();
   // Tracks both the % filled and the first unfilled field's label so
@@ -356,6 +356,31 @@ const MyPageScreen: React.FC = () => {
             </TouchableOpacity>
 
             <Text style={styles.profileName}>{userName || "User"}</Text>
+
+            {/* Verify-yourself CTA — shown only to unverified female users.
+                Males never see this; verified females have nothing to do. Tap
+                routes to the standalone KycVerification screen which mounts
+                the same Didit liveness flow used by the per-action CTAs. */}
+            {cachedProfile?.gender === "female" && !cachedProfile?.is_verified && (
+              <TouchableOpacity
+                style={styles.verifyCtaCard}
+                onPress={() => navigation.navigate("KycVerification")}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Verify yourself"
+              >
+                <View style={styles.verifyCtaIconWrap}>
+                  <Ionicons name="shield-checkmark" size={20} color={Colors.white} />
+                </View>
+                <View style={styles.verifyCtaTextWrap}>
+                  <Text style={styles.verifyCtaTitle}>Verify yourself</Text>
+                  <Text style={styles.verifyCtaSubtitle}>
+                    Unlock likes, messaging and posting in under a minute.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
 
             {/* Profile completion CTA — entire card is tappable and goes
                 to EditProfile. Below 100% it shows a specific next-step
@@ -970,6 +995,46 @@ const styles = StyleSheet.create({
     fontFamily: Typography.getFontFamily("500"),
     color: "#131313",
     marginBottom: 6,
+  },
+  // Verify-yourself CTA shown to unverified female users.
+  verifyCtaCard: {
+    width: "88%",
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  verifyCtaIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  verifyCtaTextWrap: {
+    flex: 1,
+  },
+  verifyCtaTitle: {
+    fontSize: 15,
+    fontFamily: Typography.getFontFamily(Typography.fontWeight.semibold),
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.text.primary,
+    marginBottom: 2,
+  },
+  verifyCtaSubtitle: {
+    fontSize: 12,
+    fontFamily: Typography.fontFamily.regular,
+    color: Colors.text.tertiary,
   },
   // New completion CTA — card-style, tappable, specific next-action hint.
   completionCard: {

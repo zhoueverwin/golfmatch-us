@@ -34,6 +34,7 @@ import { Typography } from "../constants/typography";
 import { RootStackParamList } from "../types";
 import { useBackHandler } from "../hooks/useBackHandler";
 import { useAuth } from "../contexts/AuthContext";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 import { useNotifications } from "../contexts/NotificationContext";
 import { messagesService } from "../services/supabase/messages.service";
 import { reviewPromptService } from "../services/reviewPromptService";
@@ -286,6 +287,7 @@ const ChatScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { chatId, userId, userName, userImage } = route.params;
   const { user } = useAuth();
+  const requireVerification = useRequireVerification();
   const { clearMessagesNotification } = useNotifications();
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
@@ -767,34 +769,16 @@ const ChatScreen: React.FC = () => {
       return;
     }
 
-    // OPTIMIZED: Use cached verification/membership status instead of querying every time
-    // Previous: Made 2 API calls (database + RevenueCat) on EVERY message send
-    // Now: Uses cached status, only re-checks on screen focus
-    if (!cachedVerificationStatus) {
-      // Status not loaded yet, load it now
-      await loadVerificationStatus();
-      // Check again after loading
-      if (!cachedVerificationStatus) {
-        Alert.alert("Error", "Couldn't verify your account status.");
-        return;
-      }
-    }
-
-    if (!cachedVerificationStatus.isVerified
-        && cachedVerificationStatus.kycRequiredForMessaging) {
-      Alert.alert(
-        "Identity Verification Required",
-        "You need to complete identity verification (KYC) before sending messages. Finish verification from My Page.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Verify Now",
-            onPress: () => navigation.navigate("KycVerification"),
-          },
-        ]
-      );
-      return;
-    }
+    // v1.2: verification gating is now driven by gender + is_verified via
+    // useRequireVerification (males pass through, unverified females see
+    // the standardized CTA → KycVerification). The legacy
+    // cachedVerificationStatus / kyc_required_for_messaging flag path is
+    // bypassed; receiving messages is always allowed, only sending gates.
+    let proceed = false;
+    requireVerification("send_message", () => {
+      proceed = true;
+    });
+    if (!proceed) return;
 
     try {
       setSending(true);

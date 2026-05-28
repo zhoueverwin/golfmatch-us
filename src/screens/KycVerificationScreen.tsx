@@ -71,6 +71,18 @@ const KycVerificationScreen: React.FC = () => {
   const isPending = status === "pending_review";
   const isRejected = status === "rejected" || status === "retry";
 
+  // If the user lands on this screen with kyc_status already in
+  // pending_review (e.g. they bailed mid-flow on a previous attempt, or the
+  // create-didit-session call wrote pending_review before they returned),
+  // skip the idle "Start verification" screen and put them straight into
+  // the waiting state. Without this, they'd see a "Start verification"
+  // CTA even though there's an in-flight submission, which is misleading.
+  useEffect(() => {
+    if (isPending && phase === "idle" && !advancedRef.current) {
+      setPhase("waiting");
+    }
+  }, [isPending, phase]);
+
   // 90-second slow-review escape hatch — same pattern as onboarding.
   useEffect(() => {
     if (phase === "waiting") {
@@ -266,10 +278,18 @@ const KycVerificationScreen: React.FC = () => {
   );
 
   const renderWaiting = () => {
-    const longWait = slowReview || isPending;
+    // "Under review" copy is shown whenever we're waiting — whether the
+    // user just started (isPending due to fresh submission) or they came
+    // back to a previously-submitted verification. The retry CTA, however,
+    // is gated separately: it should only appear after the slow-review
+    // timer (90s) actually elapses on THIS screen visit. Showing retry
+    // immediately on a fresh visit to a pending_review status looks like
+    // we're telling the user their attempt failed when it didn't.
+    const underReview = slowReview || isPending;
+    const showRetry = slowReview;
     return (
       <View style={styles.center}>
-        {longWait ? (
+        {underReview ? (
           <View style={styles.iconCircle}>
             <Ionicons name="time-outline" size={48} color={Colors.primary} />
           </View>
@@ -277,14 +297,14 @@ const KycVerificationScreen: React.FC = () => {
           <ActivityIndicator size="large" color={Colors.primary} />
         )}
         <Text style={styles.headline}>
-          {longWait ? "Under review" : "Verifying…"}
+          {underReview ? "Under review" : "Verifying…"}
         </Text>
         <Text style={styles.body}>
-          {longWait
-            ? "Your ID is being reviewed by a real person. This usually completes within a few hours, sometimes up to 24 hours. You can close this screen — we'll notify you when it's done."
+          {underReview
+            ? "Your verification is being reviewed. This usually completes within a few minutes, sometimes up to 24 hours. You can close this screen — we'll notify you when it's done."
             : "Follow the prompts in the verification page. You'll return here automatically."}
         </Text>
-        {longWait ? (
+        {showRetry ? (
           <TouchableOpacity
             style={styles.secondaryButton}
             activeOpacity={0.85}
@@ -293,7 +313,7 @@ const KycVerificationScreen: React.FC = () => {
               setPhase("idle");
             }}
           >
-            <Text style={styles.secondaryButtonText}>Retry with new photos</Text>
+            <Text style={styles.secondaryButtonText}>Retry with a new selfie</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -311,10 +331,10 @@ const KycVerificationScreen: React.FC = () => {
             Previous verification was not accepted
           </Text>
           <Text style={styles.rejectionBody}>
-            Your last ID check didn't pass. This usually happens when the
-            photo is blurry, the ID has expired, or the document couldn't be
-            matched to you. Try again with a clear photo of a valid, current
-            government ID.
+            Your last selfie didn't pass. This usually happens when the
+            photo is blurry, lighting is poor, or your face isn't fully
+            visible. Try again in a well-lit space with your face centered
+            in the frame.
           </Text>
         </View>
       ) : (
@@ -324,12 +344,13 @@ const KycVerificationScreen: React.FC = () => {
       )}
 
       <Text style={styles.bullet}>
-        <Text style={styles.bulletStrong}>1. </Text>Take a photo of a
-        government ID (driver's license or passport)
+        <Text style={styles.bulletStrong}>1. </Text>Take a quick selfie so
+        we can confirm you're a real person
       </Text>
       <Text style={styles.bullet}>
-        <Text style={styles.bulletStrong}>2. </Text>Take a selfie so we can
-        match it to your ID
+        <Text style={styles.bulletStrong}>2. </Text>Follow the on-screen
+        prompts (turn your head, smile, etc.) — this proves the photo is
+        live, not a still image
       </Text>
       <Text style={styles.bullet}>
         <Text style={styles.bulletStrong}>3. </Text>That's it. Verification
@@ -337,9 +358,10 @@ const KycVerificationScreen: React.FC = () => {
       </Text>
 
       <Text style={styles.privacy}>
-        GolfMatch uses Didit to verify identity. Your ID is only used to
-        confirm you're a real adult — it isn't shown on your profile and
-        isn't stored after verification.
+        GolfMatch uses Didit to confirm a real person is behind each
+        profile. Your selfie is only used for this liveness check — it
+        isn't shown on your profile and isn't stored after verification.
+        We do not collect government IDs.
       </Text>
 
       {errorMessage ? (

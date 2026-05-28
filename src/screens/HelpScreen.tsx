@@ -96,7 +96,7 @@ const helpCategories: HelpCategory[] = [
     title: "Identity Verification",
     items: [
       { id: "kyc-process", title: "How identity verification works" },
-      { id: "kyc-documents", title: "Accepted ID documents" },
+      { id: "kyc-documents", title: "What the verification checks" },
       { id: "kyc-required", title: "Why we verify identity" },
       { id: "kyc-failed", title: "If verification fails" },
     ],

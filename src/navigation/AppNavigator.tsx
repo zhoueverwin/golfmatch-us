@@ -45,7 +45,6 @@ import OnboardingBirthdateScreen from "../screens/onboarding/OnboardingBirthdate
 import OnboardingStateScreen from "../screens/onboarding/OnboardingStateScreen";
 import OnboardingLocationScreen from "../screens/onboarding/OnboardingLocationScreen";
 import OnboardingPhotoScreen from "../screens/onboarding/OnboardingPhotoScreen";
-import OnboardingKycScreen from "../screens/onboarding/OnboardingKycScreen";
 import OnboardingPaywallScreen from "../screens/onboarding/OnboardingPaywallScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import LocationSettingsScreen from "../screens/LocationSettingsScreen";
@@ -377,11 +376,13 @@ const AppNavigatorContent = () => {
   const needsBirthdateGate = !!(cachedProfile && !cachedProfile.birth_date);
   const needsGenderGate = !!(cachedProfile && !cachedProfile.gender);
 
-  // Universal KYC/liveness gate: returning users who never completed Didit
-  // verification are pushed through it before reaching Main. Without this,
-  // accounts created before KYC was wired in (or any account where the
-  // verdict never landed) can bypass the anti-bypass mechanism entirely.
-  const needsKycGate = !!(cachedProfile && !cachedProfile.is_verified);
+  // Liveness/KYC is no longer an onboarding gate. App Store Review (5.x)
+  // flagged the required face-verification step as personal-info collection
+  // that wasn't strictly core to the app's primary function. New model:
+  //   - Males: no verification path at all (no badge, no CTA).
+  //   - Females: optional. They land in the app immediately, can browse all
+  //     profiles freely, and only hit a verification CTA at the moment they
+  //     try to like, send a message, or post. See useRequireVerification.
 
   // Gendered hard paywall (fail-secure): only an explicit "female" skips
   // the paywall. Anything else — "male", null, "other" — gets gated until
@@ -726,14 +727,13 @@ const AppNavigatorContent = () => {
               {isNewUser ? (
                 <>
                   {/*
-                    v1.1 onboarding flow — gender + birth_date are self-
-                    attested (no longer extracted from Didit). Order:
+                    v1.2 onboarding flow — face verification removed from
+                    onboarding per App Store Review (5.x). Females verify
+                    at the moment they like / message / post via
+                    useRequireVerification; males never verify. Order:
                       Name → Birthdate → Gender → State → Location → Photo
-                            → (males) Paywall → Liveness → Main
-                            → (females)         Liveness → Main
-                    Paywall before liveness: sunk-cost commitment drives
-                    liveness completion. Liveness uses Didit's lite workflow
-                    (selfie + face match + age estimation, no document).
+                            → (males) Paywall → Main
+                            → (females)         Main
                   */}
                   <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false }} />
@@ -742,20 +742,19 @@ const AppNavigatorContent = () => {
                   <Stack.Screen name="OnboardingLocation" component={OnboardingLocationScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPhoto" component={OnboardingPhotoScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>
               ) : needsBirthdateGate ? (
                 <>
                   {/* Returning user missing birth_date (v1.1 self-attested
-                      gate). Cascades into gender / paywall / liveness as
-                      each lower-priority gate fires on re-render. */}
+                      gate). Cascades into gender / paywall as each lower-
+                      priority gate fires on re-render. Liveness no longer
+                      gates anything — it's a per-action prompt now. */}
                   <Stack.Screen name="OnboardingBirthdate" component={OnboardingBirthdateScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>
@@ -765,28 +764,14 @@ const AppNavigatorContent = () => {
                   <Stack.Screen name="OnboardingGender" component={OnboardingGenderScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="OnboardingState" component={OnboardingStateScreen} options={{ headerShown: false }} />
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>
               ) : needsPaywallGate ? (
                 <>
                   {/* Returning non-female user without an active subscription.
-                      v1.1: paywall is upstream of liveness — after purchase,
-                      OnboardingPaywallScreen resets to OnboardingKyc if the
-                      user still needs liveness. */}
+                      Paywall is the last gate before Main. */}
                   <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
-                  <Stack.Screen name="Main" component={MainTabNavigator} />
-                  <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
-                </>
-              ) : needsKycGate ? (
-                <>
-                  {/* Returning user (typically female, since males would have
-                      hit the paywall gate first) who hasn't completed
-                      liveness. v1.1: paywall already happened upstream, so
-                      Kyc routes straight to Main on approved. */}
-                  <Stack.Screen name="OnboardingKyc" component={OnboardingKycScreen} options={{ headerShown: false, gestureEnabled: false }} />
                   <Stack.Screen name="Main" component={MainTabNavigator} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
                 </>

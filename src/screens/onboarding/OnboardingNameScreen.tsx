@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   TextInput,
   StyleSheet,
@@ -24,7 +24,33 @@ const MAX_LENGTH = 40;
 
 const OnboardingNameScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  const { profileId } = useAuth();
+  const { profileId, user } = useAuth();
+
+  // App Store guideline 5.x (Sign in with Apple): once the user has
+  // authenticated via Apple, the app must use the name Apple provided and
+  // must not re-prompt for it. For Apple users we skip this screen entirely
+  // — authService.signInWithApple persists credential.fullName to the
+  // profile on first sign-in, so a real name is already on file.
+  //
+  // We check three signals because Supabase populates them on slightly
+  // different timelines after signInWithIdToken: app_metadata.provider is
+  // sometimes undefined for one render right after auth, but identities
+  // and providers[] are hydrated synchronously with the session. Any one
+  // matching is enough.
+  const skippedRef = useRef(false);
+  const appMetaProvider = user?.app_metadata?.provider;
+  const appMetaProviders = user?.app_metadata?.providers;
+  const identities = user?.identities;
+  const isAppleUser =
+    appMetaProvider === "apple" ||
+    (Array.isArray(appMetaProviders) && appMetaProviders.includes("apple")) ||
+    (Array.isArray(identities) && identities.some((i) => i?.provider === "apple"));
+  useEffect(() => {
+    if (isAppleUser && !skippedRef.current) {
+      skippedRef.current = true;
+      navigation.replace("OnboardingBirthdate");
+    }
+  }, [isAppleUser, navigation]);
   // Always start empty — the OAuth-provided name (in userProfile) is kept
   // as a DB fallback via the handle_new_user trigger, but the user types
   // their own here during onboarding.
@@ -52,6 +78,13 @@ const OnboardingNameScreen: React.FC = () => {
       setSaving(false);
     }
   };
+
+  // Don't flash the name input while we're waiting on `user` to hydrate —
+  // if we later detect it's an Apple user, we'd briefly show a screen we
+  // shouldn't, which is the exact bug Apple flagged.
+  if (!user || isAppleUser) {
+    return null;
+  }
 
   return (
     <OnboardingShell

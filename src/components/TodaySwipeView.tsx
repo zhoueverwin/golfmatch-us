@@ -20,6 +20,7 @@ import { SwipeCardWithRef, SwipeCardRef } from "./SwipeCard";
 import { DataProvider } from "../services";
 import { useAuth } from "../contexts/AuthContext";
 import { userInteractionService } from "../services/userInteractionService";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 import { UserActivityService } from "../services/userActivityService";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -31,6 +32,7 @@ interface TodaySwipeViewProps {
 
 const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
   const { profileId, userProfile } = useAuth();
+  const requireVerification = useRequireVerification();
   const insets = useSafeAreaInsets();
   const [users, setUsers] = useState<User[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -100,12 +102,21 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
   const handleSwipeRight = useCallback(
     (user: User) => {
       if (!profileId) return;
-      userInteractionService.likeUser(profileId, user.id);
-      // Mark as swiped server-side (fire-and-forget — don't block animation)
-      DataProvider.markRecommendationSwiped(profileId, user.id);
-      advanceIndex();
+      // Unverified females: spring the card back and DON'T record the like.
+      // After they verify they can swipe the same card again.
+      let allowed = false;
+      requireVerification("swipe", () => {
+        allowed = true;
+      });
+      if (allowed) {
+        userInteractionService.likeUser(profileId, user.id);
+        DataProvider.markRecommendationSwiped(profileId, user.id);
+        advanceIndex();
+      } else {
+        swipeCardRef.current?.resetPosition();
+      }
     },
-    [profileId, advanceIndex],
+    [profileId, advanceIndex, requireVerification],
   );
 
   const handleSwipeLeft = useCallback(

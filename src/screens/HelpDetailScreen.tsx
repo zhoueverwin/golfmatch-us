@@ -146,14 +146,14 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "post-create",
     title: "Create a Post",
     description:
-      "Create posts from the Home screen. You'll need to complete identity verification first.",
+      "Create posts from the Home screen.",
     steps: [
       "Tap the + button in the top right of Home",
       "Write your post text",
       "Optionally add photos or video",
       "Tap Post",
     ],
-    additionalInfo: "You need to finish identity verification before you can post.",
+    additionalInfo: "Female members are asked to complete a quick selfie liveness check before posting — this only takes about 30 seconds.",
   },
   "post-media": {
     id: "post-media",
@@ -372,46 +372,44 @@ const helpDetails: Record<string, HelpDetail> = {
     id: "kyc-process",
     title: "Identity Verification Steps",
     description:
-      "Identity verification is part of signing up. You can't use GolfMatch until verification is complete — we'll guide you through it automatically.",
+      "Verification is optional. You can use GolfMatch without it — it's only needed before you like, send a message, or post. Verification is a short selfie liveness check; we do not collect government IDs.",
     steps: [
-      "After you finish entering your basic profile during signup, you'll be taken to the verification step",
-      "Tap Start Verification — a secure verification page opens",
-      "Scan a government-issued ID when prompted",
-      "Take a short selfie video for a liveness check",
+      "When you try to like, message, or post, you'll be prompted to verify",
+      "Tap Verify Now — a secure verification page opens",
+      "Take a quick selfie and follow the on-screen prompts (turn your head, smile) for a liveness check",
       "Return to GolfMatch and wait for the result",
     ],
     additionalInfo:
-      "Most results come back within a few minutes. Complex cases can take up to 24 hours. If your status ever needs to be refreshed, you can re-verify from Settings → Manage Subscription → Identity Verification.",
+      "Most results come back within a few minutes. Complex cases can take up to 24 hours. You can also start verification any time from My Page.",
   },
   "kyc-documents": {
     id: "kyc-documents",
-    title: "Accepted ID Documents",
+    title: "What We Check",
     description:
-      "Verification accepts most government-issued photo IDs.",
+      "Verification is a selfie-based liveness check. We do not ask for, scan, or store any government-issued ID, driver's license, or passport.",
     steps: [
-      "Driver's License",
-      "State ID Card",
-      "Passport",
+      "A clear, well-lit selfie of your face",
+      "A short liveness prompt (turn your head, smile) to prove you're a real person, not a photo",
     ],
     additionalInfo:
-      "Your document must be unexpired and show clear, glare-free photos of both sides where applicable.",
+      "Your selfie is only used for the liveness check — it isn't shown on your profile and isn't kept after verification.",
   },
   "kyc-required": {
     id: "kyc-required",
-    title: "Why We Require Verification",
+    title: "Why We Verify",
     description:
-      "We verify identities to keep the community safe. Verified users earn more trust and tend to get more matches.",
+      "We run a liveness check to keep the community safe and reduce fake profiles. Verification is optional — you can browse and read messages without it — and is only required before you like, send a message, or post.",
   },
   "kyc-failed": {
     id: "kyc-failed",
     title: "If Verification Fails",
     description:
-      "If your verification was rejected, you can retry. Most failures are fixed with a clearer scan in better lighting.",
+      "If your verification was rejected, you can retry. Most failures are fixed with better lighting and a clearer view of your face.",
     steps: [
-      "Use a well-lit area when scanning your ID and recording the selfie",
-      "Make sure all corners of your ID are visible and free of glare",
-      "Use an unexpired government-issued ID",
-      "Hold the ID steady and follow the on-screen prompts carefully",
+      "Use a well-lit area, indoors or in shade — avoid backlight from a window",
+      "Hold the phone at eye level and keep your face fully in the frame",
+      "Remove hats, sunglasses, or anything covering your face",
+      "Follow the on-screen liveness prompts carefully (turn your head, smile)",
       "After two failed attempts, a manual review option becomes available",
       "If issues continue, contact support and we'll help you through it",
     ],

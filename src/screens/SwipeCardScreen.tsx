@@ -21,6 +21,7 @@ import { SwipeCardWithRef, SwipeCardRef } from "../components/SwipeCard";
 import { getSwipeCardData } from "../services/swipeCardData";
 import { useAuth } from "../contexts/AuthContext";
 import { userInteractionService } from "../services/userInteractionService";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -29,6 +30,7 @@ type SwipeCardScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 const SwipeCardScreen: React.FC = () => {
   const navigation = useNavigation<SwipeCardScreenNavigationProp>();
   const { profileId } = useAuth();
+  const requireVerification = useRequireVerification();
   const [users, setUsers] = useState<User[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardAreaHeight, setCardAreaHeight] = useState(SCREEN_HEIGHT * 0.70);
@@ -45,10 +47,22 @@ const SwipeCardScreen: React.FC = () => {
   const handleSwipeRight = useCallback(
     (user: User) => {
       if (!profileId) return;
-      userInteractionService.likeUser(profileId, user.id);
-      setCurrentIndex((prev) => prev + 1);
+      // For unverified females the gate fires a CTA Alert; the gesture has
+      // already animated the card off-screen, so we spring it back to
+      // center via the SwipeCard ref and DON'T advance the index. The user
+      // can swipe again after verifying, on the same card.
+      let allowed = false;
+      requireVerification("swipe", () => {
+        allowed = true;
+      });
+      if (allowed) {
+        userInteractionService.likeUser(profileId, user.id);
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        swipeCardRef.current?.resetPosition();
+      }
     },
-    [profileId],
+    [profileId, requireVerification],
   );
 
   const handleSwipeLeft = useCallback(

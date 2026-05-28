@@ -163,9 +163,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               })();
               // Bump the daily-return streak once per app open. Idempotent
               // server-side: same-day calls return the existing count unchanged.
+              // We pass the device's IANA timezone so the server computes
+              // "today" in the user's local calendar — otherwise users near
+              // the UTC date boundary (e.g. JST at 22:00, PST at 17:00) get
+              // their streak silently reset whenever consecutive local days
+              // skip a UTC date.
               (async () => {
                 try {
-                  const { data, error } = await supabase.rpc("bump_streak", { p_user_id: id });
+                  let tz = "UTC";
+                  try {
+                    const resolved = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    if (resolved) tz = resolved;
+                  } catch {
+                    // Some old JSC builds don't expose resolvedOptions; UTC is fine.
+                  }
+                  const { data, error } = await supabase.rpc("bump_streak", {
+                    p_user_id: id,
+                    p_timezone: tz,
+                  });
                   if (error || !isMounted) return;
                   const row = Array.isArray(data) ? data[0] : data;
                   const days = row?.current_streak_days;
@@ -235,6 +250,83 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Track user presence based on authentication state
   useUserPresence(profileId, !!profileId);
+
+  // Subscribe to the user's own profile row so cross-screen state changes
+  // (e.g. is_verified flipping to true when the Didit webhook lands while
+  // the user is anywhere in the app) propagate to every component reading
+  // from `userProfile` without manual refresh hooks per screen.
+  //
+  // IMPORTANT: ignore housekeeping fields like last_active_at. The presence
+  // service writes that field on a short interval; without this filter,
+  // every tick triggers setUserProfile → every consumer of useAuth()
+  // re-renders → screens with useEffect deps on userProfile re-fetch their
+  // feed. On the Connections / Messages empty state that looks like a
+  // constantly refreshing page.
+  useEffect(() => {
+    if (!profileId) return;
+    // Whitelist of fields whose changes should actually rebroadcast the
+    // userProfile state. Anything not in this list is treated as a
+    // housekeeping write and skipped.
+    const RELEVANT_FIELDS: ReadonlyArray<keyof CachedProfile> = [
+      "name",
+      "age",
+      "gender",
+      "prefecture",
+      "bio",
+      "profile_pictures",
+      "is_premium",
+      "current_streak_days",
+      "blood_type",
+      "height",
+      "body_type",
+      "smoking",
+      "golf_skill_level",
+      "golf_experience",
+      "average_score",
+      "transportation",
+      "available_days",
+      "is_verified",
+      "kyc_status",
+      "birth_date",
+    ];
+    const channel = supabase
+      .channel(`auth-profile-${profileId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${profileId}`,
+        },
+        (payload) => {
+          const next = payload.new as Partial<CachedProfile> | null;
+          const prev = payload.old as Partial<CachedProfile> | null;
+          if (!next) return;
+          // Bail if no whitelisted field actually changed. shallow compare
+          // is enough — fields are scalars or arrays-of-strings; reference
+          // equality for arrays from Postgres realtime is unreliable so we
+          // JSON-stringify the few array-typed fields.
+          const changed = RELEVANT_FIELDS.some((field) => {
+            const a = next?.[field];
+            const b = prev?.[field];
+            if (a === b) return false;
+            if (Array.isArray(a) || Array.isArray(b)) {
+              return JSON.stringify(a) !== JSON.stringify(b);
+            }
+            return true;
+          });
+          if (!changed) return;
+          setUserProfile((cached) =>
+            cached ? ({ ...cached, ...next } as CachedProfile) : cached,
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileId]);
 
   const refreshProfile = async () => {
     if (!profileId) return;

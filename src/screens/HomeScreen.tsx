@@ -28,6 +28,7 @@ import PostCreationModal from "../components/PostCreationModal";
 import PostMenuModal from "../components/PostMenuModal";
 import { DataProvider } from "../services";
 import { useAuth } from "../contexts/AuthContext";
+import { useRequireVerification } from "../hooks/useRequireVerification";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePosts, useReactToPost, useUnreactToPost } from "../hooks/queries/usePosts";
 import { useBatchMutualLikes } from "../hooks/queries/useMutualLikes";
@@ -49,6 +50,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const { user, profileId } = useAuth(); // Get profileId from AuthContext
+  const requireVerification = useRequireVerification();
   const queryClient = useQueryClient(); // For cache invalidation
 
   const [activeTab, setActiveTab] = useState<"recommended" | "following">(
@@ -412,10 +414,24 @@ const HomeScreen: React.FC = () => {
     videos: string[];
     aspectRatio?: number;
   }) => {
+    // Gate post creation for unverified females; males and verified females
+    // pass through. Editing an existing post is also gated, but in practice
+    // an unverified female has no posts to edit (the same gate prevented
+    // creation), so this is just defensive.
+    let proceed = false;
+    requireVerification("post", () => {
+      proceed = true;
+    });
+    if (!proceed) {
+      // Throw to surface back to the modal's submit handler so it can stop
+      // the spinner / restore the compose UI.
+      throw new Error("Verification required");
+    }
+
     try {
       // Get actual user ID from AuthContext profileId
       const currentUserId = profileId || process.env.EXPO_PUBLIC_TEST_USER_ID;
-      
+
       if (!currentUserId) {
         console.error("No authenticated user found");
         throw new Error("Please sign in to create posts");

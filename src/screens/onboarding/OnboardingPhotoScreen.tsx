@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { decode } from "base64-arraybuffer";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import OnboardingShell from "./OnboardingShell";
 import { Colors } from "../../constants/colors";
@@ -157,10 +157,19 @@ const OnboardingPhotoScreen: React.FC = () => {
     const ok = await uploadAndSave(localUri);
     if (!ok) return;
     void logOnboardingStepCompleted("photo");
-    // Read self-attested gender (set on OnboardingGenderScreen). Fail-secure:
-    // anything not explicitly "female" routes through the paywall.
+    // v1.2 routing (face verification removed from onboarding per App Store
+    // Review 5.x): females finish onboarding here and reset straight to
+    // Main; verification happens in-app at the moment they like / message /
+    // post (see useRequireVerification). Males still go through the paywall
+    // first. Fail-secure: anything not explicitly "female" goes to paywall.
     const isFemale = userProfile?.gender === "female";
-    navigation.navigate(isFemale ? "OnboardingKyc" : "OnboardingPaywall");
+    if (isFemale) {
+      navigation.dispatch(
+        CommonActions.reset({ index: 0, routes: [{ name: "Main" }] }),
+      );
+    } else {
+      navigation.navigate("OnboardingPaywall");
+    }
   };
 
   const busy = uploading || saving;

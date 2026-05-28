@@ -30,6 +30,7 @@ export default {
         NSPhotoLibraryUsageDescription: "Golfmatch accesses your photo library so you can choose existing photos or videos for posts and your profile picture. For example: pick a golf photo from your camera roll to add to a post.",
         NSMicrophoneUsageDescription: "Golfmatch uses the microphone to record audio when you capture video for your posts. For example: record your swing video with sound.",
         NSUserNotificationsUsageDescription: "Used to send notifications about new matches, messages, likes, and other activity. For example: get notified when you have a new match.",
+        NSLocationWhenInUseUsageDescription: "Golfmatch uses your location to show how far away other golfers are and to surface nearby members in Search. For example: see that a profile is 8 miles away and filter your results to golfers within 25 miles. Your precise coordinates are never shared with other users — only an approximate distance.",
         // ATT (App Tracking Transparency) permission message for iOS 14+
         NSUserTrackingUsageDescription: "Allow Golfmatch to measure the performance of our advertising campaigns. We don't display ads inside the app."
       },
