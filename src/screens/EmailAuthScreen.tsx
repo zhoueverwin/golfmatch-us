@@ -118,11 +118,20 @@ const EmailAuthScreen: React.FC = () => {
         end={{ x: 0, y: 1 }}
         style={styles.backgroundGradient}
       />
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <KeyboardAvoidingView
-          style={styles.kav}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+      {/*
+       * Nesting order matters: KeyboardAvoidingView is the OUTER container so
+       * its keyboard-driven padding offsets the entire safe-area layout
+       * rather than collapsing the ScrollView from inside the safe area. With
+       * the previous (SafeAreaView > KAV) order, the Sign up button got
+       * clipped when the Confirm Password field was focused on shorter or
+       * notched iPhones.
+       */}
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
           {/* Header — back chevron only */}
           <View style={styles.header}>
             <TouchableOpacity
@@ -140,6 +149,8 @@ const EmailAuthScreen: React.FC = () => {
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            automaticallyAdjustKeyboardInsets
             showsVerticalScrollIndicator={false}
           >
             {/* Mode toggle pill — Sign in | Sign up */}
@@ -392,8 +403,8 @@ const EmailAuthScreen: React.FC = () => {
               You must be 18 or older to sign up.
             </Text>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -427,7 +438,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 28,
     paddingTop: 12,
-    paddingBottom: 32,
+    // Generous bottom padding so the primary CTA + age notice are always
+    // reachable on shorter devices and stay visible above the keyboard. The
+    // Sign Up variant has an extra Confirm Password field, so the column is
+    // tall on devices like iPhone SE / mini.
+    paddingBottom: 96,
   },
 
   // Mode toggle pill — ink active state with gold text, matches the

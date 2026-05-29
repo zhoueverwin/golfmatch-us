@@ -600,27 +600,32 @@ const TierRow: React.FC<TierRowProps> = ({
         </Text>
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        {!hideStrike && tier.strikePrice && (
+        {/*
+         * App Review 3.1.2: the BILLED amount must be the most clear and
+         * conspicuous price element. We render the total charge (e.g. the
+         * yearly or 6-month total) at large size; the per-month equivalent,
+         * strike-through compare-at, and SAVE badge are all subordinate.
+         */}
+        <Text style={[styles.price, isHero && { color: C.gold }]}>
+          {tier.pkg.product.priceString}
+        </Text>
+        {tier.months > 1 && (
+          <Text
+            style={[styles.priceEquiv, isHero && { color: C.tealMint }]}
+          >
+            ≈ {tier.pricePerMonth} / mo
+          </Text>
+        )}
+        {!hideStrike && tier.strikePrice && tier.months > 1 && (
           <Text
             style={[
               styles.strike,
               isHero && { color: "rgba(250,246,238,0.5)" },
             ]}
           >
-            {tier.strikePrice}
+            vs {tier.strikePrice} / mo
           </Text>
         )}
-        <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-          <Text style={[styles.price, isHero && { color: C.gold, fontSize: 18 }]}>
-            {tier.pricePerMonth}
-          </Text>
-          <Text
-            style={[styles.priceUnit, isHero && { color: C.tealMint }]}
-          >
-            {" "}
-            / mo
-          </Text>
-        </View>
         {tier.savePct !== undefined && tier.savePct > 0 && (
           <View style={styles.save}>
             <Text style={styles.saveText}>SAVE {tier.savePct}%</Text>
@@ -813,12 +818,27 @@ const styles = StyleSheet.create({
   },
   strike: {
     fontFamily: F.sans,
-    fontSize: 12,
+    fontSize: 11,
     color: C.muted,
     textDecorationLine: "line-through",
+    marginTop: 2,
   },
-  price: { fontFamily: F.sansSemi, fontSize: 16, color: C.ink },
-  priceUnit: { fontFamily: F.sans, fontSize: 12, color: C.inkSoft },
+  // Billed total — the legally prominent price. Largest typographic weight
+  // on the row. Hero gets a slight bump to keep visual hierarchy.
+  price: {
+    fontFamily: F.sansBold,
+    fontSize: 22,
+    lineHeight: 24,
+    color: C.ink,
+    letterSpacing: -0.3,
+  },
+  // Per-month equivalent — subordinate, smaller, no bold weight.
+  priceEquiv: {
+    fontFamily: F.sans,
+    fontSize: 11,
+    color: C.inkSoft,
+    marginTop: 2,
+  },
   save: {
     marginTop: 4,
     backgroundColor: C.ink,

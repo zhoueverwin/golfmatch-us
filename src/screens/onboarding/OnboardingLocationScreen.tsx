@@ -19,20 +19,14 @@ import {
 type Nav = StackNavigationProp<RootStackParamList, "OnboardingLocation">;
 
 /**
- * Optional location step inserted between State (step 2) and Photo (step 4).
+ * Location step inserted between State (step 2) and Photo (step 4).
  *
- * Two paths forward:
- *   - "Use my location"  → request iOS permission, capture GPS, store as
- *                          location_source='gps'. Falls back to state
- *                          centroid silently if the user denies the system
- *                          dialog (we already have a centroid from State).
- *   - "Skip — use my state instead" → keep the state-centroid backfill that
- *                                    happened when State was saved, mark
- *                                    location_source='manual' for clarity.
- *
- * Either way, the user can move on. The screen never blocks onboarding —
- * the worst outcome is they show up to Discover with state-only location,
- * which still produces meaningful recommendations.
+ * Single forward action: "Continue" triggers the iOS permission dialog.
+ * The OS dialog is the only opt-out — no app-level Skip button (Apple
+ * App Review 5.1.1: a pre-permission rationale must not include its own
+ * exit/skip control). If the user denies in the system dialog we still
+ * proceed; the state-centroid backfill from OnboardingState keeps
+ * recommendations working.
  */
 const OnboardingLocationScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
@@ -79,28 +73,14 @@ const OnboardingLocationScreen: React.FC = () => {
     }
   };
 
-  const handleSkip = async () => {
-    if (!profileId || busy) return;
-    setBusy(true);
-    try {
-      // No-op for storage — the state-centroid backfill from OnboardingState
-      // already populated home_location. Just move on.
-      proceedToPhoto();
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <OnboardingShell
       step={5}
       title="Find golfers near you"
-      subtitle="Share your location and we'll match you with golfers within driving distance — or skip and we'll just use your state."
-      continueLabel="Use my location"
+      subtitle="Share your location and we'll match you with golfers within driving distance. You can decline on the next prompt and we'll use your state instead."
+      continueLabel="Continue"
       continueDisabled={busy}
       onContinue={handleUseLocation}
-      secondaryLabel="Skip — use my state instead"
-      onSecondary={handleSkip}
     >
       <View style={styles.illustration}>
         <View style={styles.iconBubble}>
