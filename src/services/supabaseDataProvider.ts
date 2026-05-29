@@ -324,10 +324,13 @@ class SupabaseDataProvider {
       type,
     );
 
-    if (result.success && result.data?.matched) {
-      // Clear cache for both users to refresh their match status
-      await CacheService.remove(`user_${likerUserId}`);
-      await CacheService.remove(`user_${likedUserId}`);
+    if (result.success) {
+      await this.invalidateDailyRecsCache(likerUserId);
+      if (result.data?.matched) {
+        // Clear cache for both users to refresh their match status
+        await CacheService.remove(`user_${likerUserId}`);
+        await CacheService.remove(`user_${likedUserId}`);
+      }
     }
 
     return result;
@@ -343,10 +346,13 @@ class SupabaseDataProvider {
       "super_like",
     );
 
-    if (result.success && result.data?.matched) {
-      // Clear cache for both users to refresh their match status
-      await CacheService.remove(`user_${userId}`);
-      await CacheService.remove(`user_${targetUserId}`);
+    if (result.success) {
+      await this.invalidateDailyRecsCache(userId);
+      if (result.data?.matched) {
+        // Clear cache for both users to refresh their match status
+        await CacheService.remove(`user_${userId}`);
+        await CacheService.remove(`user_${targetUserId}`);
+      }
     }
 
     return result;
@@ -366,9 +372,20 @@ class SupabaseDataProvider {
       // Clear cache for both users to refresh their interaction status
       await CacheService.remove(`user_${userId}`);
       await CacheService.remove(`user_${targetUserId}`);
+      await this.invalidateDailyRecsCache(userId);
     }
 
     return result;
+  }
+
+  // Bust the 24-hour daily-recs AsyncStorage cache for this viewer so the
+  // next getDailyRecommendations call refetches from the server. Without
+  // this, likes/passes from non-swipe surfaces (Search, profile detail)
+  // would silently leave already-acted-on profiles in the swipe deck
+  // until the JST-keyed cache rolled over the next day.
+  private async invalidateDailyRecsCache(userId: string): Promise<void> {
+    const todayJST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
+    await CacheService.remove(`daily_recs:${userId}:${todayJST}`);
   }
 
   async undoLike(

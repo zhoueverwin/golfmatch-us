@@ -145,13 +145,17 @@ export class ProfilesService {
         .not("birth_date", "is", null)
         .not("profile_pictures", "eq", "{}");
 
-      // Gate: hide unverified profiles (haven't finished onboarding/KYC) and
-      // unpaid males. Females show as long as they're verified; males also
-      // require an active premium subscription. Mirrors the same predicate
-      // applied server-side in migration 19 to the discovery RPCs.
-      query = query
-        .eq("is_verified", true)
-        .or("gender.eq.female,is_premium.eq.true");
+      // Visibility gate (v1.2 model):
+      //   - Females: visible as long as profile is complete (gender +
+      //     birth_date + at least one photo, already filtered above).
+      //   - Males: visible if premium. The hard paywall enforces premium
+      //     at entry; that's the only male-side gate.
+      // KYC verification is NOT a visibility gate on either side. It is
+      // purely a per-action gate (useRequireVerification on the client)
+      // and a display badge on the profile card. Unverified profiles
+      // appear in Search and can be browsed; they just can't perform
+      // active interactions until they verify.
+      query = query.or("gender.eq.female,and(gender.eq.male,is_premium.eq.true)");
 
       // Prefecture filter (single or multiple for region-based search)
       if (filters.prefectures && filters.prefectures.length > 0) {

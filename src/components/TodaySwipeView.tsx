@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -91,9 +92,17 @@ const TodaySwipeView: React.FC<TodaySwipeViewProps> = ({ onViewProfile }) => {
     }
   }, [profileId]);
 
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  // Refetch every time the Swipe tab regains focus. Likes performed on
+  // other surfaces (Search tab, profile detail) write to user_likes but
+  // don't flip daily_recommendations.swiped — migration 33 makes the read
+  // path self-heal against user_likes, so a refetch on focus is all the
+  // client needs to drop already-liked profiles from the deck without
+  // waiting for the next app restart or pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      loadUsers();
+    }, [loadUsers]),
+  );
 
   const advanceIndex = useCallback(() => {
     setCurrentIndex((prev) => prev + 1);
