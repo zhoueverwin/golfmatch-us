@@ -28,11 +28,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { useAuth } from "../contexts/AuthContext";
 import { storageService } from "../services/storageService";
 import { compressVideo } from "../services/videoCompressionService";
-import { supabase } from "../services/supabase";
 import { revenueCatService } from "../services/revenueCatService";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../types";
 
 import { Colors } from "../constants/colors";
 import { Spacing, BorderRadius } from "../constants/spacing";
@@ -40,10 +36,6 @@ import { Typography } from "../constants/typography";
 
 const { width, height } = Dimensions.get("window");
 const GALLERY_ITEM_SIZE = width / 4;
-
-// Feature flag: Set to true to require KYC verification before posting
-// Set to false to allow posting without verification
-const REQUIRE_KYC_FOR_POSTING = false;
 
 // Trim Video Player Component using expo-video
 interface TrimVideoPlayerProps {
@@ -304,7 +296,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   editingPost,
 }) => {
   const { profileId } = useAuth();
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
 
   // Compose view state
@@ -1142,44 +1133,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     if (!currentUserId) {
       Alert.alert("Error", "Please sign in.");
       return;
-    }
-
-    // KYC verification check (controlled by feature flag)
-    if (REQUIRE_KYC_FOR_POSTING) {
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_verified')
-          .eq('id', currentUserId)
-          .single();
-
-        if (error || !profile) {
-          Alert.alert("Error", "Failed to load your account info.");
-          return;
-        }
-
-        if (!profile.is_verified) {
-          Alert.alert(
-            "Identity verification required",
-            "You need to verify your identity (KYC) before posting. Complete verification from My Page.",
-            [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Verify now",
-                onPress: () => {
-                  onClose();
-                  navigation.navigate("KycVerification");
-                },
-              },
-            ]
-          );
-          return;
-        }
-      } catch (error) {
-        console.error("Error checking verification:", error);
-        Alert.alert("Error", "Failed to check verification status.");
-        return;
-      }
     }
 
     const invalidVideos = videos.filter((video) => !isValidVideoUri(video));

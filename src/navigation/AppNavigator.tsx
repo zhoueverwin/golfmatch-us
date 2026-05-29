@@ -605,24 +605,7 @@ const AppNavigatorContent = () => {
         // Redirect to EditProfile if essential fields are missing
         // This ensures users always complete onboarding even if previous checks failed
         if (!hasEssentialFields) {
-          // BUT: if a Didit session is already in flight (kyc_status set to
-          // anything past 'not_started'), the user has already passed the
-          // Name/State/Photo screens — resume them at the KYC gate instead
-          // of throwing them back to the start of onboarding. The
-          // `needsKycGate` branch mounts OnboardingKycScreen, which
-          // auto-snaps to the "waiting" phase for pending_review.
-          // Gender/age may still be unset because Didit's verdict writes
-          // those fields, and the webhook hasn't fired yet.
-          const kycInFlight =
-            !!cachedProfile?.kyc_status &&
-            cachedProfile.kyc_status !== 'not_started' &&
-            cachedProfile.kyc_status !== 'approved';
-          if (kycInFlight) {
-            profileCheckPassed.current = true;
-            setIsNewUser(false);
-          } else {
-            setIsNewUser(true);
-          }
+          setIsNewUser(true);
         } else {
           // Mark profile check as passed to prevent other redirects
           profileCheckPassed.current = true;
@@ -696,8 +679,8 @@ const AppNavigatorContent = () => {
   }
 
   // Wait for cachedProfile before letting the navigator decide which gated
-  // stack to render. The gates below (needsKycGate, needsPaywallGate) read
-  // cachedProfile.is_verified and cachedProfile.gender — if we render
+  // stack to render. The gates below (needsBirthdateGate, needsGenderGate,
+  // needsPaywallGate) read cachedProfile.gender — if we render
   // while cachedProfile is null, BOTH gates evaluate to false and the
   // navigator briefly mounts the Main stack. When cachedProfile arrives
   // a beat later, gates re-evaluate and the navigator swaps stacks (e.g.
